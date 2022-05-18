@@ -7,9 +7,8 @@ use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
 
-
 use Exception;
-use App\Libraries\HttpResponse;
+use Rguj\Laracore\Library\HttpResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Auth\Guard;
 
@@ -30,7 +29,7 @@ class Controller extends BaseController
     /** 
      * `HttpResponse` - the BaseController wrapper
      * 
-     * @var \App\Libraries\HttpResponse $hr
+     * @var Rguj\Laracore\Library\HttpResponse $hr
      */
     public $hr;
 
@@ -40,7 +39,7 @@ class Controller extends BaseController
      * - This must be a `final public function` to avoid method inheritance of the children
      * - This must not be inherited by the children
      * 
-     * @requires `\App\Libraries\HttpResponse`
+     * @requires `Rguj\Laracore\Library\HttpResponse`
      * @return void
      */
     final public function __construct()
