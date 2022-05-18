@@ -47,5 +47,12 @@
         "phpunit/phpunit": "^9.3.3",
         "roave/security-advisories": "dev-latest",
         "spatie/laravel-ignition": "^1.0"
-    }
+    },
+	"scripts": {
+		"post-update-cmd": [
+			"php .post_update.php",
+		]
+	}
+	
+		
 }

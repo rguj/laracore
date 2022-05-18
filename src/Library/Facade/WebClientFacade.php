@@ -1,6 +1,6 @@
 <?php
 
-namespace Rguj\Laracore\Library;
+namespace Rguj\Laracore\Library\Facade;
 
 use Illuminate\Support\Facades\Facade;
 
