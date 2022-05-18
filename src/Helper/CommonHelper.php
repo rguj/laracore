@@ -1,24 +1,45 @@
 <?php
 
-// use Exception;
-use Carbon\Carbon;
+declare(strict_types=1);
+
+namespace Rguj\Laracore\Helper;
+
+
+use Exception;
+// use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 
 use Illuminate\Http\Request;
-use \Illuminate\Support\Arr;
-use \Illuminate\Support\Str;
-use \Illuminate\Support\Facades\Route;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Session;
+
 // use Symfony\Component\Routing\Route as SymfonyRoute;
 use \Spatie\Url\Url as SpatieUrl;
 
-use \App\Http\Middleware\General\ClientInstanceMiddleware;
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 
 
 
+$__func1 = function() {
+    $filename = __FILE__;
+    $filename = "C:\\xampp\\htdocs\\hris2\\vendor\\rguj\\laracore\\src\\Helper\\CommonHelper.php";  // ???
+    $basename = basename($filename);
+    $search = "\\rguj\\laracore\\src\\Helper\\".basename($filename);
+    if(!str_ends_with($filename, $search))
+        throw new Exception('Basename not found: '.$basename);
+    $helperfile = str_replace($search, '\laravel\framework\src\Illuminate\Foundation\helpers.php', $filename);
+    if(!file_exists($helperfile))
+        throw new Exception('File not found: '.$helperfile);
+    return $helperfile;
+};
+$__illuminateHelper = $__func1();
 
+// require_once $__illuminateHelper;
 
-
-
-
+require_once "C:\\xampp\\htdocs\\hris2\\vendor\\laravel\\framework\\src\\Illuminate\\Foundation\\helpers.php";
 
 
 /* -----------------------------------------------
@@ -49,6 +70,8 @@ function cuser_has_role_role($val)
 // {
 //     return cuser_has_role($needle, 'short', $strict);
 // }
+
+
 
 function cuser_id()
 {
