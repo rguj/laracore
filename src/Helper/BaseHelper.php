@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Rguj\Laracore\Helper;
-
 use Exception;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;

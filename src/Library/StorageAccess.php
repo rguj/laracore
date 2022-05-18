@@ -1,19 +1,17 @@
 <?php
-
 namespace Rguj\Laracore\Library;
 
-
-use Illuminate\Http\Request;
+//use Illuminate\Http\Request;
+use Rguj\Laracore\Request\Request;
 use Illuminate\Support\Str;
 
-
 use Exception;
-use App\Libraries\AppFn;
-use App\Libraries\DT;
-use App\Libraries\WebClient;
-use App\Libraries\CLHF;
+use Rguj\Laracore\Library\AppFn;
+use Rguj\Laracore\Library\DT;
+use Rguj\Laracore\Library\WebClient;
+use Rguj\Laracore\Library\CLHF;
 
-use App\Http\Controllers\Student\Link as StudentLink;
+//use App\Http\Controllers\Student\Link as StudentLink;
 
 class StorageAccess {
 
@@ -29,7 +27,7 @@ class StorageAccess {
     public static function check(Request $request, $file) {
         // validate by directory or by user_id     
 
-        $uid = CLHF::AUTH_UserID();
+        /*$uid = CLHF::AUTH_UserID();
         $uid_md5 = md5($uid);
         $student_id = StudentLink::FETCH_LinkedStudID($uid) ?? 0;
         $sid_md5 = md5($student_id);
@@ -72,7 +70,7 @@ class StorageAccess {
                 return false;
                 break;
             
-        }
+        }*/
     }
    
 

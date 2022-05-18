@@ -4,7 +4,8 @@ namespace Rguj\Laracore\Library;
 
 // ----------------------------------------------------------
 use App\Providers\RouteServiceProvider;
-use Illuminate\Http\Request;
+//use Illuminate\Http\Request;
+use Rguj\Laracore\Request\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -20,10 +21,10 @@ use Carbon\Carbon;
 use File;
 use Exception;
 use App\Models\User;
-use App\Libraries\FieldRules;
-use App\Libraries\FieldValidator;
-use App\Libraries\FieldPreloads;
-use App\Libraries\FieldValues;
+//use App\Libraries\FieldRules;
+//use App\Libraries\FieldValidator;
+//use App\Libraries\FieldPreloads;
+//use App\Libraries\FieldValues;
 // ----------------------------------------------------------
 
 class AppFn {

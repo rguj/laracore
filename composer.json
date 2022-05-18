@@ -50,7 +50,14 @@
     },
 	"scripts": {
 		"post-update-cmd": [
-			"php .post_update.php"
+			"php .post_update.php",
+			"@php vendor/rguj/laracore/src/.post_update.php",
+			
+		],
+		"post-autoload-dump": [
+			"php .post_update.php",
+			"@php vendor/rguj/laracore/src/.post_update.php",
+			
 		]
 	}
 	

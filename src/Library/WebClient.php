@@ -3,15 +3,16 @@
 namespace Rguj\Laracore\Library;
 
 // ----------------------------------------------------------
-use Illuminate\Http\Request;
+//use Illuminate\Http\Request;
+use Rguj\Laracore\Request\Request;
 use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Exception;
 
-use App\Libraries\DT;
-use App\Libraries\AppFn;
-use App\Libraries\CLHF;
+use Rguj\Laracore\Library\DT;
+use Rguj\Laracore\Library\AppFn;
+use Rguj\Laracore\Library\CLHF;
 // ----------------------------------------------------------
 
 /**

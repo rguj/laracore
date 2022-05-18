@@ -4,7 +4,8 @@ namespace Rguj\Laracore\Library;
 
 // ----------------------------------------------------------
 use App\Providers\RouteServiceProvider;
-use Illuminate\Http\Request;
+//use Illuminate\Http\Request;
+use Rguj\Laracore\Request\Request;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
@@ -21,19 +22,18 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\ViewErrorBag;
 
-
 use Carbon\Carbon;
 use Intervention\Image\ImageManagerStatic as Image;
 use App\Models\User;
 
 use Exception;
-use App\Libraries\DT;
-use App\Libraries\WebClient;
-use App\Libraries\AppFn;
-use App\Libraries\FieldRules;
-use App\Libraries\FieldValidator;
-use App\Libraries\FieldPreloads;
-use App\Libraries\FieldValues;
+use Rguj\Laracore\Library\DT;
+use Rguj\Laracore\Library\WebClient;
+use Rguj\Laracore\Library\AppFn;
+//use App\Libraries\FieldRules;
+//use App\Libraries\FieldValidator;
+///use App\Libraries\FieldPreloads;
+//use App\Libraries\FieldValues;
 // ----------------------------------------------------------
 
 class CLHF {

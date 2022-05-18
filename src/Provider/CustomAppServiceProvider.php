@@ -2,13 +2,14 @@
 
 namespace Rguj\Laracore\Provider;
 
-use App\Core\Adapters\Theme;
 use Exception;
+
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Blade;
+
+use App\Core\Adapters\Theme;
 
 class CustomAppServiceProvider extends ServiceProvider
 {

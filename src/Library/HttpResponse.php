@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 
-use \App\Http\Middleware\General\ClientInstanceMiddleware as CLIENT_INSTANCE;
-
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware as CLIENT_INSTANCE;
 
 use App\Core\Adapters\Theme;
 use App\Http\Controllers\IndexController;
