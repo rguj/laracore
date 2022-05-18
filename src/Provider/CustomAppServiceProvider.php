@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Blade;
 
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use App\Core\Adapters\Theme;
 
 class CustomAppServiceProvider extends ServiceProvider
@@ -27,15 +28,14 @@ class CustomAppServiceProvider extends ServiceProvider
             $app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
         }
 
+        // Load BaseHelper
+        require_once base_path('/app/Helper/BaseHelper.php');
+
         # --------------------
         # CUSTOM
 
-        // $p1 = base_path("app/Helpers/BaseHelper.php");
-        // $p1 = base_path("vendor/rguj/laracore/src/Helper/BaseHelper.php");
-        // $p2 = str_replace('/', '\\', $p1);
 
-        // // dd($p2);
-        // require_once 'C:\xampp\htdocs\hris2\vendor\rguj\laracore\src\Helper\BaseHelper.php';
+        
     }
 
     /**
@@ -175,7 +175,7 @@ class CustomAppServiceProvider extends ServiceProvider
 
 
         // CHECK CLIENT_INSTANCE ROLES
-        $cls1 = new \ReflectionClass(\App\Http\Middleware\General\ClientInstanceMiddleware::class);
+        $cls1 = new \ReflectionClass(ClientInstanceMiddleware::class);
         $consts = $cls1->getConstants();
         $arr2 = [];
         foreach($db_roles as $k=>$v) {

@@ -5,21 +5,14 @@ namespace Rguj\Laracore\Command;
 use Illuminate\Console\Command;
 
 # -----------------------------
-use Dotenv\Repository\Adapter\PutenvAdapter;
-use Dotenv\Repository\RepositoryBuilder;
 use PhpOption\Option;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Env;
-use App\Libraries\AppFn;
-use Artisan;
-
-//use Dotenv\Dotenv as Dotenv;
 # -----------------------------
 
 
 
-class Core extends Command
+class CoreRefresh extends Command
 {
     /**
      * The name and signature of the console command.

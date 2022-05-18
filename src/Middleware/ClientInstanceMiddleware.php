@@ -5,7 +5,7 @@ namespace Rguj\Laracore\Middleware;
 use Exception;
 use Closure;
 
-use Rguj\Laracore\Request\Request;
+use Rguj\Laracore\Request\Request as BaseRequest;
 use Rguj\Laracore\Library\AppFn;
 use Rguj\Laracore\Library\CLHF;
 use Rguj\Laracore\Library\DT;
@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Arr;
 
+use Illuminate\Http\Request;
 use App\Providers\AppServiceProvider;
 use App\Core\Adapters\Theme;
 
@@ -106,11 +107,11 @@ class ClientInstanceMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
+     * @param  Request  $request
+     * @param  Closure  $next
      * @return mixed
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $req, Closure $next)
     {
         // dd(12344421);
 
@@ -119,6 +120,7 @@ class ClientInstanceMiddleware
         // try { $route_name = $request->route()->getName(); } catch(\Throwable $ex) {}
         // abort_if(empty($route_name), 404);
 
+        $request = resolve(BaseRequest::class);
         $this->request = $request;
         
         // set user info
@@ -148,7 +150,7 @@ class ClientInstanceMiddleware
         }
         
         // some validation
-        $validate = $this->validate();
+        $validate = $this->validate($request);
         // dd($validate);
         if(!$validate[0]) {
             if(!is_string($validate[2]))
@@ -207,7 +209,7 @@ class ClientInstanceMiddleware
 
 
     // some user and client validation
-    private function validate() {
+    private function validate(Request $request) {
         // returns [success, err_mode, err_data]
         // err_mode [1 => exception, 2 => redirect]
 
@@ -224,7 +226,7 @@ class ClientInstanceMiddleware
             // check account state
             if(!$this->user_info['is_active']) {
                 session_push_alert('error', 'Account is deactivated');
-                $logout = $this->logout(request(), route('index.index'));
+                $logout = $this->logout($request, route('index.index'));
                 return [false, 2, $logout];
             } 
             

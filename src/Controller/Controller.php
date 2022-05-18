@@ -74,7 +74,7 @@ class Controller extends BaseController
     }
 
 
-    final public function __invokeControllerMethod(string $method, array $args = [], string $class = '', bool $strict = false)
+    final public function __invokeClassMethod(string $method, array $args = [], string $class = '', bool $strict = false)
     {
         $ret = null;
         $class = empty($class) ? $this::class : $class;

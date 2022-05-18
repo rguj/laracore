@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Exception;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Spatie\Url\Url as SpatieUrl;

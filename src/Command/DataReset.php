@@ -23,7 +23,7 @@ use Illuminate\Support\Str;
 
 
 
-class Data extends Command
+class DataReset extends Command
 {
     /**
      * The name and signature of the console command.
