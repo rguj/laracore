@@ -50,7 +50,7 @@
     },
 	"scripts": {
 		"post-update-cmd": [
-			"php .post_update.php",
+			"php .post_update.php"
 		]
 	}
 	
