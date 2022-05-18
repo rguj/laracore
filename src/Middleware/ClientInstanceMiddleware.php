@@ -2,26 +2,26 @@
 
 namespace Rguj\Laracore\Middleware;
 
-// use Illuminate\Http\Request;
-use Rguj\Laracore\Request\Request;
 use Exception;
 use Closure;
 
+use Rguj\Laracore\Request\Request;
 use Rguj\Laracore\Library\AppFn;
 use Rguj\Laracore\Library\CLHF;
 use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\WebClient;
 use Rguj\Laracore\Library\Prologue;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Arr;
 
 use App\Providers\AppServiceProvider;
 use App\Core\Adapters\Theme;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\View;
 
 /**
  * A wrapper for web middleware

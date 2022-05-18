@@ -4,8 +4,6 @@ namespace Rguj\Laracore\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
-use App\Models\Role;
 
 class IsAdminMiddleware
 {

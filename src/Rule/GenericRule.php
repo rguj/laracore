@@ -2,22 +2,15 @@
 
 namespace Rguj\Laracore\Rule;
 
-use Illuminate\Contracts\Validation\Rule;
+use Exception;
+
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 use Rguj\Laracore\Library\AppFn;
 use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\WebClient;
 use Rguj\Laracore\Library\CLHF;
-use Exception;
-
-use App\Rules\MinMaxRegex;
-use App\Rules\DateBetween;
-use App\Rules\PreloadExists;
-
-use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-
-
 
 class GenericRule {
 

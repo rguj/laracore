@@ -2,13 +2,13 @@
 
 namespace Rguj\Laracore\Rule;
 
+use Exception;
 use Illuminate\Contracts\Validation\Rule;
 
 use Rguj\Laracore\Library\AppFn;
 use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\WebClient;
 use Rguj\Laracore\Library\CLHF;
-use Exception;
 
 class MinMaxRegex implements Rule
 {

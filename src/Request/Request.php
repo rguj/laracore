@@ -1,11 +1,16 @@
 <?php
-namespace Rguj\Library\Request;
+namespace Rguj\Laracore\Request;
+
+use Exception;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request as HttpRequest;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
+
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use Exception;
+use Rguj\Laracore\Rule\GenericRule;
+use Rguj\Laracore\Rule\FluentRule;
 
 class Request extends FormRequest
 {
@@ -31,7 +36,7 @@ class Request extends FormRequest
         $this->genericRule = $this->genericRuleClass->getRules();
         config()->set('rules.generic', $this->genericRule);
 
-        $this->fluentRule = FR::factory($request, $this->genericRule);
+        $this->fluentRule = FluentRule::factory($request, $this->genericRule);
     }
 
     /**

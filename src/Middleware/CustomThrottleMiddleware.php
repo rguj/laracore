@@ -2,9 +2,6 @@
 
 namespace Rguj\Laracore\Middleware;
 
-use Closure;
-use Illuminate\Http\Request;
-
 use Illuminate\Routing\Middleware\ThrottleRequests;
 
 class CustomThrottleMiddleware extends ThrottleRequests

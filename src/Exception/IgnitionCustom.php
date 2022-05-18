@@ -1,28 +1,11 @@
 <?php
 namespace app\Exceptions;
 
-use Spatie\Ignition\Ignition as Ignition;
-use ArrayObject;
-use ErrorException;
-use Spatie\FlareClient\Context\BaseContextProviderDetector;
-use Spatie\FlareClient\Context\ContextProviderDetector;
-use Spatie\FlareClient\Enums\MessageLevels;
-use Spatie\FlareClient\Flare;
-use Spatie\FlareClient\FlareMiddleware\AddDocumentationLinks;
-use Spatie\FlareClient\FlareMiddleware\AddSolutions;
-use Spatie\FlareClient\FlareMiddleware\FlareMiddleware;
-use Spatie\FlareClient\Report;
-use Spatie\Ignition\Config\IgnitionConfig;
-use Spatie\Ignition\Contracts\HasSolutionsForThrowable;
-use Spatie\Ignition\Contracts\ProvidesSolution;
-use Spatie\Ignition\Contracts\SolutionProviderRepository as SolutionProviderRepositoryContract;
-use Spatie\Ignition\ErrorPage\ErrorPageViewModel;
-use Spatie\Ignition\ErrorPage\Renderer;
-use Spatie\Ignition\Solutions\SolutionProviders\BadMethodCallSolutionProvider;
-use Spatie\Ignition\Solutions\SolutionProviders\MergeConflictSolutionProvider;
-use Spatie\Ignition\Solutions\SolutionProviders\SolutionProviderRepository;
-use Spatie\Ignition\Solutions\SolutionProviders\UndefinedPropertySolutionProvider;
 use Throwable;
+use ErrorException;
+use Spatie\Ignition\Ignition as Ignition;
+use Spatie\FlareClient\Report;
+use Spatie\Ignition\ErrorPage\ErrorPageViewModel;
 
 class IgnitionCustom extends Ignition {
 
@@ -31,7 +14,7 @@ class IgnitionCustom extends Ignition {
         parent::__construct();
     }
     
-    public function renderExceptionCustom(Throwable $throwable, ?Report $report = null): ErrorPageViewModel
+    final public function renderExceptionCustom(Throwable $throwable, ?Report $report = null): ErrorPageViewModel
     {
         $this->make();
 
@@ -52,14 +35,14 @@ class IgnitionCustom extends Ignition {
         // (new Renderer())->render(['viewModel' => $viewModel]);
     }
 
-    public function getParentClassDirectory()
+    final public function getParentClassDirectory()
     {        
         $reflector = new \ReflectionClass(parent::class);
         $fn = $reflector->getFileName();
         return dirname($fn);
     }
 
-    public function renderViewStringCustom($viewModel)
+    final public function renderViewStringCustom($viewModel)
     {
         // $viewFile = $this->getParentClassDirectory() . '/../../resources/views/errorPage.php';
         $viewFile = rtrim($this->getParentClassDirectory(), '\\src') . '/resources/views/errorPage.php';
@@ -75,7 +58,7 @@ class IgnitionCustom extends Ignition {
     }
 
 
-    public function renderCustom(array $data)
+    final public function renderCustom(array $data)
     {
         // $ignition = new \App\Exceptions\IgnitionCustom();
         // $viewModel = $ignition->renderExceptionCustom(new ErrorException($data['message'], 0, 1, $data['file'], $data['line']));
