@@ -7,17 +7,20 @@ use Illuminate\Console\Command;
 # -----------------------------
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Route;
+
+use Illuminate\Auth\Events\Registered;
+
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Permission;
-use Spatie\Permission\PermissionRegistrar;
-use Illuminate\Auth\Events\Registered;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Middleware\General\ClientInstanceMiddleware;
 use App\Models\VerifyEmail;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+
 use Illuminate\Support\Str;
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
+use Rguj\Laracore\Request\Request;
+use Spatie\Permission\PermissionRegistrar;
+use App\Http\Controllers\Auth\RegisteredUserController;
 
 # -----------------------------
 

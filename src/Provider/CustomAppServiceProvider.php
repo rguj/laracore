@@ -29,7 +29,8 @@ class CustomAppServiceProvider extends ServiceProvider
         }
 
         // Load BaseHelper
-        require_once base_path('/app/Helper/BaseHelper.php');
+        // require_once base_path('/app/Helper/BaseHelper.php');
+        require_once base_path('vendor/rguj/laracore/src/Helper/BaseHelper.php');
 
         # --------------------
         # CUSTOM

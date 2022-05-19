@@ -280,7 +280,7 @@ class HttpResponse {
         $this->isAjax = $this->request->ajax();
         $this->isDevMode = (bool)config('app.debug', false);
         $this->setPurposes($purposes);
-        $this->resetWith();
+        $this->setResetWith();
         
         // get session alerts toastr and swal
         $fb = session_get_alerts(true);
@@ -315,29 +315,15 @@ class HttpResponse {
 
 
 
-    protected function resetWith()
-    {
-        $this->with = $this->__getWith(false);
-    }
-
-    public function logicData()
-    {
-        return !$this->hasLogic() ? null : $this->logicData[2];
-    }
-
-    public function endProcessTime()
-    {
-        $this->processTime = (microtime(true) - LARAVEL_START);
-        Config::set('env.PROCESS_TIME', $this->processTime);
-    }
 
     /**
      * Gets the value from the array key
      *
-     * @param string $key "`_purpose`"
-     * @param array $arr [ purpose_key => closure|value ]
-     * @param boolean $isEncrypted
+     * @param string $key default `_purpose`
+     * @param array $arr `[purpose_key => closure|value]`
+     * @param boolean $isEncrypted default `false`
      * @return void
+     * @throws Exception
      */
     public function purposeLogic(string $key = '', bool $isEncrypted = false)
     {        
@@ -544,6 +530,12 @@ class HttpResponse {
 
     // SETTERS
 
+    
+    protected function setResetWith()
+    {
+        $this->with = $this->__getWith(false);
+    }
+
     public function setNoPermission()
     {
         $this->noPermission = true;
@@ -648,6 +640,16 @@ class HttpResponse {
         $this->isUserAdmin = $isUserAdmin;
     }
 
+    /**
+     * Sets the end process time
+     *
+     * @return void
+     */
+    public function setEndProcessTime()
+    {
+        $this->processTime = (microtime(true) - LARAVEL_START);
+        Config::set('env.PROCESS_TIME', $this->processTime);
+    }
 
 
 
@@ -774,7 +776,7 @@ class HttpResponse {
         $this->__evalInit();
         $this->setIsSuccess($isSuccess);
         if($endProcessTime)
-            $this->endProcessTime();
+            $this->setEndProcessTime();
         if($this->isAjax) {
             return $this->getJSON();
         } else {
@@ -808,7 +810,7 @@ class HttpResponse {
         $this->setIsSuccess($isSuccess);
         $sfk = (string)config('env.APP_SESSION_ALERTS_KEY');
         if($endProcessTime)
-            $this->endProcessTime();
+            $this->setEndProcessTime();
         if($this->isAjax) {
             return $this->getJSON();
         } else {
@@ -830,6 +832,16 @@ class HttpResponse {
         }
     }
 
+    /**
+     * Gets the logic data
+     *
+     * @uses \Rguj\Laracore\Library\HttpResponse::hasLogic()
+     * @return null|mixed
+     */
+    public function getLogicData()
+    {
+        return !$this->hasLogic() ? null : $this->logicData[2];
+    }
 
 
 
@@ -945,6 +957,14 @@ class HttpResponse {
 
     
 
+    /**
+     * Check if request has logic purpose
+     *
+     * @param boolean $forced fires the logic even if the logic is already triggered
+     * @param string $purpose default `_purpose`
+     * @param boolean $isEncrypted
+     * @return boolean
+     */
     public function hasLogic(bool $forced = false, string $purpose = '', bool $isEncrypted = false)
     {
         if($forced || $this->logicTriggered < 1) {

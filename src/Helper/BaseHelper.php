@@ -17,6 +17,96 @@ use Rguj\Laracore\Request\Request;
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 
 
+
+
+
+
+/* -----------------------------------------------
+ * CLASS
+ */
+
+/**
+ * Invokes non-static class method
+ *
+ * @param string $class
+ * @param string $method
+ * @param array $parameters
+ * @return mixed
+ */
+function class_method_unstatic(string $class, string $method, array $parameters)
+{
+    if(!class_exists($class))
+        throw new exception('Class doesn\'t exists: '. $class);
+    return (new ($class))->$method(...$parameters);
+}
+
+/**
+ * Invokes a class method
+ * 
+ * - this will not work for non-controller class
+ *
+ * @param string $class
+ * @param string $method
+ * @param array $args
+ * @param boolean $strict
+ * @return void
+ */
+function class_controller_method(string $class, string $method, array $args = [], bool $strict = false)
+{
+    $ret = null;
+    // $class = empty($class) ? $this::class : $class;
+    if(empty($class))
+        throw new exception('$class is empty');
+    if(!class_exists($class))
+        throw new exception('Class doesn\'t exists: '. $class);
+    if(!method_exists($class, $method))
+        throw new Exception('Method `'.$method.'` doesn\'t exists in `'.$class.'`');
+    
+    // reflect method information
+    $ref = new \ReflectionMethod($class, $method);
+    $params = $ref->getParameters();
+    if(empty($params)) goto point1;
+
+    $firstParam = $params[0];
+    list($name, $type) = [$firstParam->getName(), $firstParam->getType()->getName()];
+
+    // check parent, skip if parents are built-in
+    $parents = class_parents($type);
+    $requiredParent = 'App\Http\Requests\Request';
+    if(!array_key_exists($requiredParent, $parents)) {
+        if($strict) throw new exception('Required class parent (first argument): '.$requiredParent);
+        goto point1;
+    }
+
+    // remove first arg if its Request
+    $firstArg = $args[0] ?? null;
+    if(is_object($firstArg) && array_key_exists('Symfony\Component\HttpFoundation\Request', class_parents($firstArg))) {
+        array_shift($args);
+    }
+
+    // insert request object
+    $req = resolve($type);
+    array_unshift($args, $req);
+
+    point1:
+    $ret = (new $class)->$method(...$args);
+    return $ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* -----------------------------------------------
  * USER
  */
