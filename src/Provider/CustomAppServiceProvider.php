@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Blade;
 
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use App\Core\Adapters\Theme;
+use Rguj\Laracore\Macro\EloquentCollectionMacro;
 
 class CustomAppServiceProvider extends ServiceProvider
 {
@@ -21,6 +22,11 @@ class CustomAppServiceProvider extends ServiceProvider
      */
     final public function register()
     {
+        if ($this->app->environment('local')) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        }
+
         /** @var \Illuminate\Foundation\Application $app */
         $app = $this->app;
         
@@ -115,7 +121,7 @@ class CustomAppServiceProvider extends ServiceProvider
         // \Illuminate\Database\Eloquent\Collection::macro('toArr', function () {
         //     return json_decode(json_encode($this), true);
         // });
-        \Illuminate\Database\Eloquent\Collection::mixin(new \App\Macros\EloquentCollectionMacro);
+        \Illuminate\Database\Eloquent\Collection::mixin(new EloquentCollectionMacro);
         
     }
 

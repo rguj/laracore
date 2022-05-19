@@ -258,6 +258,193 @@ function cond_return(bool $cond, $true, $false)
 
 
 
+
+/** -----------------------------------------------
+ * DOCUMENTATION
+ */
+
+
+ /**
+  * Parses PHPDocs string lines
+  *
+  * @param \ReflectionMethod $obj
+  * @return <string,array{title:string,desc:<int,string>,at:<string,string>}>
+  */
+function docu_parse($obj): array {
+    $flags = [false, false, false];
+    $title = '';
+    $desc = [];
+    $ats = [];
+    $str = $obj->getDocComment();
+    if(!is_string($str)) goto point1;
+
+    $pcs1 = explode("\n", $str);
+    foreach($pcs1 as $k=>$v) {
+        $v = Str::of($v)->trim()->__toString();  // trim
+
+        if(Str::contains($v, ['/**', '*/']))  // skip start and end symbols
+            continue;
+
+        if(Str::startsWith($v, '*'))  // trim again and strip " * "   
+            $v = Str::of(Str::replaceFirst('*', '', $v))->trim()->__toString();
+
+        if(empty($v))  // skip empty
+            continue;
+
+        if(!$flags[0]) {
+            if(!empty($v))
+                $title = $v;
+            $flags[0] = true;
+        }
+        elseif($flags[0]) {
+            if(Str::startsWith($v, '@')) {
+                $pcs2 = explode(' ', Str::replaceFirst('@', '', $v), 2);                        
+                if(count($pcs2) !== 2) continue;
+                $pcs2 = [trim($pcs2[0]), trim($pcs2[1])];
+                if(empty($pcs2[0]) || empty($pcs2[1])) continue;
+                $ats[$pcs2[0]] = $pcs2[1];
+                $flags[2] = true;
+            } else {                        
+                $desc[] = $v;
+                $flags[1] = true;
+            }
+        }
+    }
+    point1:
+    $param = [];
+    foreach($obj->getParameters() as $k=>$v) {
+        $pm = [];
+        try {
+            $pm['position'] = $v->getPosition();
+            $pm['name'] = $v->getName();
+            $pm['type'] = $v->getType();
+            $pm['default'] = $v->getDefaultValue();
+        } catch(\Exception $ex) {}
+        $param[] = $pm;
+    }
+    return [
+        'title' => $title,
+        'desc' => $desc,
+        'at' => $ats,
+        'param' => $param,
+    ];
+}
+
+/**
+ * Gets the sanitized data type (in string)
+ *
+ * @param null|array $arr
+ * @return string
+ */
+function docu_type_sanitize($var)
+{
+    // $t = '';
+    // dump($var);
+    if(is_null($var) || $var === 'void' || !is_array($var) || !array_key_exists('type', $var))
+        goto point1;
+    // $type = $var['type'];
+
+    // throw new exception('$type must be an instance of \ReflectionNamedType');
+    if(is_array($var) && array_key_exists('type', $var)) {
+        if(($var['type'] instanceof \ReflectionNamedType) && method_exists($var['type'], 'getName')) {
+            $var = $var['type']->getName();
+        } else {
+            $var = '';
+        }
+    }
+
+    point1:
+    if(in_array($var, ['Closure']) || Str::startsWith($var, ['Illuminate\\'])) {
+        $var = '\\'.$var;
+    }
+    // else
+    //     $t = $t;
+    // dump($var);
+    return $var;
+}
+
+
+/**
+ * Get the PHPDoc string of a class (public only)
+ * 
+ * - merges duplicate methods
+ *
+ * @param array|string $class
+ * @return string
+ */
+function docu_string($class, bool $echoAndDie = false)
+{
+    $space = $echoAndDie ? '&nbsp;' : ' ';
+
+    if(!(is_array($class) || is_string($class)))
+        throw new exception('$class must be array or string');
+    $class = is_string($class) ? [$class] : $class;
+    $public = [];
+    $private = [];
+    $out = '';
+    foreach($class as $k1=>$v1) {
+        $v1 = trim($v1);
+        if(!class_exists($v1))
+            throw new exception('Class doesn\'t exists: '.$v1);            
+        $ref = new \ReflectionClass($v1);
+        foreach($ref->getMethods() as $k=>$v) {
+            if($v->getModifiers() === ReflectionMethod::IS_PUBLIC) {
+                $public[$v->getName()] = docu_parse($v);
+            }
+        }
+    }
+    foreach($public as $k=>$v) {
+        $ret = $v['at']['return'] ?? '';//dd($ret);
+        $ret = (!empty($ret) && $ret !== 'void') ? docu_type_sanitize($ret) : 'void';
+        // dd($ret);
+        // dump($ret);
+        $method = !empty($k) ? $k : '';
+        $title = !empty($v['title']) ? ' '.$v['title'] : '';
+        $param = '';
+        foreach($v['param'] as $k2=>$v2) {
+            $t = docu_type_sanitize($v2);
+            $param .= (
+                ($k2 > 0 ? ', ' : '')  // separator
+                .$t // type
+                .(!empty($t) ? ' ' : '').'$'.$v2['name']  // var_name
+                .(array_key_exists('default', $v2) ? ' = '.var_stringify($v2['default']) : '')  // default value
+            );
+        }
+        // dd($ret);
+        if(!empty($method))
+            $out .= $space.'* @method static '.$ret.' '.$method.'('.$param.')'.$title."\n";
+    }
+    if(!empty($out))
+        $out = '/**'."\n".$out.$space.'*/';
+    if($echoAndDie) {
+        echo nl2br($out);
+        die('');
+    }
+    return($out);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /** -----------------------------------------------
  * OBJECT
  */
@@ -1518,4 +1705,26 @@ function db_model_table_name(string $class)
     if(!array_key_exists($parent, class_parents($class)))
         throw new exception('Missing class\' parent `'.$parent.'` of the given `'.$class.'`');
     return $class::__callStatic('getTable', []);
+}
+
+
+
+
+
+
+
+
+function var_stringify($var) {
+    if($var === true) return 'true';
+    elseif($var === false) return 'true';
+    elseif($var === null) return 'null';
+    elseif(is_array($var)) return json_encode($var);
+    elseif(is_string($var)) return '"'.$var.'"';
+    return (string)$var;
+    // try {
+    //     return (string)$var;
+    // } catch(\Exception $ex) {
+    //     dump($var);
+    //     dd($ex);
+    // }
 }

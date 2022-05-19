@@ -1,0 +1,119 @@
+
+
+composer require laravel/telescope
+php artisan telescope:install
+
+
+
+
+
+add to app/http/kernel.php > $routeMiddleware
+
+# custom
+'is_admin' => \Rguj\Laracore\Middleware\IsAdminMiddleware::class,
+'client_instance' => \Rguj\Laracore\Middleware\ClientInstanceMiddleware::class,
+
+
+
+
+
+
+
+replace all content of Exception/Handler.php
+
+<?php
+
+namespace App\Exceptions;
+
+use Rguj\Laracore\Exception\CustomHandler;
+
+class Handler extends CustomHandler
+{
+    
+}
+
+
+
+
+
+
+replace all content of app/Providers/AppServiceProvider.php
+
+<?php
+
+namespace App\Exceptions;
+
+use Rguj\Laracore\Provider\CustomAppServiceProvider;
+
+class AppServiceProvider extends CustomAppServiceProvider
+{
+    
+}
+
+
+
+
+
+
+
+replace all content of app\http\controllers\controller.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Rguj\Laracore\Controller\Controller as BaseController;
+
+class Controller extends BaseController
+{
+    public function construct()
+    {        
+
+    }
+}
+
+
+
+
+
+
+
+
+add this entry to app/console/kernel.php > $commands
+
+\Rguj\Laracore\Command\CoreRefresh::class,
+\Rguj\Laracore\Command\DataReset::class,
+
+
+
+
+
+
+
+add this entry (first-most order) to composer.json > "files" > "post-autoload-dump"
+add this entry (first-most order) to composer.json > "files" > "post-update-cmd"
+
+"@php vendor/rguj/laracore/src/.post_update.php",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
