@@ -312,7 +312,16 @@ class BaseModel extends Model {
         'created_at' => 'datetime:Y-m-d H:i:s.u',
         'updated_at' => 'datetime:Y-m-d H:i:s.u',
     ];
+	
+	
+	public function getTable()
+	{
+		return $this->table;
+	}
 
-    
+    public function getConnectionName()
+	{
+		return $this->connection;
+	}
 
 }
