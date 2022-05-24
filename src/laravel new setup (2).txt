@@ -101,6 +101,12 @@ add this entry (first-most order) to composer.json > "files" > "post-update-cmd"
 
 
 
+use this classes in every controller, 
+make sure you updated "App\Http\Controllers\Controller"
+
+use App\Http\Controllers\Controller;
+use Rguj\Laracore\Request\Request;
+
 
 
 

@@ -2,10 +2,10 @@
 
 namespace Rguj\Laracore\Controller;
 
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
+use Rguj\Laracore\Request\Request;
+
+use Illuminate\Support\Str;
 
 use Exception;
 use App\Libraries\AppFn;
