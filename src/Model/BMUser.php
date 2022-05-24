@@ -1,11 +1,9 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
 
 use App\Core\Traits\SpatieLogsActivity;
@@ -14,16 +12,14 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements MustVerifyEmail
+class BMUser extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
     use SpatieLogsActivity;
     use HasRoles;
     
-
-
-    protected $connection = 'hris';
-    protected $table = 'ac_user';
+    //protected $connection = '';
+    //protected $table = '';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

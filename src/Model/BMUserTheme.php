@@ -1,19 +1,17 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
 
-class UserTheme extends BaseModel
+class BMUserTheme extends BaseModel
 {
     use HasFactory;
 
-    protected $connection = 'hris';
-    protected $table = 'ac_user_theme';
+    //protected $connection = '';
+    protected $table = 'user_theme';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

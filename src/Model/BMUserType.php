@@ -1,19 +1,17 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
 
-class UserState extends BaseModel
+class BMUserType extends BaseModel
 {
     use HasFactory;
 
-    protected $connection = 'hris';
-    protected $table = 'ac_user_state';
+    //protected $connection = '';
+    protected $table = 'user_type';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';
@@ -25,7 +23,8 @@ class UserState extends BaseModel
     
     protected $fillable = [
         'user_id',
-        'is_active',
+        'role_id',
+        'is_valid',
     ];
 
     protected $hidden = [
@@ -42,9 +41,12 @@ class UserState extends BaseModel
     ];
 
 
-    public function user()
-    {
+    public function user() {  // ok
         return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
+    }
+
+    public function role() {
+        return $this->belongsTo(\App\Models\Role::class, 'id', 'user_role_id');
     }
 
 

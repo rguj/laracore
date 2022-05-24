@@ -170,6 +170,8 @@ class BaseAppServiceProvider extends ServiceProvider
 
     final protected function addSequence()
     {
+		
+		
         // COUNT ACTIVE USERS
         config_set_core('users_count', DB::table('ac_user')->join('ac_user_state', 'ac_user_state.user_id', '=', 'ac_user.id')->where('ac_user_state.is_active', '=', 1)->count('ac_user.id'));
         

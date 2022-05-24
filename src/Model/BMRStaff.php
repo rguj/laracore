@@ -1,23 +1,20 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
-use Spatie\Permission\Models\Permission as BasePermission;
 
-class Permission extends BasePermission
+class BMRStaff extends BaseModel
 {
     use HasFactory;
 
-    protected $connection = 'hris';
-    protected $table = 'ac_permission';
+    //protected $connection = '';
+    //protected $table = '';
     protected $primaryKey = 'id';
-    protected $keyType = 'integer';
     public $incrementing = true;
+    protected $keyType = 'integer';
 
     public $timestamps = true;
     protected $dateFormat  = 'Y-m-d H:i:s.u';
@@ -25,10 +22,9 @@ class Permission extends BasePermission
     const UPDATED_AT = 'updated_at';
     
     protected $fillable = [
-        'name',
-        'short',
-        'guard_name',
-        'is_valid',
+        'program_id',
+        'user_id',
+        'is_active',
     ];
 
     protected $hidden = [
@@ -47,6 +43,15 @@ class Permission extends BasePermission
 
 
 
+
+
+    public function user() {
+        return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
+    }
+
+    public function programs() {
+        return $this->hasMany(\App\Models\Program::class, 'id', 'program_id');
+    }
 
 
 }

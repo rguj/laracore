@@ -1,22 +1,22 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
 
-class UserType extends BaseModel
+use Spatie\Permission\Models\Role as BaseRole;
+
+class BMRole extends BaseRole
 {
     use HasFactory;
 
-    protected $connection = 'hris';
-    protected $table = 'ac_user_type';
+    //protected $connection = '';
+    protected $table = 'unv_role';
     protected $primaryKey = 'id';
-    public $incrementing = true;
     protected $keyType = 'integer';
+    public $incrementing = true;
 
     public $timestamps = true;
     protected $dateFormat  = 'Y-m-d H:i:s.u';
@@ -24,13 +24,15 @@ class UserType extends BaseModel
     const UPDATED_AT = 'updated_at';
     
     protected $fillable = [
-        'user_id',
-        'role_id',
+        'name',
+        'short',
+        'guard_name',
         'is_valid',
+
     ];
 
     protected $hidden = [
-        'user_id',
+        
     ];
 
     protected $attributes = [
@@ -43,13 +45,14 @@ class UserType extends BaseModel
     ];
 
 
-    public function user() {  // ok
-        return $this->belongsTo(\App\Models\User::class, 'user_id', 'id');
+
+    public function menu() {
+        return $this->hasOne(\App\Models\Menu::class, 'role_id', 'id');
     }
 
-    public function role() {
-        return $this->belongsTo(\App\Models\Role::class, 'id', 'user_role_id');
-    }
+    // public function types() {
+    //     return $this->hasMany(\App\Models\UserType::class, 'user_role_id', 'id');
+    // }
 
 
 }

@@ -1,6 +1,20 @@
 
 
+composer update
+
+composer require barryvdh/laravel-ide-helper
+composer require spatie/url
+composer require jenssegers/agent
+composer require laravel/socialite
+composer require garygreen/pretty-routes
+composer require intervention/image
+composer require barryvdh/laravel-debugbar --dev
+composer require syamsoul/laravel-datatable-ssp
 composer require laravel/telescope
+
+composer update
+npm update
+
 php artisan telescope:install
 
 
@@ -41,7 +55,7 @@ replace all content of app/Providers/AppServiceProvider.php
 
 <?php
 
-namespace App\Exceptions;
+namespace App\Providers;
 
 use Rguj\Laracore\Provider\BaseAppServiceProvider;
 

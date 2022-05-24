@@ -280,7 +280,38 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
  * @method static mixed macroCall($method, $parameters) Dynamically handle calls to the class.
  */
 class BaseModel extends Model {
+	// child models must be prefixed by `BM` - BaseModel
+	// universal tables must be prefixed by `unv_`
+	
     use HasFactory;
+	
+	//protected $connection = '';
+    //protected $table = '';
+    protected $primaryKey = 'id';
+    protected $keyType = 'integer';
+    public $incrementing = true;
+
+    public $timestamps = true;
+    protected $dateFormat  = 'Y-m-d H:i:s.u';
+    const CREATED_AT = 'created_at';
+    const UPDATED_AT = 'updated_at';
+    
+    protected $fillable = [
+        
+    ];
+
+    protected $hidden = [
+        
+    ];
+
+    protected $attributes = [
+        
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime:Y-m-d H:i:s.u',
+        'updated_at' => 'datetime:Y-m-d H:i:s.u',
+    ];
 
     
 

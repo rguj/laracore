@@ -1,21 +1,20 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Rguj\Laracore\Model\BaseModel;
+
 use App\Core\Traits\SpatieLogsActivity;
 use Illuminate\Support\Facades\Storage;
 
-use Rguj\Laracore\Model\BaseModel;
-
-class UserInfo extends BaseModel
+class BMUserInfo extends BaseModel
 {
     use SpatieLogsActivity;
 
-    protected $connection = 'hris';
-    protected $table = 'ac_user_info';
+    //protected $connection = '';
+    protected $table = 'user_info';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

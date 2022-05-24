@@ -1,19 +1,15 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
 
-class Menu extends BaseModel
+class BMMenu extends BaseModel
 {
-    use HasFactory;
-
-    protected $connection = 'hris';
-    protected $table = 'ac_menu';
+    //protected $connection = '';
+    protected $table = 'unv_menu';
     protected $primaryKey = 'id';
     protected $keyType = 'integer';
     public $incrementing = true;
@@ -39,8 +35,6 @@ class Menu extends BaseModel
         'created_at' => 'datetime:Y-m-d H:i:s.u',
         'updated_at' => 'datetime:Y-m-d H:i:s.u',
     ];
-
-
 
 
     protected function value(): Attribute

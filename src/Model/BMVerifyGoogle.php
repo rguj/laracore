@@ -1,19 +1,17 @@
 <?php
-
 namespace Rguj\Laracore\Model;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-
 use Rguj\Laracore\Model\BaseModel;
 
-class VerifyGoogle extends BaseModel
+class BMVerifyGoogle extends BaseModel
 {
     use HasFactory;
 
-    protected $connection = 'hris';
-    protected $table = 'ac_verify_google';
+    //protected $connection = '';
+    //protected $table = '';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';
