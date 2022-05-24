@@ -13,7 +13,7 @@ use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use App\Core\Adapters\Theme;
 use Rguj\Laracore\Macro\EloquentCollectionMacro;
 
-class CustomAppServiceProvider extends ServiceProvider
+class BaseAppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.

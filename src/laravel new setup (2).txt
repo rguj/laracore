@@ -25,9 +25,9 @@ replace all content of Exception/Handler.php
 
 namespace App\Exceptions;
 
-use Rguj\Laracore\Exception\CustomHandler;
+use Rguj\Laracore\Exception\BaseHandler;
 
-class Handler extends CustomHandler
+class Handler extends BaseHandler
 {
     
 }
@@ -43,9 +43,9 @@ replace all content of app/Providers/AppServiceProvider.php
 
 namespace App\Exceptions;
 
-use Rguj\Laracore\Provider\CustomAppServiceProvider;
+use Rguj\Laracore\Provider\BaseAppServiceProvider;
 
-class AppServiceProvider extends CustomAppServiceProvider
+class AppServiceProvider extends BaseAppServiceProvider
 {
     
 }
