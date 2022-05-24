@@ -41,7 +41,6 @@ class BaseAppServiceProvider extends ServiceProvider
         # --------------------
         # CUSTOM
 
-
         
     }
 
@@ -143,7 +142,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
     final public static function initializeMetronic()
     {
-        $theme = theme();
+        /*$theme = theme();
 
         // Share theme adapter class
         View::share('theme', $theme);
@@ -162,7 +161,7 @@ class BaseAppServiceProvider extends ServiceProvider
             Theme::addHtmlAttribute('html', 'direction', 'rtl');
             Theme::addHtmlAttribute('html', 'style', 'direction:rtl;');
             Theme::addHtmlAttribute('body', 'direction', 'rtl');
-        }
+        }*/
 
 
     }
@@ -170,10 +169,11 @@ class BaseAppServiceProvider extends ServiceProvider
 
     final protected function addSequence()
     {
-		
-		
+        $tbl_user = db_model_table_name(\App\Models\User::class);
+        $tbl_user_state = db_model_table_name(\App\Models\UserState::class);
+
         // COUNT ACTIVE USERS
-        config_set_core('users_count', DB::table('ac_user')->join('ac_user_state', 'ac_user_state.user_id', '=', 'ac_user.id')->where('ac_user_state.is_active', '=', 1)->count('ac_user.id'));
+        config_set_core('users_count', DB::table($tbl_user)->join($tbl_user_state, $tbl_user_state.'.user_id', '=', $tbl_user.'.id')->where($tbl_user_state.'.is_active', '=', 1)->count($tbl_user.'.id'));
         
         // SET REGISTER NOW
         config_set_core('register_now', config('global.users_count') <= 0);
