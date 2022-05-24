@@ -25,7 +25,10 @@ class Request extends FormRequest
     //     'destroy',
     //     'massDestroy',
     // ];
-
+	
+	public $genericRuleClass;
+	public array $genericRule = [];
+	public $fluentRule;
 
     public function __construct()
     {
