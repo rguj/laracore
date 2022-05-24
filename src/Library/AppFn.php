@@ -21,10 +21,12 @@ use Carbon\Carbon;
 use File;
 use Exception;
 use App\Models\User;
-//use App\Libraries\FieldRules;
-//use App\Libraries\FieldValidator;
-//use App\Libraries\FieldPreloads;
-//use App\Libraries\FieldValues;
+
+use Rguj\Laracore\Library\CLHF;
+use Rguj\Laracore\Library\DT;
+use Rguj\Laracore\Library\HttpResponse;
+use Rguj\Laracore\Library\StorageAccess;
+use Rguj\Laracore\Library\WebClient;
 // ----------------------------------------------------------
 
 class AppFn {
@@ -52,42 +54,6 @@ class AppFn {
 
     }
 
-
-
-
-
-
-    public static function DB_TruncateUserProfileTables() {
-        DB::table('user_state')->truncate();
-        DB::table('user_type')->truncate();
-
-        DB::table('users')->truncate();
-        DB::table('users_facebook')->truncate();
-
-        DB::table('d_lnames')->truncate();
-        DB::table('d_fnames')->truncate();
-        DB::table('d_mnames')->truncate();
-        DB::table('d_birthdates')->truncate();
-        DB::table('d_birthplaces')->truncate();
-        DB::table('d_disabilities')->truncate();
-        DB::table('d_disabilities_')->truncate();
-        DB::table('d_mobilenumbers')->truncate();
-        DB::table('d_emails')->truncate();
-        DB::table('d_places')->truncate();
-        DB::table('d_relations')->truncate();
-        DB::table('d_zipcodes')->truncate();
-
-        DB::table('d_profiles')->truncate();
-        DB::table('d_residences_current')->truncate();
-        DB::table('d_residences_emergency')->truncate();
-        DB::table('d_residences_home')->truncate();
-
-
-        
-    }
-
-
-    
     
 
     
