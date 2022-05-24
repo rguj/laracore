@@ -1,5 +1,8 @@
 <?php
 
+
+// copy BaseHelper.php
+/*
 $file = 'BaseHelper.php';
 $dir = __DIR__;
 $dir_from = $dir.'\\Helper';
@@ -15,5 +18,6 @@ if(!file_exists($dir_to)) {
 if(!copy($file_from, $file_to))
 	throw new exception('Copy failed');
 
-echo 'BaseHelper.php copied successfully!'."\n";
+echo 'BaseHelper.php copied successfully!'."\n";*/
+
 
