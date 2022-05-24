@@ -40,7 +40,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
         # --------------------
         # CUSTOM
-
+		
         
     }
 

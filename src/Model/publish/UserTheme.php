@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-use Rguj\Laracore\Model\BMUserState;
+use Rguj\Laracore\Model\BMUserTheme;
 
-class UserState extends BMUserState
+class UserTheme extends BMUserTheme
 {
-    protected $connection = 'mysql';
+    protected $connection = 'mysql';	
+	protected $table = 'user_theme';
 	
 }

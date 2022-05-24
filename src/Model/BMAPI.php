@@ -9,7 +9,7 @@ use Rguj\Laracore\Model\BaseModel;
 class BMAPI extends BaseModel
 {
     //protected $connection = '';
-    protected $table = 'unv_api';
+    //protected $table = 'unv_api';
     protected $primaryKey = 'id';
     protected $keyType = 'integer';
     public $incrementing = true;

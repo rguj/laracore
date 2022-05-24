@@ -11,7 +11,7 @@ class BMUserTheme extends BaseModel
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'user_theme';
+    //protected $table = 'user_theme';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

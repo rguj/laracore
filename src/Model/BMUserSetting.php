@@ -11,7 +11,7 @@ class BMUserSetting extends BaseModel
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'user_setting';
+    //protected $table = 'user_setting';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

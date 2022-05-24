@@ -11,7 +11,7 @@ class BMUserState extends BaseModel
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'user_state';
+    //protected $table = 'user_state';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

@@ -9,7 +9,7 @@ use Rguj\Laracore\Model\BaseModel;
 class BMMenu extends BaseModel
 {
     //protected $connection = '';
-    protected $table = 'unv_menu';
+    //protected $table = 'unv_menu';
     protected $primaryKey = 'id';
     protected $keyType = 'integer';
     public $incrementing = true;

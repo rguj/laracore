@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-use Rguj\Laracore\Model\BMPermission;
+use Rguj\Laracore\Model\BMVerifyEmail;
 
-class Permission extends BMPermission
+class VerifyEmail extends BMVerifyEmail
 {
     protected $connection = 'mysql';
+	protected $table = 'user_verifyemail';
 	
 }

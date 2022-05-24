@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-use Rguj\Laracore\Model\BMAPI;
+use Rguj\Laracore\Model\BMMenu;
 
-class API extends BMAPI
+class Menu extends BMMenu
 {
     protected $connection = 'mysql';
+	protected $table = 'unv_menu';
 	
 }

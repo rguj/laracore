@@ -13,7 +13,7 @@ class BMRole extends BaseRole
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'unv_role';
+    //protected $table = 'unv_role';
     protected $primaryKey = 'id';
     protected $keyType = 'integer';
     public $incrementing = true;

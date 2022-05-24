@@ -14,7 +14,7 @@ class BMUserInfo extends BaseModel
     use SpatieLogsActivity;
 
     //protected $connection = '';
-    protected $table = 'user_info';
+    //protected $table = 'user_info';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

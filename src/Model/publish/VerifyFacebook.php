@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-use Rguj\Laracore\Model\BMMenu;
+use Rguj\Laracore\Model\BMVerifyFacebook;
 
-class Menu extends BMMenu
+class VerifyFacebook extends BMVerifyFacebook
 {
     protected $connection = 'mysql';
+	protected $table = 'user_verifyfacebook';
 	
 }

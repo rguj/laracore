@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-use Rguj\Laracore\Model\BMUserSetting;
+use Rguj\Laracore\Model\BMUser;
 
-class UserSetting extends BMUserSetting
+class User extends BMUser
 {
     protected $connection = 'mysql';
+	protected $table = 'users';
 	
 }

@@ -11,7 +11,7 @@ class BMVerifyEmail extends BaseModel
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'user_verifyemail';
+    //protected $table = 'user_verifyemail';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

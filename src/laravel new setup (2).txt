@@ -4,6 +4,7 @@ composer update
 
 composer require barryvdh/laravel-ide-helper
 composer require spatie/url
+composer require spatie/laravel-permission
 composer require jenssegers/agent
 composer require laravel/socialite
 composer require garygreen/pretty-routes

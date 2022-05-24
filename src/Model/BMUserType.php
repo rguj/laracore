@@ -11,7 +11,7 @@ class BMUserType extends BaseModel
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'user_type';
+    //protected $table = 'user_type';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'integer';

@@ -13,7 +13,7 @@ class BMPermission extends BasePermission
     use HasFactory;
 
     //protected $connection = '';
-    protected $table = 'unv_permission';
+    //protected $table = 'unv_permission';
     protected $primaryKey = 'id';
     protected $keyType = 'integer';
     public $incrementing = true;

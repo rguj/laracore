@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
-use Rguj\Laracore\Model\BMVerifyFacebook;
+use Rguj\Laracore\Model\BMRStaff;
 
-class VerifyFacebook extends BMVerifyFacebook
+class RStaff extends BMRStaff
 {
     protected $connection = 'mysql';
+	protected $table = 'cd_registrarstaff';
 	
 }
