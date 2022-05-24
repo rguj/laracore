@@ -179,6 +179,7 @@ class BaseAppServiceProvider extends ServiceProvider
         config_set_core('register_now', config('global.users_count') <= 0);
 
         // GET ROLES
+		dd(db_model_table_name(\App\Models\Role::class));
         $db_roles = \App\Models\Role::where(['is_valid'=>1])->get()->toArr();
         config_set_core('roles', $db_roles);
 
