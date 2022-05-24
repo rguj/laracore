@@ -68,14 +68,31 @@ class BaseAppServiceProvider extends ServiceProvider
 
     final protected function checkRequirement()
     {
-        $required_php = (string)env('PHP_MIN_VERSION', '8.1.2');
-        $required_laravel = (string)env('LARAVEL_MIN_VERSION', '9.5.1');
+        //$required_php = (string)env('PHP_MIN_VERSION', '8.1.2');
+        //$required_laravel = (string)env('LARAVEL_MIN_VERSION', '9.5.1');
+		
+		$composer = json_decode(file_get_contents(base_path('./composer.json')), true);
+		$getMinVersion = function(string $key, string $default) use($composer) {
+			return preg_replace("/[^0-9\.]/", '', trim((string)arr_get($composer, 'require.'.$key, $default)));
+		};
+		
+		$required_php = $getMinVersion('php', '8.0');
+        $required_laravel = $getMinVersion('laravel/framework', '8.12');
+		
         if(!app()->runningInConsole()) {
+			
             // check php version
+			if(empty($required_php)) {
+				die('Required PHP version must not be empty.');
+			}
             if(!str_version_ge(PHP_VERSION, $required_php)) {
                 die('PHP version must be '.$required_php.' or up.');
             }
+			
             // check laravel version
+			if(empty($required_laravel)) {
+				die('Required Laravel version must not be empty.');
+			}
             if(!str_version_ge(app()->version(), $required_laravel)) {
                 die('Laravel version must be '.$required_laravel.' or up.');
             }
