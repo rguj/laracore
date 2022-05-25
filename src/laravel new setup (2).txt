@@ -29,6 +29,13 @@ autoload: { files: [] }
 
 
 
+(optional) prepend this code in config/database.php
+
+require_once __DIR__.'/../vendor/rguj/laracore/src/Helper/BaseHelper.php';
+
+
+
+
 
 
 add to app/http/kernel.php > $routeMiddleware

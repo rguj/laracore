@@ -20,7 +20,7 @@ class BaseAppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    final public function register()
+    public function register()
     {
         if ($this->app->environment('local')) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
@@ -49,7 +49,7 @@ class BaseAppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    final public function boot()
+    public function boot()
     {
         // auth()->user();  // trigger eloquent object
         $this->checkRequirement();
