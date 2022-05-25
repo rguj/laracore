@@ -20,12 +20,6 @@ class FileStreamController extends Controller {
     //public $class1;
 
 
-    public function __construct() {
-        // CLASS INSTANCE
-        
-    }
-
-
     public static function check(Request $request, $file) {
         // validate by directory or by user_id     
 
