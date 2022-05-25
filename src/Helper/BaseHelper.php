@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -713,7 +715,9 @@ function db_check(string $connection, string $table = '') {
 
         // check connection
         try {
-            DB::connection($connection)->getPdo();
+            /** @var \Illuminate\Database\Connection $c */
+            $c = DB::connection($connection);
+            $c->getPdo();
         } catch(\Exception $ex2) {
             throw new exception('Invalid connection: '.$connection.'');
         }
