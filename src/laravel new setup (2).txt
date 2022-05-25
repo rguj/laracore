@@ -21,6 +21,15 @@ php artisan telescope:install
 
 
 
+add this to composer.json > autoload > files
+autoload: { files: [] }
+
+"vendor/rguj/laracore/src/Helper/BaseHelper.php"
+
+
+
+
+
 
 add to app/http/kernel.php > $routeMiddleware
 
