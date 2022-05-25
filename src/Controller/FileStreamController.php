@@ -20,7 +20,7 @@ class FileStreamController extends Controller {
     //public $class1;
 
 
-    public static function check(Request $request, $file) {
+    public static function index(Request $request, $file) {
         // validate by directory or by user_id     
 
         /*$uid = CLHF::AUTH_UserID();
