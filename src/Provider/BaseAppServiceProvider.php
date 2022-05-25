@@ -66,7 +66,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
 
-    final protected function checkRequirement()
+    protected function checkRequirement()
     {
         //$required_php = (string)env('PHP_MIN_VERSION', '8.1.2');
         //$required_laravel = (string)env('LARAVEL_MIN_VERSION', '9.5.1');
@@ -103,7 +103,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
 
-    final protected function addMacros()
+    protected function addMacros()
     {
         // QUERY BUILDER
         \Illuminate\Database\Query\Builder::macro('toArr', function () {
@@ -141,7 +141,7 @@ class BaseAppServiceProvider extends ServiceProvider
         
     }
 
-    final protected function addBladeDirectives()
+    protected function addBladeDirectives()
     {
         Blade::directive('blade_error', function($expression) {  // blade render attr errors (brae)
             return "<?php echo blade_render_attr_error($expression); ?>";
@@ -157,34 +157,37 @@ class BaseAppServiceProvider extends ServiceProvider
 
     }
 
-    final public static function initializeMetronic()
+    public static function initializeMetronic()
     {
-        /*$theme = theme();
+        $theme = null;
+        try { $theme = theme(); } catch(\Throwable $ex) {}
+        
+        if(config()->has('demoa') && get_class($theme) === 'App\Core\Adapters\Theme') {
+            $theme = theme();
 
-        // Share theme adapter class
-        View::share('theme', $theme);
-
-        // Set demo globally
-        // $theme->setDemo(request()->input('demo', 'demo1'));
-        $theme->setDemo('demoa');
-
-        $theme->initConfig();
-
-        bootstrap()->run();
-
-        if (isRTL()) {
-            // RTL html attributes
-            Theme::addHtmlAttribute('html', 'dir', 'rtl');
-            Theme::addHtmlAttribute('html', 'direction', 'rtl');
-            Theme::addHtmlAttribute('html', 'style', 'direction:rtl;');
-            Theme::addHtmlAttribute('body', 'direction', 'rtl');
-        }*/
-
-
+            // Share theme adapter class
+            View::share('theme', $theme);
+    
+            // Set demo globally
+            // $theme->setDemo(request()->input('demo', 'demo1'));
+            $theme->setDemo('demoa');
+    
+            $theme->initConfig();
+    
+            bootstrap()->run();
+    
+            if (isRTL()) {
+                // RTL html attributes
+                Theme::addHtmlAttribute('html', 'dir', 'rtl');
+                Theme::addHtmlAttribute('html', 'direction', 'rtl');
+                Theme::addHtmlAttribute('html', 'style', 'direction:rtl;');
+                Theme::addHtmlAttribute('body', 'direction', 'rtl');
+            }
+        }
     }
 
 
-    final protected function addSequence()
+    protected function addSequence()
     {
         $tbl_user = db_model_table_name(\App\Models\User::class);
         $tbl_user_state = db_model_table_name(\App\Models\UserState::class);
