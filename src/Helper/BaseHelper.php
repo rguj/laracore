@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -664,8 +666,7 @@ function db_model_table_name(string $class)
     return $class::__callStatic('getTable', []);
 }
 
-
-public function db_eloquent_relations(bool $withNamespace = true)
+function db_eloquent_relations(bool $withNamespace = true)
 {
 	$arr = [
 		'\Illuminate\Database\Eloquent\Relations\BelongsTo',
@@ -737,7 +738,9 @@ function db_check(string $connection, string $table = '') {
 
         // check connection
         try {
-            DB::connection($connection)->getPdo();
+            /** @var \Illuminate\Database\Connection $c */
+            $c = DB::connection($connection);
+            $c->getPdo();
         } catch(\Exception $ex2) {
             throw new exception('Invalid connection: '.$connection.'');
         }
