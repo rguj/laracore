@@ -42,7 +42,6 @@ class BaseAppServiceProvider extends ServiceProvider
         # --------------------
         # CUSTOM
 		
-        
     }
 
     /**
@@ -60,6 +59,10 @@ class BaseAppServiceProvider extends ServiceProvider
         $this->addSequence();
 
         // dd(theme()->getMenu());
+
+        // for($x=1; $x<=24; $x++) {
+        //     DB::table('role_permission')->updateOrInsert(['role_id'=>1, 'permission_id'=>$x]);
+        // }
         
     }
 

@@ -279,7 +279,7 @@ class HttpResponse {
 
         // setters
         $this->constants = $this->reflection->getConstants() ?? [];
-        $this->dbPermissions = Permission::all('name')->pluck('name')->toArray();
+        $this->dbPermissions = Permission::all('title')->pluck('title')->toArray();
         $this->routeName = str_sanitize($this->request->route()->getName());
         $this->routeNames = route_names(true);
         $this->request = $this->request;

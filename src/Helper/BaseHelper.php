@@ -519,7 +519,7 @@ function config_unv_set(string $key, $val)
  *
  * @param string $key
  * @param mixed $val
- * @return void
+ * @return mixed
  */
 function config_env($key = null, $default = null) {
 	return config(CONFIG_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
@@ -531,7 +531,7 @@ function config_env($key = null, $default = null) {
  *
  * @param string $key
  * @param mixed $val
- * @return void
+ * @return mixed
  */
 function config_unv($key = null, $default = null) {
 	return config(CONFIG_UNV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
@@ -1129,7 +1129,8 @@ function dt_standard_format()
  */
 function dt_is_carbon($obj)
 {
-    return (!is_null($obj) && ($obj instanceof Carbon) && (get_class($obj) === 'Carbon\Carbon'));
+    // return (!is_null($obj) && ($obj instanceof Carbon) && (get_class($obj) === 'Carbon\Carbon'));
+    return (!is_null($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
 }
 
 /**
@@ -1544,7 +1545,9 @@ function route_names(bool $withFilter = false)
     $routes = Route::getRoutes();
     $route_names = [];
     foreach($routes as $route) {
-        $n = trim($route->getName());
+        $n = $route->getName();
+        if(!is_string($n)) continue;
+        $n = trim($n);
         $cond = !empty($n) && ($withFilter ? !Str::startsWith($n, ['generated::', 'debugbar', 'ignition']) : true);
         if($cond) $route_names[] = $n;
     }
@@ -1649,7 +1652,7 @@ function session_push_alert(string $status, string $msg, string $alert_type = 't
     if(!in_array($alert_type, $alert_types))
         throw new exception('Invalid alert type `'.$alert_type.'`');
     $val = ['type' => $status, 'msg' => $msg];
-    session_push(config('env.APP_SESSION_ALERTS_KEY').'.'.$alert_type, $val);
+    session_push(config('env.APP_SESSION_FEEDBACKS_KEY').'.'.$alert_type, $val);
 }
 
 

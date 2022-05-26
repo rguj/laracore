@@ -155,8 +155,7 @@ class ClientInstanceMiddleware
         }
         
         // some validation
-        $validate = $this->validate($request);
-        // dd($validate);
+        $validate = $this->validate($request);//dump(session()->all());
         if(!$validate[0]) {
             if(!is_string($validate[2]))
                 throw new Exception('Parameter 3 must be string');
@@ -173,6 +172,7 @@ class ClientInstanceMiddleware
        
         // set config
         // Config::set('user', $this->user_info);
+        
 
         // set user theme mode
         $theme_mode = config('user.settings.theme_mode') ?? '';
@@ -180,7 +180,7 @@ class ClientInstanceMiddleware
         Config::set('demoa.general.layout.aside.theme', $theme_mode);
         // dd(12321);
         // override global menu
-        Config::set('global.menu', $this->user_menu($request));
+        Config::set('global.menu', $this->user_menu($request, false));
 
         // trigger theme bootstrap
         AppServiceProvider::initializeMetronic();
@@ -250,7 +250,7 @@ class ClientInstanceMiddleware
         } else {
             // check if no user
             $is_url_registration = ($url->url === $this->url_register);
-            if($this->force_register && config('core.users_count') < 1 && !$is_url_registration) {
+            if($this->force_register && config_unv('users_count') < 1 && !$is_url_registration) {
                 session_push_alert('info', 'Please register first');
                 return [false, 2, $this->url_register];
             } 
@@ -338,16 +338,16 @@ class ClientInstanceMiddleware
 
                     $q->select(['user_id', 'verified_at']);
                 },
-                // 'types' => function(HasMany $q) {
-                //     /** @var \Illuminate\Database\Query\Builder $q */
-                //     list($t, $p) = db_relation_info($q);
-                //     $r = db_model_table_name(\App\Models\Role::class);  // role table
+                'types' => function(HasMany $q) {
+                    /** @var \Illuminate\Database\Query\Builder $q */
+                    list($t, $p) = db_relation_info($q);
+                    $r = db_model_table_name(\App\Models\Role::class);  // role table
 
-                //     $q->leftJoin($r,  $r.'.id', '=',  $t.'.role_id', );
-                //     $q->select(['user_id',  $r.'.id AS role_id',  $r.'.name',  $r.'.short']);
-                //     $q->where([ $t.'.is_valid'=>1]);
-                //     $q->orderBy( $t.'.role_id', 'asc');
-                // },
+                    $q->leftJoin($r,  $r.'.id', '=',  $t.'.role_id', );
+                    $q->select(['user_id',  $r.'.id AS role_id',  $r.'.title',  $r.'.short']);
+                    // $q->where([ $t.'.is_valid'=>1]);
+                    $q->orderBy( $t.'.role_id', 'asc');
+                },
                 'info' => function(HasOne $q) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
@@ -360,8 +360,10 @@ class ClientInstanceMiddleware
             // ->toSql()
             ;
             
-            
-            dd($user->roles);
+            // dd($user);
+            // dd(User::find($id)->roles()->where()->orderBy('id', 'asc'));
+            // $rs = Arr::only(User::find($id)->roles, []);
+            // dd($rs);
             
             // harmonize user settings array
             $user_settings = [];
@@ -481,13 +483,13 @@ class ClientInstanceMiddleware
 
         // get the menu of each role
         $main = [];
-        array_push($main, config('core.menu.all'));
+        array_push($main, config_unv('menu.all'));
         if(cuser_is_auth()) {
             foreach($show_roles as $k1=>$v1) {
                 $lbl = [false, ''];
                 foreach(config('user.types') as $k2=>$v2) {
                     if($v2['short'] === $v1) {
-                        $lbl = [true, $v2['name']];
+                        $lbl = [true, $v2['title']];
                         break;
                     }
                 }
@@ -498,15 +500,15 @@ class ClientInstanceMiddleware
                     if(!file_exists(config_path('/core/menu/'.$v1.'.php')))
                         throw new exception('Role `'.$v1.'` not found. [File]');
                 }
-                $m = config('core.menu.'.$v1);
+                $m = config_unv('menu.'.$v1);
                 if(!empty($m)) {
                     array_unshift($m, $category($lbl[1]));
                     array_push($main, $m);
                 }
             }
-            array_push($main, $category('User'), config('core.menu.user'));
+            array_push($main, $category('User'), config_unv('menu.user'));
         } else {
-            array_push($main, $category('Guest'), config('core.menu.guest'));
+            array_push($main, $category('Guest'), config_unv('menu.guest'));
         }
 
         // remove empty elements
