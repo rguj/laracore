@@ -666,6 +666,30 @@ function db_model_table_name(string $class)
     return $class::__callStatic('getTable', []);
 }
 
+/**
+ * Gets the relation info
+ * 
+ * do not forget to typehint the `$q` in the closure
+ * 
+ * 
+ * @usage `/** @var \Illuminate\Database\Query\Builder $q *\/ list($t, $p) = db_relation_info($q);`
+ *
+ * @param \Illuminate\Database\Eloquent\Relations\Relation $query
+ * @return <int,string>
+ */
+function db_relation_info($query)
+{
+    $table = '';
+    $tableParent = '';
+    try {
+        $table = trim((string)$query->getQuery()->getModel()->getTable());
+        $tableParent = trim((string)$query->getParent()->getTable());
+    } catch(\Exception $ex) {}
+    if(empty($table)) throw new exception('$table is empty');
+    if(empty($tableParent)) throw new exception('$tableParent is empty');
+    return [$table, $tableParent];
+}
+
 function db_eloquent_relations(bool $withNamespace = true)
 {
 	$arr = [
