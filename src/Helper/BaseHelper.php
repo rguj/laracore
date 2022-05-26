@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -667,6 +665,30 @@ function db_model_table_name(string $class)
 }
 
 
+public function db_eloquent_relations(bool $withNamespace = true)
+{
+	$arr = [
+		'\Illuminate\Database\Eloquent\Relations\BelongsTo',
+		'\Illuminate\Database\Eloquent\Relations\BelongsToMany',
+		'\Illuminate\Database\Eloquent\Relations\HasMany',
+		'\Illuminate\Database\Eloquent\Relations\HasManyThrough',
+		'\Illuminate\Database\Eloquent\Relations\HasOne',
+		'\Illuminate\Database\Eloquent\Relations\HasOneOrMany',
+		'\Illuminate\Database\Eloquent\Relations\HasOneThrough',
+		'\Illuminate\Database\Eloquent\Relations\MorphMany',
+		'\Illuminate\Database\Eloquent\Relations\MorphOne',
+		'\Illuminate\Database\Eloquent\Relations\MorphOneOrMany',
+		'\Illuminate\Database\Eloquent\Relations\MorphPivot',
+		'\Illuminate\Database\Eloquent\Relations\MorphTo',
+		'\Illuminate\Database\Eloquent\Relations\MorphToMany',
+	];
+	$arr2 = [];
+	foreach($arr as $k=>$v) {
+		$arr2[] = !$withNamespace ? basename($v) : $v;
+	}
+	return $arr2;
+}
+
 /**
  * Gets the array of `connection` orWith `table`
  *
@@ -715,9 +737,7 @@ function db_check(string $connection, string $table = '') {
 
         // check connection
         try {
-            /** @var \Illuminate\Database\Connection $c */
-            $c = DB::connection($connection);
-            $c->getPdo();
+            DB::connection($connection)->getPdo();
         } catch(\Exception $ex2) {
             throw new exception('Invalid connection: '.$connection.'');
         }

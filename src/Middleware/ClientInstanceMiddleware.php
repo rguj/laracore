@@ -23,6 +23,11 @@ use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use App\Providers\AppServiceProvider;
 use App\Core\Adapters\Theme;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * A wrapper for web middleware
@@ -273,7 +278,9 @@ class ClientInstanceMiddleware
 
     public static function getAvatarUrl(string $file, string $theme_mode)
     {
-        $url = Storage::disk('user_avatar')->path($file);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('user_avatar');
+        $url = $disk->path($file);
         $file_url = CLHF::STORAGE_FileURL($url, 'dispose');
 
         // if file avatar exist in storage folder
@@ -293,38 +300,68 @@ class ClientInstanceMiddleware
     }
 
 
+    
+
+
     public static function user_info_($id) {
+
+        $tblUser = db_model_table_name(\App\Models\User::class);
+        $tblRole = db_model_table_name(\App\Models\Role::class);
+        $tblUserType = db_model_table_name(\App\Models\UserType::class);
+        // dd(\App\Models\User::find($id)->roles);
+
         // get user data
         $user = [];
         if(!is_null($id)) {
-            $user = \App\Models\User::with([                
-                'settings' => function($q) {
-                    $q->select(['user_id', 'ac_user_setting.key', 'ac_user_setting.value']);
+            $u = db_model_table_name(\App\Models\User::class);  // user table;
+            $user = \App\Models\User::with([
+                'settings' => function(HasMany $q) {
+                    /** @var \Illuminate\Database\Query\Builder $q */
+                    list($t, $p) = db_relation_info($q);
+
+                    $q->select(['user_id', $t.'.key', $t.'.value']);
                 },
+
                 // 'theme' => function($q) {
                 //     $q->select(['user_id', 'ac_user_theme.theme', 'ac_user_theme.mode']);
                 // },
-                'state' => function($q) {
+
+                'state' => function(HasOne $q) {
+                    /** @var \Illuminate\Database\Query\Builder $q */
+                    list($t, $p) = db_relation_info($q);
+
                     $q->select(['user_id', 'is_active']);
                 },
-                'verifyemail' => function($q) {
+                'verifyemail' => function(HasOne $q) {
+                    /** @var \Illuminate\Database\Query\Builder $q */
+                    list($t, $p) = db_relation_info($q);
+
                     $q->select(['user_id', 'verified_at']);
                 },
-                'types' => function($q) {
-                    $q->leftJoin('ac_role', 'ac_role.id', '=', 'ac_user_type.role_id', );
-                    $q->select(['user_id', 'ac_role.id AS role_id', 'ac_role.name', 'ac_role.short']);
-                    $q->where(['ac_user_type.is_valid'=>1]);
-                    $q->orderBy('ac_user_type.role_id', 'asc');
-                },
-                'info' => function($q) {
-                    $q->select(['user_id', 'ac_user_info.*']);
+                // 'types' => function(HasMany $q) {
+                //     /** @var \Illuminate\Database\Query\Builder $q */
+                //     list($t, $p) = db_relation_info($q);
+                //     $r = db_model_table_name(\App\Models\Role::class);  // role table
+
+                //     $q->leftJoin($r,  $r.'.id', '=',  $t.'.role_id', );
+                //     $q->select(['user_id',  $r.'.id AS role_id',  $r.'.name',  $r.'.short']);
+                //     $q->where([ $t.'.is_valid'=>1]);
+                //     $q->orderBy( $t.'.role_id', 'asc');
+                // },
+                'info' => function(HasOne $q) {
+                    /** @var \Illuminate\Database\Query\Builder $q */
+                    list($t, $p) = db_relation_info($q);
+
+                    $q->select(['user_id', $t.'.*']);
                 },
             ])
-            ->where('ac_user.id', '=', $id)
+            ->where($u.'.id', '=', $id)
             ->get()->toArr(0)
             // ->toSql()
             ;
-            // dd($user);
+            
+            
+            dd($user->roles);
             
             // harmonize user settings array
             $user_settings = [];

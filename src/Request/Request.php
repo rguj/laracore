@@ -141,7 +141,8 @@ class Request extends FormRequest
         $arrDecrypt = [];
         $route = Route::getCurrentRoute();
         $action = $route->action;
-        $controller = explode('@', $route->action['controller']);
+        if(!array_key_exists('controller', $action)) goto point1;
+        $controller = explode('@', $action['controller']);
         $b = (
             !empty($action)
             && array_key_exists('as', $action) && !empty($action['as']) && !Str::startsWith($action['as'], 'generated::')
