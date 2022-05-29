@@ -1130,7 +1130,7 @@ function dt_standard_format()
 function dt_is_carbon($obj)
 {
     // return (!is_null($obj) && ($obj instanceof Carbon) && (get_class($obj) === 'Carbon\Carbon'));
-    return (!is_null($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
+    return (!is_null($obj) && is_object($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
 }
 
 /**

@@ -60,6 +60,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
         // dd(theme()->getMenu());
 
+
         // for($x=1; $x<=24; $x++) {
         //     DB::table('role_permission')->updateOrInsert(['role_id'=>1, 'permission_id'=>$x]);
         // }
