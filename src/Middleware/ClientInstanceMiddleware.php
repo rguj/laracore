@@ -1,11 +1,14 @@
 <?php
 
-namespace Rguj\Laracore\Middleware;
+namespace App\Http\Middleware;
 
 use Exception;
 use Closure;
 
+use Illuminate\Http\Request as HttpRequest;
+
 use Rguj\Laracore\Request\Request as BaseRequest;
+// use Rguj\Laracore\Request\Request;
 use Rguj\Laracore\Library\AppFn;
 use Rguj\Laracore\Library\CLHF;
 use Rguj\Laracore\Library\DT;
@@ -20,7 +23,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Arr;
 
-use Illuminate\Http\Request;
 use App\Providers\AppServiceProvider;
 use App\Core\Adapters\Theme;
 use App\Models\Role;
@@ -112,13 +114,12 @@ class ClientInstanceMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  Request  $request
+     * @param  HttpRequest  $request
      * @param  Closure  $next
      * @return mixed
      */
-    public function handle(Request $req, Closure $next)
+    public function handle(HttpRequest $req, Closure $next)
     {
-        // dd(12344421);
 
         // CHECK URI
         // $route_name = null;
@@ -149,8 +150,8 @@ class ClientInstanceMiddleware
             Config::set('app.debug', true);
         } else {
             if($request->server('REMOTE_ADDR') !== '127.0.0.1') {
-                app('debugbar')->disable();
-                Config::set('app.debug', false);
+                //app('debugbar')->disable();
+                //Config::set('app.debug', false);
             }
         }
         
@@ -182,15 +183,15 @@ class ClientInstanceMiddleware
         // override global menu
         Config::set('global.menu', $this->user_menu($request, false));
 
+        //dd(12344421);
         // trigger theme bootstrap
-        AppServiceProvider::initializeMetronic();
+        //AppServiceProvider::initializeMetronic();
         
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
         
-        // dd(3213);
-        return $next($request);
+        return $next($req);
     }
 
 
@@ -200,7 +201,7 @@ class ClientInstanceMiddleware
 
 
 
-    public static function logout(Request $request, string $redirect = '/')
+    public static function logout(BaseRequest $request, string $redirect = '/')
     {
         Auth::guard('web')->logout();
         session()->forget('app.feedbacks');
@@ -214,7 +215,7 @@ class ClientInstanceMiddleware
 
 
     // some user and client validation
-    private function validate(Request $request) {
+    private function validate(BaseRequest $request) {
         // returns [success, err_mode, err_data]
         // err_mode [1 => exception, 2 => redirect]
 
@@ -406,7 +407,7 @@ class ClientInstanceMiddleware
 
     //     return $client_info;
     // }
-    public static function client_info_(Request $request) {
+    public static function client_info_(BaseRequest $request) {
         // $request->merge(['_timezone'=>config('env.APP_TIMEZONE')]);  // override timezone
         $client_info = WebClient::getClientUAInfo($request);  // get client info
         return $client_info;
@@ -464,7 +465,7 @@ class ClientInstanceMiddleware
 
 
     
-    public function user_menu(Request $request, bool $strict = true)
+    public function user_menu(BaseRequest $request, bool $strict = true)
     {
         $category = function(string $cat) {
             return [
@@ -527,7 +528,7 @@ class ClientInstanceMiddleware
 
 
 
-    private function user_menu_main(Request $request)
+    private function user_menu_main(BaseRequest $request)
     {
         $data = [
             //// Dashboard
@@ -644,7 +645,7 @@ class ClientInstanceMiddleware
 
 
 
-    private function user_menu_documentation(Request $request)
+    private function user_menu_documentation(BaseRequest $request)
     {
         return !cuser_is_admin() ? [] : [
             // Getting Started

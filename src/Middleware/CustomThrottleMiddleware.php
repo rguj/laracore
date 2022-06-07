@@ -3,6 +3,7 @@
 namespace Rguj\Laracore\Middleware;
 
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 
 class CustomThrottleMiddleware extends ThrottleRequests
 {
@@ -11,7 +12,7 @@ class CustomThrottleMiddleware extends ThrottleRequests
 
     public function __construct()
     {
-        $global_throttle = \App\Http\Middleware\General\ClientInstanceMiddleware::GLOBAL_THROTTLE;
+        $global_throttle = ClientInstanceMiddleware::GLOBAL_THROTTLE;
         dd($global_throttle);
     }
 
