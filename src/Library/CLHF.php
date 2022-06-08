@@ -963,7 +963,7 @@ class CLHF {
         $data = [false, null];
         $users_count = CLHF::DBO('users')->count();
         $force_register = AppFn::CONFIG_env('APP_NO_USER_FORCE_REGISTER', false, 'boolean');
-        $is_url_registration = (url()->current() === route('student.register.show'));
+        $is_url_registration = (url()->current() === route('register'));
         $bypass = [route('webclient.ua.issue'), ];
 
         if(in_array($request->url(), $bypass)) {
@@ -974,7 +974,7 @@ class CLHF {
         if($force_register === true && $users_count <= 0 && $is_url_registration !== true) {
             if($popup_error === true)
                 CLHF::SESSION_PushFeedback('info', 'Please register first.');
-            $data[1] = Redirect::to(route('student.register.show'));
+            $data[1] = Redirect::to(route('register'));
             goto point1;
         }
 
@@ -1027,18 +1027,18 @@ class CLHF {
                 //dd($user_exists[2]);
                 if($user_exists[2] === true) {  // if user is verified
                     // PASSED
-                    if(url()->current() === route('auth.emailverify.index')) {
+                    if(url()->current() === route('verification.notice')) {
                         CLHF::SESSION_PushFeedback('success', 'Account is already verified.');
                         return Redirect::to(route('home.index'));
                     }
                 } else {
                     // FAILED, FORCE VERIFY FIRST
-                    if(url()->current() === route('auth.emailverify.index')) {
+                    if(url()->current() === route('verification.notice')) {
                         $data = true;
                         goto point1;
                     } else {
                         CLHF::SESSION_PushFeedback('info', 'Please verify your email first.');
-                        return Redirect::to(route('auth.emailverify.index'));
+                        return Redirect::to(route('verification.notice'));
                     }
                 }
             } else {  // if user is deactivated
@@ -1046,21 +1046,21 @@ class CLHF {
                     // FAILED, FORCED LOGOUT
                     AUTH::logout();
                     CLHF::SESSION_PushFeedback('error', 'Account is deactivated.');
-                    return Redirect::to(route('guest.login.index'));
+                    return Redirect::to(route('login'));
                 } else {  // if user is unverified
                     // FAILED, FORCE VERIFY FIRST
-                    if(url()->current() === route('auth.verify.index')) {
+                    if(url()->current() === route('verification.notice')) {
                         $data = true;
                         goto point1;
                     } else {
                         CLHF::SESSION_PushFeedback('info', 'Please verify your email first.');
-                        return Redirect::to(route('auth.verify.show'));
+                        return Redirect::to(route('verification.notice'));
                     }
                 }
             }
         } else {  // if guest
             CLHF::SESSION_PushFeedback('error', 'Please login first.');
-            return Redirect::to(route('guest.login.show'));
+            return Redirect::to(route('login'));
         }
 
         $err_msg = '';
@@ -1305,7 +1305,7 @@ class CLHF {
             //$err_msg = $ex->getMessage().' | '.$ex->getLine();dd($err_msg);
             $err_msg = $ex->getMessage();
             $data[1] = $err_msg;
-            $data[2] = Redirect::to(route('login.show'))->withInput($inputs_old)->withErrors($errors_first);
+            $data[2] = Redirect::to(route('login'))->withInput($inputs_old)->withErrors($errors_first);
             CLHF::SESSION_PushFeedback('error', $err_msg);
             goto point1;
         }
