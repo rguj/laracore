@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace Rguj\Laracore\Middleware;
 
 use Exception;
 use Closure;
