@@ -964,7 +964,8 @@ class CLHF {
         $users_count = CLHF::DBO('users')->count();
         $force_register = AppFn::CONFIG_env('APP_NO_USER_FORCE_REGISTER', false, 'boolean');
         $is_url_registration = (url()->current() === route('register'));
-        $bypass = [route('webclient.ua.issue'), ];
+        //$bypass = [route('webclient.ua.issue'), ];
+		$bypass = [];
 
         if(in_array($request->url(), $bypass)) {
             $data[0] = true;
