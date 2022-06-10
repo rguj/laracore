@@ -58,12 +58,19 @@ class BaseAppServiceProvider extends ServiceProvider
         // $this->initializeMetronic();  // gone to HttpResponse::getView()
         $this->addSequence();
 
-        // dd(theme()->getMenu());
+        if(env('FORCE_HTTPS')) {
+            URL::forceScheme('https');
+        }
 
+        // dd(theme()->getMenu());
+        if(!app()->runningInConsole() && request()->ip() !== '192.168.5.250') {
+            dd('Under maintenance');
+        }
 
         // for($x=1; $x<=24; $x++) {
         //     DB::table('role_permission')->updateOrInsert(['role_id'=>1, 'permission_id'=>$x]);
         // }
+        // dd(5353);
         
     }
 
@@ -149,7 +156,7 @@ class BaseAppServiceProvider extends ServiceProvider
     protected function addBladeDirectives()
     {
         Blade::directive('blade_error', function($expression) {  // blade render attr errors (brae)
-            return "<?php echo blade_render_attr_error($expression); ?>";
+            return "<?php echo blade_error($expression); ?>";
         });
 
         Blade::directive('blade_purpose', function($expression){
@@ -169,7 +176,7 @@ class BaseAppServiceProvider extends ServiceProvider
         
         if(config()->has('demoa') && get_class($theme) === 'App\Core\Adapters\Theme') {
             $theme = theme();
-
+            
             // Share theme adapter class
             View::share('theme', $theme);
     
@@ -254,6 +261,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
     }
+
 
 
 

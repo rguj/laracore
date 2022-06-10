@@ -1,7 +1,10 @@
 <?php
 
+error_reporting(E_ALL);
+ini_set('display_errors', 'On');
+
 $index_called = true;
-require_once __DIR__.'\check.php';
+require_once __DIR__.'/check.php';
 
 /*
 |--------------------------------------------------------------------------

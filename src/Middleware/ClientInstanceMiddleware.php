@@ -1,6 +1,6 @@
 <?php
 
-namespace Rguj\Laracore\Middleware;
+namespace App\Http\Middleware;
 
 use Exception;
 use Closure;
@@ -23,7 +23,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Arr;
 
-use App\Providers\AppServiceProvider;
+// use App\Providers\AppServiceProvider;
+use Rguj\Laracore\Provider\BaseAppServiceProvider as AppServiceProvider;
 use App\Core\Adapters\Theme;
 use App\Models\Role;
 use App\Models\User;
@@ -120,12 +121,6 @@ class ClientInstanceMiddleware
      */
     public function handle(HttpRequest $req, Closure $next)
     {
-
-        // CHECK URI
-        // $route_name = null;
-        // try { $route_name = $request->route()->getName(); } catch(\Throwable $ex) {}
-        // abort_if(empty($route_name), 404);
-
         $request = resolve(BaseRequest::class);
         $this->request = $request;
         
@@ -143,7 +138,6 @@ class ClientInstanceMiddleware
         $this->client_info = $this->client_info[2];
         Config::set('client', $this->client_info);
         
-
         // some logic for debugging
         if($this->is_admin) {
             app('debugbar')->enable();
@@ -156,7 +150,7 @@ class ClientInstanceMiddleware
         }
         
         // some validation
-        $validate = $this->validate($request);//dump(session()->all());
+        $validate = $this->validate($request);dd($validate);
         if(!$validate[0]) {
             if(!is_string($validate[2]))
                 throw new Exception('Parameter 3 must be string');
@@ -183,7 +177,7 @@ class ClientInstanceMiddleware
         // override global menu
         Config::set('global.menu', $this->user_menu($request, false));
 
-        //dd(12344421);
+        dd(12344421);
         // trigger theme bootstrap
         //AppServiceProvider::initializeMetronic();
         
@@ -259,8 +253,12 @@ class ClientInstanceMiddleware
                 goto point1;
             }            
             else {
-                if($url->url === $this->url_login)
+                if($url->url === $this->url_login) {
                     goto point1;
+                }
+                dump($url->url);
+                dump($this->url_login);
+                dd(3421);
                 session_push_alert('error', 'Please login first.');
                 return [false, 2, $this->url_login];
             }

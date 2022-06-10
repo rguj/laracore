@@ -20,16 +20,16 @@
 */
 
 // SETTINGS
-$path_index = 0;
+//$path_index = 0;
 $paths = [  // htdocs (xampp) or www/html (ubuntu)
-	'C:\\xampp\\htdocs\\',  // windows xampp
-	'/var/www/html/',       // ubuntu
+	'winnt' > 'C:\\xampp\\htdocs\\',  // windows xampp
+	'linux' => '/var/www/html/',       // ubuntu
 ];
 
 $ic = isset($index_called) && is_bool($index_called) && $index_called;
 
 // CHECK ROOT DIRECTORY PATH
-$proj_root_path = $paths[$path_index];
+$proj_root_path = $paths[strtolower(PHP_OS)] ?? '';
 if(!str_starts_with(__DIR__, $proj_root_path)) {
 	die('The project path does not match on the OS root path.');  
 }
