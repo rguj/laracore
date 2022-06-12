@@ -726,6 +726,16 @@ class HttpResponse {
             throw new Exception('Array key `'.$key.'` doesn\'t exists');
         return is_null($mode) ? $this->purposes[$key] : $this->purposes[$key][$mode];
     }
+	
+	public function getPurposes($mode = null)
+    {
+        $arr = [];
+        foreach($this->purposes as $k=>$v) {
+            $p = $this->getPurpose($k, $mode);
+            $arr[$k] = $p;
+        }
+        return $arr;
+    }
 
     public function getWith(bool $withKey = false)
     {
