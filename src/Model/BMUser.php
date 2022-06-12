@@ -119,7 +119,7 @@ class BMUser extends Authenticatable implements MustVerifyEmail
      */
     public function info()
     {
-        return $this->hasOne(App\Models\UserInfo::class);
+        return $this->hasOne(\App\Models\UserInfo::class);
     }
 
 
