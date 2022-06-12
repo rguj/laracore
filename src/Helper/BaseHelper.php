@@ -1475,7 +1475,7 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
  */
 function dt_parse_str(string $dt_str, $dt_format, $tz)
 {
-    return dt_parse($dt_str, $dt_format, $tz)->string->onto;
+    return dt_parse($dt_str, $dt_format, $tz)->string->onto ?? '';
 }
 
 /**
