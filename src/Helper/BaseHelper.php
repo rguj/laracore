@@ -1870,9 +1870,9 @@ function str_random_alphanum(int $min_length = 10, int $max_length = 0) {
  * VALIDATE
  */
 
-function validate_simple(array $data)
+function validate_simple(array $data, array $rules)
 {
-    return !Validator::make($data)->fails();  // LARAVEL DEPENDENT
+    return !Validator::make($data, $rules)->fails();  // LARAVEL DEPENDENT
 }
 
 function validate_url(string $url)
