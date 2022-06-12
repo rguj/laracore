@@ -408,7 +408,7 @@ function cond_return(bool $cond, $true, $false)
 
 
 
-public function component_data_validate(array $config, array $UID, int $check_mode=0)
+function component_data_validate(array $config, array $UID, int $check_mode=0)
 {
 	$output = [false, ''];
 	try {
@@ -448,7 +448,7 @@ public function component_data_validate(array $config, array $UID, int $check_mo
 	return $output;
 }
 
-public function component_analysis($data, $args)
+function component_analysis($data, $args)
 {
 
 	// $data component data
