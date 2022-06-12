@@ -2004,3 +2004,14 @@ function vv(string $key, bool $strict=false)
 {
     return view_variable($key, $strict);
 }
+
+
+
+
+
+
+
+function webclient_is_dev()
+{
+    return !empty(env('DEV_KEY')) && ((string)($_COOKIE['dev'] ?? '')) === env('DEV_KEY');
+}
