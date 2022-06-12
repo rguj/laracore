@@ -909,6 +909,24 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
 }
 
 
+function db_stored_procedure(string $conn, string $func_name, array $binding=[], bool $to_array=false)
+{
+	// $FR_app = FieldRules::getGeneral();
+	$kw = 'CALL ';  // keyword starts with, with 1 space
+	$func_name = AppFn::STR_Sanitize($func_name);
+	// if(AppFn::STR_preg_match($FR_app['function']['regex'], $func_name) !== true)
+	//     throw new exception('`$func_name` must be a valid function name');
+	$param = '';
+	$x = -1;
+	foreach($binding as $key=>$val) {
+		$param .= ((++$x)>0 ? ',' : '').'?';
+	}
+	$sql = $kw.$func_name.'('.$param.')';//dd($param);
+	$select = DB::connection($conn)->select($sql, $binding);
+	$output = $to_array ? AppFn::OBJECT_toArray($select) : $select;
+	return $output;
+}
+
 
 
 
@@ -1200,7 +1218,7 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
  */
 function dt_parse_str(string $dt_str, $dt_format, $tz)
 {
-    return dt_parse($dt_str, $dt_format, $tz)['string']['onto'];
+    return dt_parse($dt_str, $dt_format, $tz)->string->onto;
 }
 
 /**
