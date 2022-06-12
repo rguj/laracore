@@ -2033,3 +2033,8 @@ function webclient_is_dev()
 {
     return !empty(env('DEV_KEY')) && ((string)($_COOKIE['dev'] ?? '')) === env('DEV_KEY');
 }
+
+function webclient_timezone()
+{
+    return config('user.settings.timezone', 'Asia/Taipei');
+}
