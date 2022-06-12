@@ -1412,23 +1412,37 @@ function obj_reflect($obj, bool $to_array=false, $default=null)
  */
 
 
-function route_parse_url(string $url)
+function route_parse_url(string $url, bool $adjustScheme = true)
 {
-    $d = SpatieUrl::fromString($url);
-    $u = explode(':', $d->getUserInfo());
-    $r = [
-        'scheme' => $d->getScheme(),
-        'host' => $d->getHost(),
-        'port' => $d->getPort(),
-        'user' => $u[0] ?? '',
-        'password' => $u[1] ?? null,
-        'path' => $d->getPath(),
-        'query' => $d->getAllQueryParameters(),
-        'fragment' => $d->getFragment(),
-    ];
-    $r['url'] = $r['scheme'].'://'.$r['host'].(!empty($r['port']) ? ':'.$r['port'] : '').$r['path'];
-    $r['fullUrl'] = $url;
-    return (object)$r;
+	if(!Str::startsWith($url, ['http://', 'https://']))
+		throw new exception('$url must starts with `http` or `https`');
+
+	$d = SpatieUrl::fromString($url);
+	$u = explode(':', $d->getUserInfo());
+
+	$fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
+	$isUrlHttps = Str::startsWith($url, 'https');
+	$isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https');
+	$shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
+	$scheme = $shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps);
+	$fullUrl = $scheme.strstr($url, ':');
+
+	$r = [
+		'scheme' => $scheme, //$d->getScheme(),
+		'host' => $d->getHost(),
+		'port' => $d->getPort(),
+		'user' => $u[0] ?? '',
+		'password' => $u[1] ?? null,
+		'path' => $d->getPath(),
+		'query' => $d->getAllQueryParameters(),
+		'fragment' => $d->getFragment(),
+		'is_scheme_adjusted' => $shouldAdjust,
+		'obj' => $d,
+	];
+	$r['scheme'] = $scheme;
+	$r['url'] = $scheme.'://'.$r['host'].(!empty($r['port']) ? ':'.$r['port'] : '').$r['path'];
+	$r['fullUrl'] = $fullUrl;
+	return (object)$r;
 }
 
 
