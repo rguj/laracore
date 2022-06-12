@@ -404,6 +404,263 @@ function cond_return(bool $cond, $true, $false)
 
 
 
+
+
+
+
+public function component_data_validate(array $config, array $UID, int $check_mode=0)
+{
+	$output = [false, ''];
+	try {
+		if(!in_array($check_mode, [0, 1, 2]))  // [all, config only, uid only]
+			throw new exception('$check_mode must be 0, 1, or 2');
+		
+		// config & UID
+		$bool1 = (
+			arr_depth($config) >= 1
+			&& array_key_exists('name', $config) && str_filled($config['name'])
+			&& array_key_exists('label', $config) && is_string($config['label'])
+			&& array_key_exists('description', $config) && is_string($config['description'])
+			&& array_key_exists('placeholder', $config) && is_string($config['placeholder'])
+			&& array_key_exists('class', $config) && is_string($config['class'])
+			&& array_key_exists('hinter_lbl', $config) && is_string($config['hinter_lbl'])
+			&& array_key_exists('hinter_ipt', $config) && is_string($config['hinter_ipt'])
+			&& array_key_exists('is_required', $config) && is_bool($config['is_required'])
+			&& array_key_exists('is_autocomplete', $config) && is_bool($config['is_autocomplete'])
+			&& array_key_exists('is_autofocus', $config) && is_bool($config['is_autofocus'])
+			&& array_key_exists('is_autofocuserr', $config) && is_bool($config['is_autofocuserr'])
+			&& array_key_exists('feedback_allowed', $config) && is_array($config['feedback_allowed'])
+		);
+		$bool2 = (
+			arr_depth($UID) >= 1
+			&& array_key_exists('rules', $UID)
+			&& array_key_exists('preloads', $UID)
+			&& array_key_exists('values', $UID)
+			&& array_key_exists('errors', $UID)
+		);
+		
+		if(!$bool1 && in_array($check_mode, [0, 1])) throw new Exception('Invalid array structure `$config`');
+		if(!$bool2 && in_array($check_mode, [0, 2])) throw new Exception('Invalid array structure `$uid`');
+		$output[0] = true;
+	} catch(\Exception $ex) {
+		$output[1] = $ex->getMessage();
+	}        
+	return $output;
+}
+
+public function component_analysis($data, $args)
+{
+
+	// $data component data
+	// $args [config[...], form[preloads, fieldrules, defaults, errors, ]]
+	
+	// can accept one or multiple configs
+
+	if(!is_array($args) || count($args) !== 2)
+		throw new Exception('$args must be an array of 2 (config & with)');
+	
+	$configs = $args[0];
+	$form = $args[1]['form'];//$args[1];
+			
+	$APP_VSK_NAME = config_env('APP_VSK_NAME', '', 'string');
+	if(str_empty($APP_VSK_NAME))
+		throw new Exception('VSK value is empty');
+
+	if(empty($configs))
+		throw new exception('Must have at least 1 config array');
+
+	$componentName = $data['componentName'];
+	$attributes = obj_reflect($data['attributes'], true)['attributes'];
+	$slot = obj_reflect($data['slot'], true)['html'];
+
+	// unify form subkeys
+	foreach(['preloads', 'rules', 'values', 'errors', ] as $k=>$v) {
+		if(array_key_exists('field_'.$v, $form)) {
+			$form[$v] = $form['field_'.$v];
+			unset($form['field_'.$v]);
+		}
+	}
+
+	$PRELOADS   = $form['preloads'] ?? [];
+	$RULES      = $form['rules'] ?? [];
+	$VALUES     = $form['values'] ?? [];
+	$ERRORS     = $form['errors'] ?? [];
+
+	$ANALYZER = function(int $num, array $config) use($componentName, $attributes, $slot, $form, $ERRORS, $PRELOADS, $RULES, $VALUES, $APP_VSK_NAME) {
+
+		// validate config and form (User Interaction Data)
+		// dd($form);
+		$validation = $this->component_data_validate($config, $form);
+		if(!$validation[0])
+			throw new exception($validation[1].' ['.$num.']');
+								
+		//$config2['componentName_'] = $componentName;
+		//$config2['attributes_'] = AppFn::OBJECT_toArray($attributes)['attributes'];
+		//$config2['slot_'] = AppFn::OBJECT_toArray($slot)['html'];
+		$config2['name'] = $config['name'];
+		$config2['min'] = $RULES[$config['name']]['min'] ?? 0;
+		$config2['max'] = $RULES[$config['name']]['max'] ?? 0;
+		$config2['value'] = old($config2['name'], $VALUES[$config2['name']] ?? null);  // INTELLIGENT VALUE PICKER
+		$config2['preloads'] = $PRELOADS[$config['name']] ?? [];
+
+		$config2['label'] = $config['label'];
+		$config2['description'] = $config['description'];
+		$config2['placeholder'] = $config['placeholder'];
+		$config2['placeholder_s2'] = str_filled_eval_self($config2['placeholder'], ' '); // alt code 255
+		$config2['class'] = $config['class'];
+		$config2['class_fgs'] = '';  // form group state | override below
+		$config2['feedback_allowed'] = $config['feedback_allowed'];
+
+		$config2['bool'] = [    
+			'is_valid'             => !array_key_exists($config['name'], $ERRORS),        
+			'is_required'          => $config['is_required'],
+			'is_autocomplete'      => $config['is_autocomplete'],
+			'is_autofocus'         => $config['is_autofocus'],  // override below
+			'is_autofocuserr'      => $config['is_autofocuserr'],
+			'is_showable_error'    => in_array('error', $config['feedback_allowed']),
+			'is_showable_success'  => in_array('success', $config['feedback_allowed']),            
+		];
+
+
+		// ---------------------------------------------------
+		// FUNCTIONS
+
+		$fgs_picker = function(string $attr_name) use($APP_VSK_NAME, $config2) {
+			// form group state picker
+			$vsk = old($APP_VSK_NAME.'.'.$attr_name, '');
+			$fg_state = 'fg-normal';
+			if($vsk === 'error')
+				$fg_state = ($config2['bool']['is_showable_error'] ? 'fg-error' : 'fg-normal');
+			else if($vsk === 'success')
+				$fg_state = ($config2['bool']['is_showable_success'] ? 'fg-success' : 'fg-normal');            
+			return $fg_state;
+		};
+
+		$is_af = function($val) use($config2) {
+			$af_val = is_string($val) ? str_sanitize($val) : $val;
+			$autofocus = false;
+			if($config2['bool']['is_autofocus'] === true) {
+				if($config2['bool']['is_valid'] !== true && $config2['bool']['is_autofocuserr'] === true) {
+					$autofocus = true;
+				}
+				else if($config2['bool']['is_required'] === true && empty($af_val)) {
+					$autofocus = true;
+				}
+			}
+			return $autofocus;
+		};
+
+
+		// ---------------------------------------------------
+		// REFORM ATTRIBUTE
+		//$config2['attributes_']['descriptionStyle'] = array_key_exists('descriptionStyle', $config2['attributes_']) ? $config2['attributes_']['descriptionStyle'] : '';
+		//$config2['attributes_']['elementStyle'] = array_key_exists('elementStyle', $config2['attributes_']) ? $config2['attributes_']['elementStyle'] : '';
+
+
+		// ---------------------------------------------------
+		// LOGIC
+		
+		$config2['bool']['is_autofocus'] = $is_af($config2['value']);
+		$config2['class_fgs'] = $fgs_picker($config['name']);
+
+		// HINTER
+		$components1 = ['forms.input'];  // allowed for max length
+		$hinter_msg = $config2['bool']['is_required'] ? 'Required' : 'Optional';
+		if(in_array($componentName, $components1))
+			$hinter_msg .= '<br>Max length is '.$config2['max'].'';
+		$hinter_msg .= str_filled($config['hinter_lbl']) ? '<br>'.$config['hinter_lbl'] : '';
+		$config2['hinter'] = [
+			'label' => $hinter_msg,
+			'input' => $hinter_msg,
+		];
+
+		$msg_error = array_key_exists($config['name'], $ERRORS) ? ($ERRORS[$config['name']][0] ?? 'ERROR') : '';
+		$config2['msg'] = [
+			'current'  => $config2['bool']['is_valid'] ? $config['description'] : $msg_error,  // INTELLIGENT MSG PICKER
+			'default'  => $config['description'],
+			'error'    => $msg_error,
+		];        
+
+		$attr_hinter_ipt = 'data-theme="dark" data-trigger="focus" data-html="true" title="'.$config2['hinter']['input'].'"';
+		$attr_hinter_lbl = 'data-theme="dark" data-trigger="focus hover" data-html="true" title="'.$config2['hinter']['label'].'"';
+		$html_hinter_lbl = '<span data-toggle="tooltip" '.$attr_hinter_lbl.'><i class="mr-1 ml-1 fas fa-question-circle" style="font-size: 14px;"></i></span>';
+		$html_required = $config2['bool']['is_required'] ? '<span class="text-danger" title="Required">*</span>' : '';
+
+		
+		$config2['attr'] = [
+			'maxlength'      => $config2['max']>0 ? 'maxlength='.$config2['max'].'' : '',
+			'placeholder'    => !empty($config2['placeholder']) ? 'placeholder="'.$config2['placeholder'].'"' : '',
+			'required'       => $config2['bool']['is_required'] ? 'required' : '',
+			'autocomplete'   => 'autocomplete='.($config2['bool']['is_autocomplete'] ? 'on' : 'off').'',
+			'autofocus'      => $config2['bool']['is_autofocus'] ? 'autofocus' : '',
+			'hinter_input'   => str_filled($config2['hinter']['input']) ? $attr_hinter_ipt : '',
+			'others'         => '',
+			
+		];
+		$config2['html'] = [
+			'label' => '',
+			//'required'       => $html_required,
+			//'hinter_label'   => str_filled($config2['hinter']['label']) ? $html_hinter_lbl : '',
+		];
+
+		// LABEL CONTENT
+		$arr2 = [
+			':label'    => $config2['label'], 
+			':hinter'   => $html_hinter_lbl, 
+			':required' => $html_required,
+		];
+		$txt1 = $config['label_content'];
+		foreach($arr2 as $key=>$val) {
+			$txt1 = str_replace($key, $val, $txt1);
+		}
+		$config2['html']['label'] = $txt1;
+
+		// ATTR OTHERS 
+		$arr1 = [
+			':maxlength'    => $config2['attr']['maxlength'], 
+			':required'     => $config2['attr']['required'], 
+			':autocomplete' => $config2['attr']['autocomplete'], 
+			':autofocus'    => $config2['attr']['autofocus'],
+		];
+		$txt1 = $config['attr_others'];
+		foreach($arr1 as $key=>$val) {
+			$txt1 = str_replace($key, $val, $txt1);
+		}
+		$config2['attr']['others'] = $txt1;
+
+		//if(array_key_exists('element2', $config))
+		//    $config2['element2'] = $config['element2'];
+		return $config2;
+	};
+
+	// start
+	$analysis = [];
+	//$analysis['componentName_'] = $componentName;
+	$analysis['attributes_'] = $attributes;
+	$analysis['slot_'] = $slot;
+	foreach($configs as $key=>$val) {
+		$analysis['elements'][$key] = $ANALYZER($key, $val);
+	}
+
+	$data2 = $data;
+	unset($data2['args'], $data2['config'], $data2['form']);
+	$analysis2 = array_merge($data2, ['args'=>$args], $analysis);
+	//dd($analysis2);
+	return $analysis2;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 /** -----------------------------------------------
  * CONFIG
  */
