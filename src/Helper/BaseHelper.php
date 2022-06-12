@@ -490,7 +490,7 @@ function component_analysis($data, $args)
 
 		// validate config and form (User Interaction Data)
 		// dd($form);
-		$validation = $this->component_data_validate($config, $form);
+		$validation = component_data_validate($config, $form);
 		if(!$validation[0])
 			throw new exception($validation[1].' ['.$num.']');
 								
