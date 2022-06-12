@@ -913,7 +913,7 @@ function db_stored_procedure(string $conn, string $func_name, array $binding=[],
 {
 	// $FR_app = FieldRules::getGeneral();
 	$kw = 'CALL ';  // keyword starts with, with 1 space
-	$func_name = AppFn::STR_Sanitize($func_name);
+	$func_name = str_sanitize($func_name);
 	// if(AppFn::STR_preg_match($FR_app['function']['regex'], $func_name) !== true)
 	//     throw new exception('`$func_name` must be a valid function name');
 	$param = '';
@@ -923,7 +923,7 @@ function db_stored_procedure(string $conn, string $func_name, array $binding=[],
 	}
 	$sql = $kw.$func_name.'('.$param.')';//dd($param);
 	$select = DB::connection($conn)->select($sql, $binding);
-	$output = $to_array ? AppFn::OBJECT_toArray($select) : $select;
+	$output = $to_array ? obj_reflect($select) : $select;
 	return $output;
 }
 
