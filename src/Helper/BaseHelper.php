@@ -1595,6 +1595,32 @@ function dt_copyright_str(bool $withFrom = false) {
     return $cr_year;
 }
 
+/**
+ * Evaluates two datetime string (in ascending) and returns the first correct value.
+ *
+ * @param string $dt_format
+ * @param string $dt_val
+ * @param string $dt_fallback
+ * @return string
+ */
+function dt_eval_str(string $dt_format, string $dt_val, string $dt_fallback = '') {
+    $output = '';
+    $dt_format = str_empty($dt_format) ? dt_standard_format() : $dt_format;
+    $dtf = dt_format_eval($dt_format);
+    $dt1 = dt_parse_str($dt_val, $dtf, ['UTC', 'UTC']);
+    $dt2 = dt_parse_str($dt_fallback, $dtf, ['UTC', 'UTC']);
+    $bool1 = str_filled($dt1);
+    $bool2 = str_filled($dt2);
+    if($bool1 !== true && $bool2 !== true)
+        goto point1;
+    if($bool1 === true)
+        $output = $dt1;
+    else if($bool2 === true)
+        $output = $dt2;
+    point1:
+    return $output;
+}
+
 
 
 
