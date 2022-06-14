@@ -581,9 +581,11 @@ function component_analysis($data, $args)
 			'error'    => $msg_error,
 		];        
 
-		$attr_hinter_ipt = 'data-theme="dark" data-trigger="focus" data-html="true" title="'.$config2['hinter']['input'].'"';
-		$attr_hinter_lbl = 'data-theme="dark" data-trigger="focus hover" data-html="true" title="'.$config2['hinter']['label'].'"';
-		$html_hinter_lbl = '<span data-toggle="tooltip" '.$attr_hinter_lbl.'><i class="mr-1 ml-1 fas fa-question-circle" style="font-size: 14px;"></i></span>';
+		// $attr_hinter_ipt = 'data-theme="dark" data-trigger="focus" data-html="true" title="'.$config2['hinter']['input'].'"';
+		// $attr_hinter_lbl = 'data-theme="dark" data-trigger="focus hover" data-html="true" title="'.$config2['hinter']['label'].'"';
+		$attr_hinter_ipt = 'data-bs-trigger="focus" data-bs-placement="auto" data-bs-html="true" title="'.$config2['hinter']['input'].'"';
+		$attr_hinter_lbl = 'data-bs-trigger="focus hover" data-bs-html="true" title="'.$config2['hinter']['label'].'"';
+		$html_hinter_lbl = '<span data-bs-toggle="tooltip" '.$attr_hinter_lbl.'><i class="mr-1 ml-1 fas fa-question-circle" style="font-size: 14px;"></i></span>';
 		$html_required = $config2['bool']['is_required'] ? '<span class="text-danger" title="Required">*</span>' : '';
 
 		
