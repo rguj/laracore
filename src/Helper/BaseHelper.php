@@ -327,7 +327,7 @@ function class_method_unstatic(string $class, string $method, array $parameters)
  * @param boolean $strict
  * @return void
  */
-function class_controller_method(string $class, string $method, array $args = [], bool $strict = false)
+function class_controller_method(string $class, string $method, array $args = [], string $resolveRequest = '', bool $strict = false)
 {
     $ret = null;
     if(empty($class))
@@ -347,7 +347,8 @@ function class_controller_method(string $class, string $method, array $args = []
 
     // check parent, skip if parents are built-in
     $parents = class_parents($type);
-    $requiredParent = 'App\Http\Requests\Request';
+    // $requiredParent = 'App\Http\Requests\Request';
+    $requiredParent = 'Rguj\Laracore\Request\Request';
     if(!array_key_exists($requiredParent, $parents)) {
         if($strict) throw new exception('Required class parent (first argument): '.$requiredParent);
         goto point1;
@@ -360,7 +361,10 @@ function class_controller_method(string $class, string $method, array $args = []
     }
 
     // insert request object
-    $req = resolve($type);
+    if(!empty($resolveRequest) && !class_exists($resolveRequest))
+        throw new exception('Inexistent class: '.$resolveRequest);
+    $toResolve = !empty($resolveRequest) ? $resolveRequest : $type;
+    $req = resolve($toResolve);
     array_unshift($args, $req);
 
     point1:
