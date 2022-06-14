@@ -346,30 +346,51 @@ function class_controller_method(string $class, string $method, array $args = []
     list($name, $type) = [$firstParam->getName(), $firstParam->getType()->getName()];
 
     // check parent, skip if parents are built-in
-    $parents = class_parents($type);
-    // $requiredParent = 'App\Http\Requests\Request';
-    $requiredParent = 'Rguj\Laracore\Request\Request';
+    $parents = (!empty($type) && !in_array($type, var_types(), true) && class_exists($type)) ? class_parents($type) : '';
+    // $requiredParent = 'Rguj\Laracore\Request\Request';
+    $requiredParent = 'Symfony\Component\HttpFoundation\Request';
     if(!array_key_exists($requiredParent, $parents)) {
         if($strict) throw new exception('Required class parent (first argument): '.$requiredParent);
         goto point1;
     }
 
     // remove first arg if its Request
+    $isFirstArgReq = false;
     $firstArg = $args[0] ?? null;
-    if(is_object($firstArg) && array_key_exists('Symfony\Component\HttpFoundation\Request', class_parents($firstArg))) {
-        array_shift($args);
+    if(!is_null($firstArg)) {
+        if(is_string($firstArg))      $firstArg = $firstArg;
+        else if(is_object($firstArg)) $firstArg = $firstArg::class;
+        if(array_key_exists('Symfony\Component\HttpFoundation\Request', class_parents($firstArg))) {
+            $isFirstArgReq = true;
+            array_shift($args);
+        }
     }
-
+    
     // insert request object
     if(!empty($resolveRequest) && !class_exists($resolveRequest))
         throw new exception('Inexistent class: '.$resolveRequest);
+    elseif(empty($resolveRequest) && $isFirstArgReq) {
+        $resolveRequest = $firstArg;
+        // dd($resolveRequest);
+    }
     $toResolve = !empty($resolveRequest) ? $resolveRequest : $type;
+
+    // check if request types match
+    if($isFirstArgReq && ($toResolve !== $type)) {
+        $bt = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1] ?? [];
+        $file = $bt['file'] ?? '';
+        $function = $bt['function'] ?? '';
+        $line = $bt['line'] ?? '';
+        $trace = str_sanitize($file.(!empty($function) ? '::'.$function.'()' : '').(!empty($line) ? ' (line '.$line.')' : ''));
+        $trace = (!empty($trace) ? ' Trace: '.$trace : '');
+        throw new exception('Type mismatch. Expected '.$type.', given '.$toResolve.'.'.$trace);
+    }
+
     $req = resolve($toResolve);
     array_unshift($args, $req);
 
     point1:
-    $ret = (new $class)->$method(...$args);
-    return $ret;
+    return (new $class)->$method(...$args);
 }
 
 
@@ -671,6 +692,21 @@ function component_analysis($data, $args)
  * CONFIG
  */
 
+function var_types() {
+    return [
+        'NULL',
+        'string',
+        'integer',
+        'float',
+        'double',
+        //'real',  // removed
+        'boolean',
+        'array',
+        'object',
+        'resource',
+    ];
+}
+
 /**
  * Gets the official PHP data type
  *
@@ -691,18 +727,7 @@ function var_type_official(string $type)
         'res'   => 'resource',
         'real'  => 'float',  // real converted to float
     ];
-    $types = [
-        'NULL',
-        'string',
-        'integer',
-        'float',
-        'double',
-        //'real',  // removed
-        'boolean',
-        'array',
-        'object',
-        'resource',
-    ];
+    $types = var_types();
     $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
     $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
     // if(!in_array($type2, $types, true))
