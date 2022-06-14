@@ -842,9 +842,14 @@ class CLHF {
         $bool1 = false;
         if(!is_int($user_id))
             goto point1;
-        $arr1 = CLHF::DB_LookUp('users', ['id'=>$user_id], true)[0] ?? [];
+        
+        $arr1 = DB::table('users')->where(['id'=>$user_id])->get()->toArr()[0] ?? [];
+
         if(!empty($arr1)) {
-            $arr2 = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0] ?? [];
+
+            // $arr2 = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0] ?? [];
+            $arr2 = DB::table('user_state')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
+
             if($check_validity) {
                 $bool1 = (($arr2['is_active'] ?? 0) === 1); 
             } else {
@@ -859,14 +864,19 @@ class CLHF {
         $output = [false, false, false, false];  // [user_exists, is_active, is_verified, passed_all]
         if(!is_int($user_id))
             goto point1;
-        $user_data = CLHF::DB_LookUp('users', ['id'=>$user_id], true);
+
+        // $user_data = CLHF::DB_LookUp('users', ['id'=>$user_id], true);
+        $user_data = DB::table('users')->where(['id'=>$user_id])->get()->toArr();
+        
         $user_count = count($user_data);
         $dt_now = DT::now('UTC');
         if($user_count > 0) {
             $output[0] = true;
 
             // user state
-            $user_state_data = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0] ?? [];
+            // $user_state_data = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0] ?? [];
+            $user_state_data = DB::table('user_state')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
+
             $user_state = (($user_state_data['is_active'] ?? 0) === 1);
             if($user_state === true) {
                 $output[1] = true;
@@ -874,7 +884,10 @@ class CLHF {
 
             // user email verified (column `verified_at`)
             //$user_ev_code = $user_ev_data['code'] ?? '';
-            $user_ev_data = CLHF::DB_LookUp('user_emailverify', ['user_id'=>$user_id], true)[0] ?? [];
+
+            // $user_ev_data = CLHF::DB_LookUp('user_verifyemail', ['user_id'=>$user_id], true)[0] ?? [];
+            $user_ev_data = DB::table('user_verifyemail')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
+
             $user_ev = DT::createDateTimeUTC(($user_ev_data['verified_at'] ?? ''));
             $valid_va_dt = DT::isCarbonObject($user_ev) ? ($user_ev <= $dt_now) : false;
 
@@ -897,7 +910,7 @@ class CLHF {
         $FR_App = FieldRules::getGeneral();
         $data = null;
         try {
-            $arr1 = \App\Models\User::where('id', '=', $user_id)->first()->toArray();  // CLHF::DB_LookUp('users', ['id'=>$user_id], true)[0];
+            $arr1 = \App\Models\User::where('id', '=', $user_id)->first()->toArray();
             $id = $arr1['id'];
             $email = $arr1['email'];
             
@@ -907,10 +920,8 @@ class CLHF {
                 $auth_with = explode('_', $str, 2);
             }
             
-            // $is_active = (CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0]['is_active'] ?? 0) === 1;
-            $is_active = (bool)DB::table('user_state')->where('user_id', '=', $user_id)->first()->is_active; // (CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0]['is_active'] ?? 0) === 1;
+            $is_active = (bool)DB::table('user_state')->where('user_id', '=', $user_id)->first()->is_active;
             
-            // $user_roles = CLHF::AUTH_UserRoles($user_id);
             $user_roles = array_column(AppFn::OBJECT_reflect(DB::table('users')
                 ->select('user_roles.role')
                 ->leftJoin('user_type', 'user_type.user_id', '=', 'users.id')
@@ -1166,11 +1177,17 @@ class CLHF {
         if($user_exists[0] !== true)
             return $user_roles;
         
-        $arr1 = CLHF::DB_LookUp('user_type', ['user_id'=>$user_id, 'is_valid'=>1], true);
+        // $arr1 = CLHF::DB_LookUp('user_type', ['user_id'=>$user_id, 'is_valid'=>1], true);        
+        $arr1 = DB::table('user_type')->where(['user_id'=>$user_id, 'is_valid'=>1])->get()->toArr();
+
+
         $user_role_ids = array_column($arr1, 'user_role_id');
         sort($user_role_ids);
-        //$arr2 = AppFn::OBJECT_toArray(CLHF::DBO('user_roles')->whereIn('id', $user_role_ids)->where(['is_valid'=>1])->get());
-        $arr2 = CLHF::DB_LookUp('user_roles', ['id'=>$user_role_ids, 'is_valid'=>1], true);
+
+        // $arr2 = CLHF::DB_LookUp('user_roles', ['id'=>$user_role_ids, 'is_valid'=>1], true);
+        $arr2 = DB::table('user_roles')->where(['id'=>$user_role_ids, 'is_valid'=>1])->get()->toArr();
+
+
         foreach($arr2 as $key=>$val) {
             $user_roles[] = [$val['id'], $val['role']];
         }
@@ -1242,14 +1259,16 @@ class CLHF {
             }
 
             // GET USER ID
-            $dbp1 = CLHF::DB_LookUp('users', ['email'=>$email], true);
+            // $dbp1 = CLHF::DB_LookUp('users', ['email'=>$email], true);
+            $dbp1 = DB::table('users')->where(['email'=>$email])->get()->toArr();
+
             $user_id = $dbp1[0]['id'] ?? 0;
             $user_exists = CLHF::AUTH_UserExists2($user_id);
             if($user_exists[0] !== true)
                 throw new exception('User doesn\'t exists.');
 
             /*// CHECK USER STATE
-            $dbp2 = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true);
+            $dbp2 = DB::table('user_state')->where(['user_id'=>$user_id])->get()->toArr();
             $is_active = (($dbp2[0]['is_active'] ?? 0) === 1);
             if($is_active !== true)
                 throw new exception('Account is deactivated.');*/
@@ -1400,7 +1419,10 @@ class CLHF {
         $new_ids = [];
         //$new_roles = [];
         foreach($arr99['role'] as $key=>$val) {
-            $lookup = CLHF::DB_LookUp('user_roles', array_merge(['role'=>$val], ($is_valid ? ['is_valid'=>1] : [])), true);
+
+            // $lookup = CLHF::DB_LookUp('user_roles', array_merge(['role'=>$val], ($is_valid ? ['is_valid'=>1] : [])), true);
+            $lookup = DB::table('user_roles')->where(array_merge(['role'=>$val], ($is_valid ? ['is_valid'=>1] : [])))->get()->toArr();
+
             if(!empty($lookup)) {
                 //$new_roles[] = $val;
                 $ids = array_unique(array_column($lookup, 'id'));
@@ -1433,7 +1455,10 @@ class CLHF {
         sort($arr99['id']);
         $data = [];
         foreach($arr99['id'] as $key=>$val) {
-            $lookup = CLHF::DB_LookUp('user_roles', array_merge(['id'=>$val], ($is_valid ? ['is_valid'=>1] : [])), true)[0] ?? [];
+
+            // $lookup = CLHF::DB_LookUp('user_roles', array_merge(['id'=>$val], ($is_valid ? ['is_valid'=>1] : [])), true)[0] ?? [];
+            $lookup = DB::table('user_roles')->where(array_merge(['id'=>$val], ($is_valid ? ['is_valid'=>1] : [])))->get()->toArr()[0] ?? [];
+
             if(!empty($lookup)) {
                 $c2++;
                 $data[] = ['id'=>$lookup['id'], 'role'=>$lookup['role']];
@@ -1564,7 +1589,10 @@ class CLHF {
         $where = [$col_name => $value];
         if($is_valid)
             $where['is_valid'] = 1;
-        $db2 = CLHF::DB_LookUp($tbl_name, $where, true);
+
+        // $db2 = CLHF::DB_LookUp($tbl_name, $where, true);
+        $db2 = DB::table($tbl_name)->where($where)->get()->toArr();
+
         if(empty($db2)) {
             $op[1] = 'Invalid data.';
             goto point1;
@@ -1687,7 +1715,9 @@ class CLHF {
             // $id_ = (int)($upsert[2][0]['id'] ?? null);
             // $id = !is_null($id_) ? $id_ : null;
 
-            $lookup1 = CLHF::DB_LookUp($data[0], $data[1], true);
+            // $lookup1 = CLHF::DB_LookUp($data[0], $data[1], true);
+            $lookup1 = DB::table($data[0])->where($data[1])->get()->toArr();
+
             if(!empty($lookup1)) {  // lookup
                 $id = $lookup1[0]['id'] ?? null;
             } else {  // insert
@@ -1809,7 +1839,14 @@ class CLHF {
         } else {
             $where2 = $case_sensitive ? $where : CLHF::DB_TransformRawLike($where);
         }
-        $lookup1 = CLHF::DB_LookUp($conn_tbl, $where2, true, $order_by);
+
+        // $lookup1 = CLHF::DB_LookUp($conn_tbl, $where2, true, $order_by);        
+        $lookup1 = DB::connection($ct[0])->table($ct[1])->where($where2);
+        foreach($order_by as $k=>$v) {
+            $lookup1->orderBy($v[0], $v[1]);
+        }
+        $lookup1 = $lookup1->get()->toArr();
+
         return $lookup1;
     }
 
@@ -1967,6 +2004,7 @@ class CLHF {
             @param $strict = true ? no inserting if already exists : insert always
         */
 
+        $ct = db_param($conn_tbl);
         if(empty($values))
             throw new exception('$values must not be empty');
         if(AppFn::ARRAY_depth($values) > 2)
@@ -1984,7 +2022,10 @@ class CLHF {
 
         $data = [];
         foreach($values as $key=>$val) {
-            $lookup = CLHF::DB_LookUp($conn_tbl, $val, true)[0] ?? [];
+
+            // $lookup = CLHF::DB_LookUp($conn_tbl, $val, true)[0] ?? [];
+            $lookup = $CONN->where($val)->get()->toArr()[0] ?? [];
+
             $data[] = $lookup;
         }
         $output = [true, count($values), $data];
@@ -2007,8 +2048,10 @@ class CLHF {
         $lookup = null;
 
         // start
-        $arr1 = CLHF::DB_LookUp($conn_tbl, $merged, true);
-        $arr2 = CLHF::DB_LookUp($conn_tbl, $attr, true);
+        // $arr1 = CLHF::DB_LookUp($conn_tbl, $merged, true);
+        // $arr2 = CLHF::DB_LookUp($conn_tbl, $attr, true);
+        $arr1 = $CONN->where($merged)->get()->toArr();
+        $arr2 = $CONN->where($attr)->get()->toArr();
 
 		// find existing results
 		$arr1_count = count($arr1);
@@ -2022,7 +2065,10 @@ class CLHF {
 		$arr2_count = count($arr2);
 		if($arr2_count > 0) {
 			$dbp2 = $CONN->where($attr)->update($values);
-            $dbp2_count = count(CLHF::DB_LookUp($conn_tbl, $merged, true));
+
+            // $dbp2_count = count(CLHF::DB_LookUp($conn_tbl, $merged, true));
+            $dbp2_count = $CONN->where($merged)->get()->toArr();
+
             $affected_rows = $dbp2_count;
 			goto point1;
 		}
@@ -2036,15 +2082,20 @@ class CLHF {
         }
         $dbp3 = (is_int($insert_id) && $insert_id >= 0);
         if($dbp3 === true) {
-            //$dbp4 = CLHF::DB_LookUp($conn_tbl, ['id'=>$insert_id], true);
-            $dbp4 = CLHF::DB_LookUp($conn_tbl, $merged, true);
+
+            // $dbp4 = CLHF::DB_LookUp($conn_tbl, $merged, true);
+            $dbp4 = $CONN->where($merged)->get()->toArr();
+
 			$dbp4_count = count($dbp4);
             $affected_rows = $dbp4_count;
             if($affected_rows > 0) {
                 $lookup = $dbp4;
             }
             else if(!empty($lu)) {
-                $dbp5 = CLHF::DB_LookUp($conn_tbl, $lu, true);
+
+                // $dbp5 = CLHF::DB_LookUp($conn_tbl, $lu, true);
+                $dbp5 = $CONN->where($lu)->get()->toArr();
+
                 $dbp5_count = count($dbp5);
                 $affected_rows = $dbp5_count;
                 if($dbp5_count > 0) {
@@ -2054,7 +2105,7 @@ class CLHF {
 		}
 
 		point1:
-        $lookup = !is_null($lookup) ? $lookup : CLHF::DB_LookUp($conn_tbl, $merged, true);
+        $lookup = !is_null($lookup) ? $lookup : $CONN->where($merged)->get()->toArr();
         $data[0] = ($affected_rows > 0 && count($lookup) > 0);
         $data[1] = $affected_rows;
         $data[2] = $lookup;
@@ -2063,12 +2114,19 @@ class CLHF {
 
     public static function DB_delete($conn_tbl, array $where) {
         $ct = CLHF::DBOParam($conn_tbl);
+        $conn = CLHF::DBO($conn_tbl);
         $is_success = false;
-        $lu1 = CLHF::DB_LookUp($ct, $where, true);
+
+        // $lu1 = CLHF::DB_LookUp($ct, $where, true);
+        $lu1 = $conn->where($where)->get()->toArr();
+
         $count1 = count($lu1);
         $dbp1 = CLHF::DBO($ct)->where($where)->delete();//dd($dbp1);
         if($dbp1 >= 0) {
-            $lu2 = CLHF::DB_LookUp($ct, $where, true);
+
+            // $lu2 = CLHF::DB_LookUp($ct, $where, true);
+            $lu2 = $conn->where($where)->get()->toArr();
+
             $count2 = count($lu2);
             $is_success = ($count1 <= 0) ? true : ($count2 === 0);
         }
