@@ -257,7 +257,7 @@ class FluentRule {
     {
         $rulepath = Str::replace('/', '\\', trim($rulepath));
         $rulepath = (!Str::startsWith($rulepath, '\\') ? '\\' : '').$rulepath;
-        $cname = "\App\Rules".$rulepath;
+        $cname = "\Rguj\Laracore\Rule".$rulepath;
         if(!class_exists($cname))
             throw new exception('Class doesn\'t exists: '.$cname);
         $cls1 = new $cname(...$args);
