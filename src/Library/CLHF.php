@@ -1840,10 +1840,10 @@ class CLHF {
             $where2 = $case_sensitive ? $where : CLHF::DB_TransformRawLike($where);
         }
 
-        // $lookup1 = CLHF::DB_LookUp($conn_tbl, $where2, true, $order_by);        
+        // $lookup1 = CLHF::DB_LookUp($conn_tbl, $where2, true, $order_by);
         $lookup1 = DB::connection($ct[0])->table($ct[1])->where($where2);
         foreach($order_by as $k=>$v) {
-            $lookup1->orderBy($v[0], $v[1]);
+            $lookup1->orderBy($k, $v);
         }
         $lookup1 = $lookup1->get()->toArr();
 

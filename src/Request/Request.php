@@ -166,6 +166,44 @@ class Request extends FormRequest
         return $arrDecrypt;
     }
 
+    /**
+     * Creates attribute for non-existent input based from rules
+     *
+     * @return void
+     */
+    final public function fillMissingInputs()
+    {
+        // create empty element if not exists
+        $all = $this->all();
+        foreach($this->rules() as $k=>$v) {
+            if(array_key_exists($k, $all))
+                continue;
+            $all[$k] = null;
+        }
+        $this->merge($all);
+    }
+
+    /**
+     * Converts the date format (from client to server)
+     *
+     * @param array $keys
+     * @return void
+     */
+    final public function convertDateFormat(array $keys)
+    {
+        $all = $this->all();
+        foreach($keys as $k=>$v) {
+            if(
+                array_key_exists($v, $all)
+                && !is_null($all[$v])
+                && is_callable(arr_get($this->genericRule, $v.'.converter', null))
+            ) {
+                $all[$v] = $this->genericRule[$v]['converter']($all[$v]);
+            }
+        }
+        $this->merge($all);
+    }
+
 
 
 

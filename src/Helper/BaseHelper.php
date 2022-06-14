@@ -1158,11 +1158,17 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
     try {
         $obj = DB::connection($conn)->table($table);
         $where_db = $obj;
+        $hasNull = false;
         foreach($where as $k=>$v) {
+            if(!$hasNull && (is_null($v) || $v === ''))
+                $hasNull = true;                
             if($case_sensitive)
                 $where_db->whereRaw('BINARY `'.$k.'` = ? ', [$v], 'and');
             else
                 $where_db->where($k, '=', $v, 'and');
+        }
+        if($hasNull) {
+            goto point1;
         }
         $where_db->lockForUpdate();
 
@@ -1193,6 +1199,7 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
     if($id <= 0)
         throw new exception('Value of `id` must be UNSIGNED');
 
+    point1:
     return $id;
 }
 

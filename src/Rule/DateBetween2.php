@@ -52,7 +52,7 @@ class DateBetween2 implements Rule
      */
     public function passes($attribute, $value)
     {
-        $client_tz = WebClient::getTimeZone();
+        $client_tz = webclient_timezone();
         if(empty($client_tz))
             throw new exception('Invalid client timezone');
 
