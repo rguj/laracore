@@ -36,6 +36,8 @@ class FluentRule {
     private string $key = '';
     private string $sameAs = '';
     private array $data_sameAs = [];
+    private string $sameAsGeneric = '';
+    private array $data_sameAsGeneric = [];
     private array $data1_primary = [];
     private array $data2_type = [];
     private array $data3_any = [];
@@ -205,10 +207,15 @@ class FluentRule {
         $arr2 = [];
         /** @var \App\Rules\Core\FluentRule $v */
         foreach($arr as $k=>$v) {
+            
             if(!empty($v->sameAs)) {
                 if(!array_key_exists($v->sameAs, $arr2))
                     throw new exception('sameAs key ('.$v->sameAs.') not found on the create list');
                 $arr2[$v->key] = $arr2[$v->sameAs];
+            } else if(!empty($v->sameAsGeneric)) {
+                if(!array_key_exists($v->sameAsGeneric, $this->genericRule))
+                    throw new exception('Generic rule not found: '.$v->sameAsGeneric);
+                $arr2[$v->key] = $this->genericRule[$v->sameAsGeneric];
             } else {
                 if($strict && !array_key_exists($v->key, $this->all)) {  // validate keys
                     throw new exception('Key not found: '.$k);
@@ -242,6 +249,13 @@ class FluentRule {
     final public function sameAs(string $key)
     {
         $this->sameAs = $key;
+
+        return $this;
+    }
+
+    final public function sameAsGeneric(string $key)
+    {
+        $this->sameAsGeneric = $key;
 
         return $this;
     }

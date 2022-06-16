@@ -246,6 +246,9 @@ class GenericRule {
                 'maiden_fname'   => 'fname',
                 'maiden_mname'   => 'mname',
 
+                'birthplace_ps'  => 'address',
+                'birthplace_cm'  => 'address',
+
             ];
 
             foreach($arr as $k=>$v) {

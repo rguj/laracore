@@ -35,7 +35,6 @@ class Request extends FormRequest
         $request = request();
 
         $this->genericRuleClass = new GenericRule();
-        // $this->genericRuleClass->finalizeRules();
         $this->genericRule = $this->genericRuleClass->getRules();
         config()->set('rules.generic', $this->genericRule);
 
