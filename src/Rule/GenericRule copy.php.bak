@@ -7,7 +7,12 @@ use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
-class GenericRule {
+use Rguj\Laracore\Library\AppFn;
+use Rguj\Laracore\Library\DT;
+use Rguj\Laracore\Library\WebClient;
+use Rguj\Laracore\Library\CLHF;
+
+class GenericRuleBak {
 
     private bool $isPasswordSet = false;
     private bool $isDateSet = false;
@@ -111,7 +116,7 @@ class GenericRule {
 
     final private function is_adm()  // is app dev mode
     {
-        return (bool)config_env('APP_DEV_MODE', false);
+        return AppFn::CONFIG_env('APP_DEV_MODE', false, 'boolean');
     }
 
     final private function __initRules()
@@ -167,7 +172,7 @@ class GenericRule {
             $pw_min_standard = 8;
             $pw_min = $this->is_adm() ? 3 : $pw_min_standard;
             $pw_max = 50;
-            $ks = str_keyboard_symbols(true);
+            $ks = AppFn::STR_GetKeyboardSymbols(true);
             $this->__mergeRule('password', [
                 'min' => $pw_min,
                 'max' => $pw_max,
@@ -187,26 +192,22 @@ class GenericRule {
                 'format_in'    => 'd M Y',
                 'format_out'   => 'Y-m-d',
                 'format_db'    => dt_standard_format(),
-                'date_min'     => dt_parse_str('1900-01-01 00:00:00.000000', ['', ''], ['UTC', 'UTC']),
+                // 'date_min'     => DT::STR_TryParse('1900-01-01 00:00:00.000000', '', [DT::getServerTZ(), 'UTC']),
+                'date_min'     => DT::STR_TryParse('1900-01-01 00:00:00.000000', '', [DT::getServerTZ(), 'UTC']),
                 'date_max'     => dt_now_str(dt_standard_format()),
                 'converter'    => function(string $str) {
-                    return str_regex_eval(
+                    return AppFn::STR_regex_eval(
                         $this->rulesArr['date']['regex'], 
                         $str, 
                         function(string $pattern, string $subject, mixed $output) {
-                            // return dt_parse_str(
-                            //     $subject.' 00:00:00.000000',
-                            //     [$this->rulesArr['date']['format_in'].' H:i:s.u', $this->rulesArr['date']['format_db']],
-                            //     ['UTC', webclient_timezone()],
-                            // );
-                            return dt_parse_str(
+                            return DT::STR_TryParseUTC(
                                 $subject.' 00:00:00.000000',
-                                [$this->rulesArr['date']['format_in'].' H:i:s.u', $this->rulesArr['date']['format_db']],
-                                [webclient_timezone(), dt_standard_tz()],
+                                [$this->rulesArr['date']['format_in'].' H:i:s.u',
+                                $this->rulesArr['date']['format_db']],
+                                webclient_timezone(),
                             );
                         }
                     );
-
                 },
             ]);
             $this->isDateSet = true;
@@ -249,52 +250,6 @@ class GenericRule {
                 'birthplace_ps'  => 'address',
                 'birthplace_cm'  => 'address',
 
-                // curr
-                'RC_lname'        => 'lname',
-                'RC_fname'        => 'fname',
-                'RC_mname'        => 'mname',
-                // 'RC_namex'        => '',
-                'RC_relation'     => 'relation',
-                'RC_mobilenumber' => 'mobilenumber',
-                'RC_email'        => 'email',
-                // 'RC_country'      => '',
-                'RC_ps'           => 'address',
-                'RC_cm'           => 'address',
-                'RC_place'        => 'address',
-                'RC_zipcode'      => 'zipcode',
-                
-                // emgn
-                'RE_lname'        => 'lname',
-                'RE_fname'        => 'fname',
-                'RE_mname'        => 'mname',
-                // 'RE_namex'        => '',
-                'RE_relation'     => 'relation',
-                'RE_mobilenumber' => 'mobilenumber',
-                'RE_email'        => 'email',
-                // 'RE_country'      => '',
-                'RE_ps'           => 'address',
-                'RE_cm'           => 'address',
-                'RE_place'        => 'address',
-                'RE_zipcode'      => 'zipcode',
-
-                // home
-                // 'RH_country'      => '',
-                'RH_ps'           => 'address',
-                'RH_cm'           => 'address',
-                'RH_place'        => 'address',
-                'RH_zipcode'      => 'zipcode',
-
-                'f_lname'        => 'lname',
-                'f_fname'        => 'fname',
-                'f_mname'        => 'mname',
-                'f_occupation'   => 'occupation',
-                'f_mobilenumber' => 'mobilenumber',
-                'm_lname'        => 'lname',
-                'm_fname'        => 'fname',
-                'm_mname'        => 'mname',
-                'm_occupation'   => 'occupation',
-                'm_mobilenumber' => 'mobilenumber',
-
             ];
 
             foreach($arr as $k=>$v) {
@@ -327,7 +282,7 @@ class GenericRule {
     {
         $this->copyRules();  // invoke copy rules first
 
-        if(!arr_has($this->rulesArr, $key)) {
+        if(!Arr::has($this->rulesArr, $key)) {
             throw new exception('Key not found: '.$key);
         }
         
@@ -347,7 +302,7 @@ class GenericRule {
         // if(array_key_exists($mainKey, $match))
         //     $match[$mainKey]();        
 
-        return arr_get($this->rulesArr, $key);
+        return Arr::get($this->rulesArr, $key);
     }
 
     final public function getRules()

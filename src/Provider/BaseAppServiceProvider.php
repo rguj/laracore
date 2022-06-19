@@ -10,12 +10,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Artisan;
 
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use App\Core\Adapters\Theme;
 use Rguj\Laracore\Macro\EloquentCollectionMacro;
 
 class BaseAppServiceProvider extends ServiceProvider
+
 {
     /**
      * Register any application services.
@@ -36,6 +38,7 @@ class BaseAppServiceProvider extends ServiceProvider
             $app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
         }
 
+
         // Load BaseHelper
         // require_once base_path('/app/Helper/BaseHelper.php');
         require_once base_path('vendor/rguj/laracore/src/Helper/BaseHelper.php');
@@ -52,26 +55,13 @@ class BaseAppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Artisan::call('view:clear');
         // auth()->user();  // trigger eloquent object
         $this->checkRequirement();
         $this->addMacros();
         $this->addBladeDirectives();
         // $this->initializeMetronic();  // gone to HttpResponse::getView()
         $this->addSequence();
-
-        if(env('FORCE_HTTPS')) {
-            URL::forceScheme('https');
-        }
-
-        // dd(theme()->getMenu());
-        if(!app()->runningInConsole() && request()->ip() !== '192.168.5.250') {
-            dd('Under maintenance');
-        }
-
-        // for($x=1; $x<=24; $x++) {
-        //     DB::table('role_permission')->updateOrInsert(['role_id'=>1, 'permission_id'=>$x]);
-        // }
-        // dd(5353);
         
     }
 
@@ -131,6 +121,13 @@ class BaseAppServiceProvider extends ServiceProvider
         function () {
             /** @var \Illuminate\Database\Eloquent\Builder $this */
             return json_decode(json_encode($this->model->toArray()), true);
+        });
+
+        \Illuminate\Database\Query\Builder::macro('toRawSql', function(){
+            /** @var \Illuminate\Database\Eloquent\Builder $this */
+            return array_reduce($this->getBindings(), function($sql, $binding){
+                return preg_replace('/\?/', is_numeric($binding) ? $binding : "'".$binding."'" , $sql, 1);
+            }, $this->toSql());
         });
 
         \Illuminate\Database\Eloquent\Builder::macro('arrGet', 
@@ -201,7 +198,13 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
     protected function addSequence()
-    {
+    {        
+        // FORCE SCHEME
+        if(env('FORCE_HTTPS', false)) {
+            //URL::forceScheme('https');
+            $this->app['request']->server->set('HTTPS', true);
+        }
+
         $tbl_user = db_model_table_name(\App\Models\User::class);
         $tbl_user_state = db_model_table_name(\App\Models\UserState::class);
         $defaultDBConn = (string)config('database.default');
@@ -262,8 +265,6 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
     }
-
-
 
 
 }

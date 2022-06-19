@@ -164,8 +164,10 @@ class FluentRule {
     {
         if(empty($this->data1_primary))
             throw new exception('Data 1 is empty (primary)');
-        if(empty($this->data2_type))
+        if(empty($this->data2_type)) {
+            // dd($this);
             throw new exception('Data 2 is empty (type)');
+        }
 
         if($this->min < 0)
             throw new exception('Minimum value must be zero and above');

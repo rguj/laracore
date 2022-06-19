@@ -240,6 +240,18 @@ function arr_colval_exists($needle, array $haystack, string $col_key, bool $stri
     return in_array($needle, array_column($haystack, $col_key), $strict);
 }
 
+/**
+ * Check if an item or items exist in an array using "dot" notation.
+ *
+ * @param  \ArrayAccess|array  $array
+ * @param  string|array  $keys
+ * @return bool
+ */
+function arr_has($array, $keys)
+{
+    return Arr::has($array, $keys);
+}
+
 
 
 
@@ -371,7 +383,6 @@ function class_controller_method(string $class, string $method, array $args = []
         throw new exception('Inexistent class: '.$resolveRequest);
     elseif(empty($resolveRequest) && $isFirstArgReq) {
         $resolveRequest = $firstArg;
-        // dd($resolveRequest);
     }
     $toResolve = !empty($resolveRequest) ? $resolveRequest : $type;
 
@@ -487,7 +498,7 @@ function component_analysis($data, $args)
 	$configs = $args[0];
 	$form = $args[1]['form'];//$args[1];
 			
-	$APP_VSK_NAME = config_env('APP_VSK_NAME', '', 'string');
+	$APP_VSK_NAME = config_env('APP_VSK_NAME', '');
 	if(str_empty($APP_VSK_NAME))
 		throw new Exception('VSK value is empty');
 
@@ -514,7 +525,6 @@ function component_analysis($data, $args)
 	$ANALYZER = function(int $num, array $config) use($componentName, $attributes, $slot, $form, $ERRORS, $PRELOADS, $RULES, $VALUES, $APP_VSK_NAME) {
 
 		// validate config and form (User Interaction Data)
-		// dd($form);
 		$validation = component_data_validate($config, $form);
 		if(!$validation[0])
 			throw new exception($validation[1].' ['.$num.']');
@@ -526,6 +536,8 @@ function component_analysis($data, $args)
 		$config2['min'] = $RULES[$config['name']]['min'] ?? 0;
 		$config2['max'] = $RULES[$config['name']]['max'] ?? 0;
 		$config2['value'] = old($config2['name'], $VALUES[$config2['name']] ?? null);  // INTELLIGENT VALUE PICKER
+        // dump(old($config2['name']));
+        // dump($config2['value']);
 		$config2['preloads'] = $PRELOADS[$config['name']] ?? [];
 
 		$config2['label'] = $config['label'];
@@ -552,12 +564,18 @@ function component_analysis($data, $args)
 
 		$fgs_picker = function(string $attr_name) use($APP_VSK_NAME, $config2) {
 			// form group state picker
-			$vsk = old($APP_VSK_NAME.'.'.$attr_name, '');
+			// $vsk = old($APP_VSK_NAME.'.'.$attr_name, '');
+            $vsk = '';
+            if(session()->has(config_env('APP_ERROR_KEY').'.'.$attr_name))
+                $vsk = 'error';
+            elseif(session()->has(config_env('APP_SUCCESS_KEY').'.'.$attr_name))
+                $vsk = 'success';
+
 			$fg_state = 'fg-normal';
 			if($vsk === 'error')
 				$fg_state = ($config2['bool']['is_showable_error'] ? 'fg-error' : 'fg-normal');
 			else if($vsk === 'success')
-				$fg_state = ($config2['bool']['is_showable_success'] ? 'fg-success' : 'fg-normal');            
+				$fg_state = ($config2['bool']['is_showable_success'] ? 'fg-success' : 'fg-normal');
 			return $fg_state;
 		};
 
@@ -672,7 +690,6 @@ function component_analysis($data, $args)
 	$data2 = $data;
 	unset($data2['args'], $data2['config'], $data2['form']);
 	$analysis2 = array_merge($data2, ['args'=>$args], $analysis);
-	//dd($analysis2);
 	return $analysis2;
 }
 
@@ -727,12 +744,25 @@ function var_type_official(string $type)
         'res'   => 'resource',
         'real'  => 'float',  // real converted to float
     ];
-    $types = var_types();
-    $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
-    $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
-    // if(!in_array($type2, $types, true))
-    if(!array_key_exists($type2, $t))
-        throw new exception('Invalid data type: '.$type2);
+
+
+    // try {
+        $type = array_key_exists($type, $o) ? $o[$type] : $type;
+        $types = var_types();
+        if(!in_array($type, $types, true))
+            throw new exception('Invalid type: '.$type);
+        $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
+        $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
+        // if(!in_array($type2, $types, true))
+        if(!array_key_exists($type2, $t))
+            throw new exception('Invalid data type: '.$type2);
+    // } catch(\Throwable $ex) {
+        // dump($o);
+        // dump($t);
+        // dump($type);
+        // dump($type2);
+        // dd($ex);
+    // }
     return $t[$type2];
 }
 
@@ -757,10 +787,37 @@ function var_cast($var, string $type)
         'object'    => (object) $var,
         default     => $var,
     };*/
-    $type2 = var_type_official($type);
-    settype($var, strtolower($type2));
+        $type2 = var_type_official($type);
+        settype($var, strtolower($type2));
     return $var;
 }
+
+function var_is_closure($obj) {
+    $bool = false;
+    try {
+        $reflection = new \ReflectionFunction($obj);
+        $bool = (bool)$reflection->isClosure();
+    } catch(\Throwable $th) {}
+    return $bool;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Get the specified configuration value.
@@ -1119,7 +1176,7 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
     $where = [];
     $prefixes = ['ad_', 'pl_'];
     $word = '';
-
+    
     // remove id key
     if(array_key_exists('id', $needles))
         unset($needles['id']);
@@ -1154,14 +1211,16 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
     // upsert
     $id = 0;
     $data = [];
+    $hasNull = false;
     DB::beginTransaction();
     try {
         $obj = DB::connection($conn)->table($table);
         $where_db = $obj;
-        $hasNull = false;
         foreach($where as $k=>$v) {
-            if(!$hasNull && (is_null($v) || $v === ''))
-                $hasNull = true;                
+            if(!$hasNull && (is_null($v) || $v === '')) {
+                $hasNull = true;
+                goto point1;
+            }
             if($case_sensitive)
                 $where_db->whereRaw('BINARY `'.$k.'` = ? ', [$v], 'and');
             else
@@ -1190,16 +1249,17 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
             throw new exception('Value of `id` is not integer');
         $id = (int)$data['id'];
 
+        point1:
         DB::commit();
     } catch(\Exception $ex) {
         DB::rollBack();
-        dd($ex);
+        // dd($ex);
     }
 
-    if($id <= 0)
-        throw new exception('Value of `id` must be UNSIGNED');
-
-    point1:
+    // if($id <= 0)
+    //     throw new exception('Value of `id` must be UNSIGNED');
+    
+    // point1:
     return $id;
 }
 
@@ -1216,12 +1276,36 @@ function db_stored_procedure(string $conn, string $func_name, array $binding=[],
 	foreach($binding as $key=>$val) {
 		$param .= ((++$x)>0 ? ',' : '').'?';
 	}
-	$sql = $kw.$func_name.'('.$param.')';//dd($param);
+	$sql = $kw.$func_name.'('.$param.')';
 	$select = DB::connection($conn)->select($sql, $binding);
 	$output = $to_array ? obj_reflect($select) : $select;
 	return $output;
 }
 
+function db_sql_with_binding($builder)
+{
+    $query = str_replace(array('?'), array('\'%s\''), $builder->toSql());
+    $query = vsprintf($query, $builder->getBindings());
+    return $query;
+}
+
+function db_upsert($conn_tbl, array $attr, array $values)
+{
+    $conn = db_obj($conn_tbl);
+    $merged = array_merge($values, $attr);
+    $count1 = $conn->where($attr)->count();
+    
+
+    $bool1 = $conn->updateOrInsert($attr, $values);
+
+    $data2 = $conn->where($merged)->get()->toArr();
+    $count2 = count($data2);
+
+    $success = $bool1 || $count2 > 0 || $count2 > $count1;
+    $count2 = $count2 > 0 ? $count2 : 0;
+
+    return [$success, $count2, $data2];
+}
 
 
 
@@ -1312,7 +1396,6 @@ function db_stored_procedure(string $conn, string $func_name, array $binding=[],
 function docu_type_sanitize($var)
 {
     // $t = '';
-    // dump($var);
     if(is_null($var) || $var === 'void' || !is_array($var) || !array_key_exists('type', $var))
         goto point1;
     // $type = $var['type'];
@@ -1332,7 +1415,6 @@ function docu_type_sanitize($var)
     }
     // else
     //     $t = $t;
-    // dump($var);
     return $var;
 }
 
@@ -1367,10 +1449,8 @@ function docu_string($class, bool $echoAndDie = false)
         }
     }
     foreach($public as $k=>$v) {
-        $ret = $v['at']['return'] ?? '';//dd($ret);
+        $ret = $v['at']['return'] ?? '';
         $ret = (!empty($ret) && $ret !== 'void') ? docu_type_sanitize($ret) : 'void';
-        // dd($ret);
-        // dump($ret);
         $method = !empty($k) ? $k : '';
         $title = !empty($v['title']) ? ' '.$v['title'] : '';
         $param = '';
@@ -1383,7 +1463,6 @@ function docu_string($class, bool $echoAndDie = false)
                 .(array_key_exists('default', $v2) ? ' = '.var_stringify($v2['default']) : '')  // default value
             );
         }
-        // dd($ret);
         if(!empty($method))
             $out .= $space.'* @method static '.$ret.' '.$method.'('.$param.')'.$title."\n";
     }
@@ -1659,6 +1738,30 @@ function dt_eval_str(string $dt_format, string $dt_val, string $dt_fallback = ''
     return $output;
 }
 
+function dt_standard_tz()
+{
+    return 'UTC';
+}
+
+function dt_is_timezone(string $tz_str) {
+    // if returns `null`, the error is either on `dt_format` or `dt_str`, or BOTH
+    $dt_now = null;
+    $dt_test = null;
+    $dt_format = dt_standard_format();
+    try {
+        $dt_now = Carbon::now(dt_standard_tz())->startOfDay()->format($dt_format);
+        $dt_test = Carbon::createFromFormat($dt_format, $dt_now, $tz_str);
+        return true;
+    } catch (\Exception $ex) {
+        return false;
+    }
+}
+
+function dt_server_tz() {
+    $stz = config_env('APP_TIMEZONE', dt_standard_tz());
+    if(!dt_is_timezone($stz)) throw new exception('Invalid server timezone');
+    return $stz;
+}
 
 
 
@@ -1735,6 +1838,94 @@ function obj_reflect($obj, bool $to_array=false, $default=null)
 
 
 
+/**
+ * Gets the rules of FormRequest class
+ * 
+ * - callbacks not included
+ */
+function request_rules(string $requestClass)
+{
+    if(!class_exists($requestClass))
+        throw new exception('Non-existent class: '.$requestClass);
+    if(!array_key_exists(Request::class, class_parents($requestClass)))
+        throw new Exception('$requestClass must a parent class '.Request::class);
+    $onlyRules = [
+        'min' => 'int',
+        'max' => 'int',
+        'regex' => 'string',
+        'date_min' => 'string',
+        'date_max' => 'string'
+    ];
+    /** @var \Rguj\Laracore\Request\Request $c */
+    $c = resolve($requestClass);
+    $r = $c->rules();
+    $g = $c->genericRule ?? [];
+    $o = [];
+    
+    // format rules
+    foreach($r as $k1=>$v1) {
+        foreach($v1 as $k2=>$v2) {
+            if(is_string($v2)) {
+                list($rule, $ruleVal) = explode(':', (Str::contains($v2, ':') ? $v2 : $v2.':'), 2);
+                if(!empty($rule) && !empty($ruleVal) && array_key_exists($rule, $onlyRules)) {
+                    $o[$k1][$rule] = var_cast($ruleVal, $onlyRules[$rule]);
+                }
+            }
+        }
+    }
+
+    // add missing generic rule
+    foreach($g as $k2=>$v2) {
+        foreach($v2 as $k3=>$v3) {
+            if(arr_has($o, $k2) && !arr_has($o, $k2.'.'.$k3)) {
+                arr_set($o, $k2.'.'.$k3, $v3);
+            }
+        }
+    }
+
+    return $o;
+}
+/*
+function request_rules(string $requestClass)
+{
+    if(!class_exists($requestClass))
+        throw new exception('Non-existent class: '.$requestClass);
+    if(!array_key_exists(Request::class, class_parents($requestClass)))
+        throw new Exception('$requestClass must a parent class '.Request::class);
+    $onlyRules = [
+        'min' => 'int',
+        'max' => 'int',
+        'regex' => 'string',
+        'date_min' => 'string',
+        'date_max' => 'string'
+    ];
+    $c = resolve($requestClass);
+    $r = $c->rules();
+    $g = $c->genericRule ?? [];
+    $o = [];
+    foreach($r as $k=>$v) {
+        foreach($v as $k2=>$v2) {
+            if(!is_string($v2)) goto point1;
+            list($rule, $ruleVal) = explode(':', (Str::contains($v2, ':') ? $v2 : $v2.':'), 2);            
+            if(!empty($rule) && !empty($ruleVal) && array_key_exists($rule, $onlyRules)) {
+                // dd(var_cast($ruleVal, $onlyRules[$rule]));
+                $o[$k][$rule] = var_cast($ruleVal, $onlyRules[$rule]);
+            } else {
+                // dump($k.$rule, $ruleVal);
+            }
+        }
+        point1:
+        if($k === 'birthdate') {
+            foreach(['date_min', 'date_max'] as $k3=>$v3) {
+                if(!array_key_exists($v3, $o[$k] ?? []) && array_key_exists($v3, $g[$k] ?? [])) {
+                    $o[$k][$v3] = $g[$k][$v3];
+                }
+            }
+        }
+    }
+    return $o;
+}
+*/
 
 
 
@@ -1975,8 +2166,8 @@ function route_generate_auth_platform(string $platform)
 
 function session_get_alerts(bool $delete_alerts_session = false)
 {
-    $key = (string)config('env.APP_SESSION_ALERTS_KEY');
-    $alerts = session()->get($key) ?? [];
+    $key = (string)config_env('APP_SESSION_ALERTS_KEY');
+    $alerts = (array)(session()->get($key) ?? []);
     if($delete_alerts_session)
         session()->forget($key);
     return $alerts;
@@ -1998,14 +2189,16 @@ function session_push(string $key, $val)
     session()->push($key, $val);
 }
 
-function session_push_alert(string $status, string $msg, string $alert_type = 'toastr')
+function session_push_alert(string $status, string $msg, string $title = '', string $alert_type = 'toastr')
 {
     //bs_class => [ primary, secondary, success, danger, warning, info, light, dark ]
     $alert_types = ['swal2', 'toastr'];
     if(!in_array($alert_type, $alert_types))
         throw new exception('Invalid alert type `'.$alert_type.'`');
-    $val = ['type' => $status, 'msg' => $msg];
-    session_push(config('env.APP_SESSION_FEEDBACKS_KEY').'.'.$alert_type, $val);
+    $val = ['status' => $status, 'msg' => $msg, 'type' => $alert_type, 'title' => $title];
+    // session_push(config('env.APP_SESSION_ALERTS_KEY').'.'.$alert_type, $val);
+    // dd(config_env('APP_SESSION_ALERTS_KEY'));
+    session_push(config_env('APP_SESSION_ALERTS_KEY'), $val);
 }
 
 
@@ -2174,6 +2367,37 @@ function str_random_alphanum(int $min_length = 10, int $max_length = 0) {
     return $randomString;
 }
 
+/**
+ * Evaluate pattern to subject and if true, manipulate subject value in Closure.
+ *
+ * @param string $pattern Regular expression
+ * @param string $subject
+ * @param \Closure $true_func Params (string $pattern, string $subject, mixed $output)
+ * @return null|mixed
+ */
+function str_regex_eval(string $pattern, string $subject, $true_func=null) {
+    $output = null;
+    if(str_preg_match($pattern, $subject)) {
+        if(var_is_closure($true_func) !== true) {
+            $output = !is_null($true_func) ? $true_func : $subject;
+        } else {
+            $output = $true_func->__invoke($pattern, $subject, null);
+        }
+    }
+    return $output;
+}
+
+function str_keyboard_symbols(bool $escape = false) {
+    $output = $symbols = "!@#$%^&*()-_=+[{]};:'".'"'."\|,<.>/?`~";  // double quotes intentionally isolated
+    if(!$escape) goto point1;    
+    $pcs = str_split($symbols);
+    foreach($pcs as $key=>$val) {
+        $output .= $pcs[22].$val;
+    }
+    point1:
+    return $output;
+}
+
 
 
 
@@ -2265,12 +2489,6 @@ function var_stringify($var) {
     elseif(is_array($var)) return json_encode($var);
     elseif(is_string($var)) return '"'.$var.'"';
     return (string)$var;
-    // try {
-    //     return (string)$var;
-    // } catch(\Exception $ex) {
-    //     dump($var);
-    //     dd($ex);
-    // }
 }
 
 
@@ -2357,5 +2575,5 @@ function webclient_is_dev()
 
 function webclient_timezone()
 {
-    return config('user.settings.timezone', 'Asia/Taipei');
+    return (string)config('user.settings.timezone', 'Asia/Taipei');
 }

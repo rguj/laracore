@@ -30,6 +30,10 @@ class Request extends FormRequest
 	public array $genericRule = [];
 	public $fluentRule;
 
+    public $validator;
+    public array $translated = [];
+    public array $firstErrors;
+
     public function __construct()
     {
         $request = request();
@@ -73,16 +77,30 @@ class Request extends FormRequest
         $this->decryptElements();
     }
 
-	final protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+	// final protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+	final public function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
     {
         $this->validator = $validator;
+        $f = [];
+        foreach($validator->errors()->getMessageBag()->getMessages() as $k=>$v) {
+            if(!empty($v)) {
+                $f[$k] = $v[0];
+            }
+        }
+        $this->firstErrors = $f;
+        // $this->flash();
 
         // implement error report logic below
 
         if(!$this->ajax()) {
-            return redirect()->back()->withErrors($validator->getMessageBag()->getMessages());
+            // return redirect()->back()->withErrors($validator->getMessageBag()->getMessages());
         }
 
+    }
+
+    public function passedValidation()
+    {
+        // session()->remove('_old_input');
     }
 	
 	/**
@@ -166,20 +184,81 @@ class Request extends FormRequest
     }
 
     /**
+     * Translates input to database column key `_id`
+     * 
+     * only use this on method `passedValidation()`
+     *
+     * @param array $arr [ `attr`, `table`, `column`, `override_new_attr`, `mergeNeedle` ]
+     * @return void
+     */
+    final public function translate(array $arr, bool $update = true)
+    {
+        $opt = [];
+        $inputs = $this->all();
+        // dump($inputs);
+        $rules = $this->rules();
+        foreach($arr as $k=>$v) {
+            list($attr, $table, $column) = $v;
+
+            if(!array_key_exists($attr, $inputs))
+                throw new exception('Attribute not found: '.$attr);
+            if(empty($table))
+                throw new exception('Empty table on attribute: '.$attr);
+
+            $new_attr = str_sanitize($v[3] ?? '');
+            $new_attr = !empty($new_attr) ? $new_attr : $attr.'_id';
+
+            $column = empty($column) ? $attr : $column;
+            $mergeNeedle = (array)($v[4] ?? []);
+
+            if(is_array($inputs[$attr])) {
+                $d = [];
+                foreach($inputs[$attr] as $k3=>$v3) {
+                    // $mergeNeedle = (array)($v[4] ?? []);
+                    $needle = [$column=>$v3];
+                    if(!empty($mergeNeedle))
+                        $needle = array_merge($mergeNeedle, $needle);
+                    $d[] = db_cache_fetsert_id($table, $needle, true);
+                }
+                $d = array_unique($d);
+                $opt[$new_attr] = $d;
+            } else {
+                // $mergeNeedle = (array)($v[4] ?? []);
+                $needle = [$column=>$inputs[$attr]];
+                if(!empty($mergeNeedle))
+                    $needle = array_merge($mergeNeedle, $needle);    
+                $opt[$new_attr] = db_cache_fetsert_id($table, $needle, true);
+            }
+        }
+        // dd($opt);
+        if($update)
+            $this->translated = $opt;
+        else return $opt;
+    }
+
+    final public function getTranslated()
+    {
+        return $this->translated;
+    }
+
+    /**
      * Creates attribute for non-existent input based from rules
+     * 
+     * this follows the order of rule keys
      *
      * @return void
      */
     final public function fillMissingInputs()
     {
-        // create empty element if not exists
         $all = $this->all();
+        $all2 = [];
         foreach($this->rules() as $k=>$v) {
-            if(array_key_exists($k, $all))
-                continue;
-            $all[$k] = null;
+            if(Str::endsWith($k, '.*')) continue;
+            $v2 = array_key_exists($k, $all) ? $all[$k] : null;
+            $v2 = !is_null($v2) ? $v2 : (Str::endsWith($k, '.*') ? [] : '');
+            $all2[$k] = $v2;
         }
-        $this->merge($all);
+        $this->merge($all2);
     }
 
     /**
@@ -198,6 +277,28 @@ class Request extends FormRequest
                 && is_callable(arr_get($this->genericRule, $v.'.converter', null))
             ) {
                 $all[$v] = $this->genericRule[$v]['converter']($all[$v]);
+            }
+        }
+        $this->merge($all);
+    }
+
+    /**
+     * Converts the mobile number (from client to server)
+     *
+     * @param array $keys
+     * @return void
+     */
+    final public function convertMobileNum(array $keys)
+    {
+        $all = $this->all();
+        foreach($keys as $k=>$v) {
+            if(
+                array_key_exists($v, $all)
+                && !is_null($all[$v])
+                && !empty(arr_get($this->genericRule, $v.'.prefix', ''))
+            ) {
+                if(!empty($all[$v]))
+                    $all[$v] = $this->genericRule[$v]['prefix'].$all[$v];
             }
         }
         $this->merge($all);

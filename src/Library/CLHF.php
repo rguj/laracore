@@ -2050,11 +2050,24 @@ class CLHF {
         // start
         // $arr1 = CLHF::DB_LookUp($conn_tbl, $merged, true);
         // $arr2 = CLHF::DB_LookUp($conn_tbl, $attr, true);
+        
+        // dd($merged);
+        // dd(($CONN->where($merged)->toRawSql()));
+
         $arr1 = $CONN->where($merged)->get()->toArr();
         $arr2 = $CONN->where($attr)->get()->toArr();
 
+        // dump(db_sql_with_binding($CONN->where($merged)));
+        // dump($CONN->where(array_merge($merged, ['civilstatus_id'=>5]))->get());
+        // dump($attr);
+
+        // dump($attr);
+        // dump($arr1);
+        // dd($arr2);
+
 		// find existing results
 		$arr1_count = count($arr1);
+        //dd($arr2_count);
         if($arr1_count > 0) {
             $affected_rows = $arr1_count;
             //dd($affected_rows);
@@ -2625,7 +2638,7 @@ class CLHF {
         return $inputs3;
     }
 
-    public static function FORM_LogicResponse(Request $request, $response) {
+    public static function FORM_LogicResponse(Request $request, $response, $isJSON = null) {
         // $response => [[status=>msg], [attr=>error_msg], response_obj]
         /*
             returns
@@ -2654,9 +2667,11 @@ class CLHF {
         if($has_error === true && empty($response[1])) {
             $response[1]['__'] = '';
         }
-        if($request->ajax() || in_array($request->route()->getActionMethod(), [
-            'index', 'create', 'store', 'show', 'edit', 'update', 'destroy',
-        ])) {
+
+        $isAjax = is_bool($isJSON) ? $isJSON : $request->ajax();
+        // in_array($request->route()->getActionMethod(), ['index', 'create', 'store', 'show', 'edit', 'update', 'destroy',]))
+        
+        if($isAjax) {
             $json = [
                 '_messages' => $response[0],
                 '_errors' => $response[1],
@@ -3054,7 +3069,7 @@ class CLHF {
         // ROLE VALIDATION
         $hasAccess = StorageAccess::check($request, $file);
         if($hasAccess !== true)
-            throw new exception('Access denied');
+            abort(403, 'Access denied');
 
         // FILE STREAM
         $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];

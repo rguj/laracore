@@ -21,6 +21,7 @@ class DateBetween2 implements Rule
     private Carbon $v;
     private bool $startOfDay = false;
     private string $format;
+    private string $format2;
     private string $err_msg;
 
     /**
@@ -30,16 +31,18 @@ class DateBetween2 implements Rule
      */
     public function __construct(string $date_min, string $date_max, string $format, string $timezone, bool $startOfDay)
     {
-        $d1 = DT::createDateTimeX2($date_min, [$format, $format], [$timezone, 'UTC'], $startOfDay);
-        $d2 = DT::createDateTimeX2($date_max, [$format, $format], [$timezone, 'UTC'], $startOfDay);
+        $format2 = $format.' H:i:s.u';
+        $d1 = dt_parse($date_min.' 00:00:00.000000', [$format2, dt_standard_format()], [webclient_timezone(), 'UTC']);
+        $d2 = dt_parse($date_max.' 23:59:59.999999', [$format2, dt_standard_format()], [webclient_timezone(), 'UTC']);
+        
+        if(!$d1->is_valid) throw new exception('Invalid format: date_min');
+        if(!$d2->is_valid) throw new exception('Invalid format: date_max');
+        if($d2->carbon->onto < $d1->carbon->onto) throw new exception('date_max must be greater than date_min');
 
-        if(!$d1[0]) throw new exception('Invalid format: date_min');
-        if(!$d2[0]) throw new exception('Invalid format: date_max');
-        if($d2[3][1] < $d1[3][1]) throw new exception('date_max must be greater that dadate_minte1');
-
-        $this->d1 = $d1[3][1];
-        $this->d2 = $d2[3][1];
+        $this->d1 = $d1->carbon->onto;
+        $this->d2 = $d2->carbon->onto;
         $this->format = $format;
+        $this->format2 = $format2;
         $this->startOfDay = $startOfDay;
     }
 
@@ -56,22 +59,24 @@ class DateBetween2 implements Rule
         if(empty($client_tz))
             throw new exception('Invalid client timezone');
 
-        $v = DT::createDateTimeX2($value, [$this->format, $this->format], [$client_tz, 'UTC'], false);
-        if(!$v[0]) {
+        // $v = DT::createDateTimeX2($value, [$this->format, $this->format], [$client_tz, 'UTC'], false);
+
+        // this assumes that dt_str is already parse to the standard timezone
+        $v = dt_parse($value, [$this->format2, $this->format2], ['UTC', 'UTC']);
+
+        if(!$v->is_valid) {
             $this->err_msg = 'Invalid date.';  // invalid value date format
             return false;
         }
-        $this->v = $v[3][1];
+        $this->v = $v->carbon->onto;
 
         if($this->v < $this->d1)
             $this->err_msg = 'Invalid date [-]';
         else if($this->v > $this->d2)
             $this->err_msg = 'Invalid date [+]';
         
-        if(!empty($this->err_msg))
+        return !(!empty($this->err_msg));
             return false;
-
-        return true;
     }
 
     /**

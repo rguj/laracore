@@ -26,53 +26,50 @@ class StorageAccess {
     }
 
 
+    public static function data_student(int $user_id)
+    {
+        $ret = [false, 0, ''];  // success, sid, md5_sid
+        $cls = 'App\Http\Controllers\Student\LinkController';
+        if(!class_exists($cls) || !method_exists($cls, 'FETCH_LinkedStudID'))
+            goto point1;        
+        $sid = (new ($cls))->FETCH_LinkedStudID($user_id) ?? 0;
+        $ret[0] = $sid > 0;
+        $ret[1] = $ret[0] ? $sid : 0;
+        $ret[2] = $ret[0] ? md5($sid) : '';
+        point1:
+        return $ret;
+    }
+
+
     public static function check(Request $request, $file) {
         // validate by directory or by user_id     
 
-        /*$uid = CLHF::AUTH_UserID();
-        $uid_md5 = md5($uid);
-        $student_id = StudentLink::FETCH_LinkedStudID($uid) ?? 0;
-        $sid_md5 = md5($student_id);
+        $uid = cuser_id();
 
-        switch($file['dir_app']) {
+        $student = SELF::data_student($uid);
+        $student_id = $student[0];
+        $sid_md5 = $student[2];
 
-            case 'stud_photo':
-                return ($file['basename'] === $sid_md5 || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
+        $is_admin = cuser_is_admin();
+        $is_rstaff = cuser_is_rstaff();
+        $is_eofficer = cuser_is_eofficer();
+        $is_cashier = cuser_is_cashier();
+        $is_student = cuser_is_student();
 
-            case 'stud_esig':
-                return ($file['basename'] === $sid_md5 || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
- 
-            case 'stud_loa':
-                return (Str::contains($file['basename'], $sid_md5) || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
-            
-            case 'stud_brcf':
-                return (Str::contains($file['basename'], $sid_md5) || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
-                    
-            case 'stud_gomo':
-                return (Str::contains($file['basename'], $sid_md5) || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
-                
-            case 'stud_pocl':
-                return (Str::contains($file['basename'], $sid_md5) || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
-                
-            case 'stud_grad':
-                return (Str::contains($file['basename'], $sid_md5) || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
-                
-            case 'stud_paym':
-                return (Str::contains($file['basename'], $sid_md5) || CLHF::AUTH_RoleAuthorized([1,2,3,5], $uid));
-                break;
+        // $is_self_file = $file['basename'] === $sid_md5;
+        $is_self_file = !empty($file['basename']) && Str::contains($file['basename'], $sid_md5);
+        $can_stud_photo = ($is_admin || $is_rstaff || $is_eofficer || $is_cashier || $is_cashier);
 
-            default:
-                return false;
-                break;
-            
-        }*/
+        return match($file['dir_app']) {
+            'stud_photo' => ($is_self_file || $can_stud_photo),
+            'stud_esig'  => ($is_self_file || $can_stud_photo),
+            'stud_loa'   => ($is_self_file || $can_stud_photo),
+            'stud_brcf'  => ($is_self_file || $can_stud_photo),
+            'stud_gomo'  => ($is_self_file || $can_stud_photo),
+            'stud_pocl'  => ($is_self_file || $can_stud_photo),
+            'stud_grad'  => ($is_self_file || $can_stud_photo),
+            'stud_paym'  => ($is_self_file || $can_stud_photo),
+        };
     }
    
 

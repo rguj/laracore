@@ -1,7 +1,6 @@
 <?php
 
 namespace Rguj\Laracore\Middleware;
-
 use Exception;
 use Closure;
 
@@ -22,6 +21,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 // use App\Providers\AppServiceProvider;
 use Rguj\Laracore\Provider\BaseAppServiceProvider as AppServiceProvider;
@@ -31,6 +31,8 @@ use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\Url\Url as SpatieUrl;
+use Illuminate\Support\ViewErrorBag;
 
 /**
  * A wrapper for web middleware
@@ -112,6 +114,10 @@ class ClientInstanceMiddleware
 
 
 
+
+    
+
+
     /**
      * Handle an incoming request.
      *
@@ -129,7 +135,7 @@ class ClientInstanceMiddleware
         $this->user_info = SELF::user_info_($id);
         $this->is_admin = arr_colval_exists(SELF::ROLE_ADMIN, $this->user_info['types'] ?? [], 'role_id', true);
         Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', env('APP_TIMEZONE', 'UTC')));
-        Config::set('user', $this->user_info);
+        Config::set('user', $this->user_info);//dd(config('user'));
         
         // set client info
         $this->client_info = SELF::client_info_($request);
@@ -139,18 +145,22 @@ class ClientInstanceMiddleware
         Config::set('client', $this->client_info);
         
         // some logic for debugging
-        if($this->is_admin) {
+        $has_dev_key = webclient_is_dev();
+        if($this->is_admin || $has_dev_key) {
             app('debugbar')->enable();
             Config::set('app.debug', true);
         } else {
-            if($request->server('REMOTE_ADDR') !== '127.0.0.1') {
-                //app('debugbar')->disable();
-                //Config::set('app.debug', false);
-            }
+            app('debugbar')->disable();
+            Config::set('app.debug', false);
+        }
+        
+        // MAINTENANCE MODE
+        if(env('MAINTENANCE_MODE', false) && !app()->runningInConsole() && !webclient_is_dev()) {
+            abort(503, 'Under maintenance');
         }
         
         // some validation
-        $validate = $this->validate($request);dd($validate);
+        $validate = $this->validate($request);//dd($validate);
         if(!$validate[0]) {
             if(!is_string($validate[2]))
                 throw new Exception('Parameter 3 must be string');
@@ -177,20 +187,17 @@ class ClientInstanceMiddleware
         // override global menu
         Config::set('global.menu', $this->user_menu($request, false));
 
-        dd(12344421);
+        // dd(12344421);
         // trigger theme bootstrap
-        //AppServiceProvider::initializeMetronic();
+        AppServiceProvider::initializeMetronic();
         
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
+
         
         return $next($req);
     }
-
-
-
-
 
 
 
@@ -206,14 +213,13 @@ class ClientInstanceMiddleware
         return redirect()->to($redirect_to);
     }
 
-
-
     // some user and client validation
     private function validate(BaseRequest $request) {
         // returns [success, err_mode, err_data]
         // err_mode [1 => exception, 2 => redirect]
 
         $url = route_parse_url(request()->fullUrl());
+        // dd($url);
         // https://hris2.localhost.com?mode=dark
         
         if(in_array($url->url, $this->bypassAuthRoutes))
@@ -256,9 +262,9 @@ class ClientInstanceMiddleware
                 if($url->url === $this->url_login) {
                     goto point1;
                 }
-                dump($url->url);
-                dump($this->url_login);
-                dd(3421);
+                // dump($url->url);
+                // dump($this->url_login);
+                // dd(3421);
                 session_push_alert('error', 'Please login first.');
                 return [false, 2, $this->url_login];
             }
@@ -358,6 +364,7 @@ class ClientInstanceMiddleware
             ->get()->toArr(0)
             // ->toSql()
             ;
+            //dd($user);
             
             // dd($user);
             // dd(User::find($id)->roles()->where()->orderBy('id', 'asc'));
@@ -477,6 +484,9 @@ class ClientInstanceMiddleware
             // set the ordering here
             'jappl',
             'admin',
+            'student',
+            // 'eofficer',
+            // 'rstaff',
         ];
         array_unique($show_roles);
 
@@ -505,9 +515,13 @@ class ClientInstanceMiddleware
                     array_push($main, $m);
                 }
             }
-            array_push($main, $category('User'), config_unv('menu.user'));
-        } else {
-            array_push($main, $category('Guest'), config_unv('menu.guest'));
+            if(!empty(config('unv.menu.user'))) {
+                array_push($main, $category('User'), config_unv('menu.user'));
+            }
+        } else {            
+            if(!empty(config('unv.menu.guest'))) {
+                array_push($main, $category('Guest'), config_unv('menu.guest'));
+            }
         }
 
         // remove empty elements

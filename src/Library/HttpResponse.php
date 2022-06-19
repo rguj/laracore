@@ -27,6 +27,8 @@ use Rguj\Laracore\Library\CLHF;
 use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\StorageAccess;
 use Rguj\Laracore\Library\WebClient;
+use Illuminate\Support\ViewErrorBag;
+use Rguj\Laracore\Request\Request as BaseRequest;
 
 // ----------------------------------------------------------
 
@@ -61,6 +63,7 @@ class HttpResponse {
     private bool $isAjax = false;
     private string $title = '';
     private string $desc = '';
+    private string $method;
     private float $processTime = 0.00;
     private string $defaultPurposeKey = '_purpose';
 
@@ -190,12 +193,12 @@ class HttpResponse {
             's' => $this->isSuccess,    // is _success
             'm' => [                    // messages
                 'toastr' => $this->alertsToastr,
-                'swal'  => $this->alertsSwal,
+                'swal2'  => $this->alertsSwal,
             ],
             'e' => $this->formErrors,   // errors
             'r' => $this->url,          // redirect url
             'd' => $d,                  // data
-            'p' => $this->processTime,  // process time                
+            'p' => $this->processTime,  // process time
         ] : [
             'page' => [
                 'title'            => $this->title,
@@ -283,18 +286,28 @@ class HttpResponse {
         $this->routeName = str_sanitize($this->request->route()->getName());
         $this->routeNames = route_names(true);
         $this->request = $this->request;
+        $this->method = $this->request->method();
         $this->isAjax = $this->request->ajax();
         $this->isDevMode = (bool)config('app.debug', false);
         $this->setPurposes($purposes);
         $this->setResetWith();
-        
+
         // get session alerts toastr and swal
         $fb = session_get_alerts(true);
-        foreach(arr_get($fb, 'swal2', []) as $key=>$val) {
-            $this->addAlertSwal($val['type'], $val['msg']);
-        }
-        foreach(arr_get($fb, 'toastr', []) as $key=>$val) {
-            $this->addAlertToastr($val['type'], $val['msg']);
+        foreach($fb as $k=>$v) {
+            if(!array_key_exists('type', $v) || !array_key_exists('status', $v) || !array_key_exists('msg', $v))
+                continue;
+            $t = $v['title'] ?? '';
+            switch($v['type']) {
+                case 'swal2':
+                    // $this->addAlertSwal($v['status'], $v['msg'], $t, $this->isAjax);
+                    $this->addAlertSwal($v['status'], $v['msg'], $t, false);
+                    break;
+                case 'toastr':
+                    // $this->addAlertToastr($v['status'], $v['msg'], $t, $this->isAjax);
+                    $this->addAlertToastr($v['status'], $v['msg'], $t, false);
+                    break;
+            }
         }
 
         // get user id and privileges
@@ -331,12 +344,12 @@ class HttpResponse {
      * @return void
      * @throws Exception
      */
-    public function purposeLogic(string $key = '', bool $isEncrypted = false)
+    public function purposeLogic(array $args = [], string $key = '', bool $isEncrypted = false)
     {        
         $this->logicTriggered++;
         $key = empty($key) ? $this->defaultPurposeKey : $key;
 
-        $func1 = function(string $key, bool $isEncrypted){
+        $func1 = function(array $args, string $key, bool $isEncrypted){
             $data = [null, '', null];  // [ null|bool, err_msg, return_data ]
             if(!$this->request->has($key)) {
                 return $data;
@@ -365,15 +378,47 @@ class HttpResponse {
             if(!$method_exists) {
                 throw new exception('Method `'.$func_name2.'` doesn\'t exists in '.$this->class::class);
             }
+
+            // eval request arg/s
+            if(!empty($args) && is_object($args[0]) && method_exists($this->class, $func_name2)
+                && !empty($params = (new \ReflectionMethod($this->class, $func_name2))->getParameters())
+            ) {
+                $a = get_class($args[0]);
+                $b = class_parents($args[0]);
+                $b = !array_key_exists($a, $b) ? array_merge([$a=>$a], $b) : $b;
+                $c = $params[0]->getType()->getName();
+                $d = class_parents($params[0]->getType()->getName());
+                if(array_key_exists(BaseRequest::class, $d) && $c !== BaseRequest::class) {
+                    $args[0] = resolve($c);
+                }
+            }
             
-            $data[2] = $this->class->{$func_name2}($this->request);
+            // $data[2] = $this->class->{$func_name2}($this->request);
+            $data[2] = $this->class->{$func_name2}(...$args);
             $data[0] = true;
             return $data;
         };
 
-        $this->logicData = $func1($key, $isEncrypted);
+        $this->logicData = $func1($args, $key, $isEncrypted);
     }
 
+
+    public function resolveRequest(string $requestClass)
+    {
+        if(!class_exists($requestClass))
+            throw new exception('Non-existent class: '.$requestClass);
+        if(!array_key_exists(BaseRequest::class, class_parents($requestClass)))
+            throw new exception('$requestClass must have a parent class `'.BaseRequest::class.'`');
+
+        /** @var \Rguj\Laracore\Request\Request $obj */
+        $obj = resolve($requestClass);
+
+        if($obj->validator->fails()) {
+            dd('failed to validate');
+            // return $obj->validator->
+        }
+
+    }
 
 
 
@@ -407,7 +452,6 @@ class HttpResponse {
     
     public function addAlertAuto(bool $cond, string $alert_type = 'toastr', bool $as_session = false)
     {
-        // if(!$cond) goto point1;
         $this->__evalAlertType($alert_type);
         $str = '';
         $type = $cond ? 'success' : 'error';
@@ -422,8 +466,6 @@ class HttpResponse {
             'massDestroy' => 'mass delete',
         ];
         $caller_method = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1]['function'] ?? '';
-        // $caller_method = '';
-        // dd($caller_method);
         if(!empty($caller_method) && array_key_exists($caller_method, $arr)) {
             $str = !empty($arr[$caller_method]) ? $arr[$caller_method] : $caller_method;
         }       
@@ -477,44 +519,73 @@ class HttpResponse {
         $this->formErrors[] = [$key, $val];
     }
 
+
+
+
+    public function __asSessionAlert($as_session = null)
+    {
+        $a = $as_session;
+        if(is_bool($a)) goto point1;
+        $m = $this->request->method();
+        $j = $this->request->ajax();
+        if($j) {
+            $a = !in_array($m, ['POST']);
+        } else {     
+            $a = in_array($m, ['POST']);
+        }
+        $a = !is_bool($a) ? !$this->isAjax : $a; // DEFECTIVE
+        point1:
+        return $a;
+    }
+
     /**
      * Adds a sweetalert alert
      *
-     * @param string $alert_type `success, info, question, warning, error`
+     * @param string $alert_status `success, info, question, warning, error`
      * @param string $alert_msg
+     * @param string $alert_title
+     * @param null|bool $as_session
      * @return void
      */
-    public function addAlertSwal(string $alert_type, string $alert_msg, bool $as_session = false) 
+    public function addAlertSwal(string $alert_status, string $alert_msg, string $alert_title = '', $as_session = null)
     {
-        if(!in_array($alert_type, $this->alertSwalCategories))
-            throw new Exception('Invalid alert type `'.$alert_type.'`');
+        $as_session = $this->__asSessionAlert($as_session);
+
+        // dd($this->request);
+
+        if(!in_array($alert_status, $this->alertSwalCategories))
+            throw new Exception('Invalid alert type `'.$alert_status.'`');
         if(empty($alert_msg))
             throw new Exception('Alert message must not be empty');
-        $this->alertsSwal[] = ['type'=>$alert_type, 'msg'=>$alert_msg];
         if($as_session)
-            session_push_alert($alert_type, $alert_msg, 'swal2');
+            session_push_alert($alert_status, $alert_msg, $alert_title, 'swal2');
         else
-            $this->alertsSwal[] = ['type'=>$alert_type, 'msg'=>$alert_msg];
+            $this->alertsSwal[] = ['status'=>$alert_status, 'msg'=>$alert_msg, 'title'=>$alert_title];
     }
 
     /**
      * Adds a toastr alert
      *
-     * @param string $alert_type `success, info, warning, error`
+     * @param string $alert_status `success, info, warning, error`
      * @param string $alert_msg
+     * @param string $alert_title
+     * @param null|bool $as_session
      * @return void
      */
-    public function addAlertToastr(string $alert_type, string $alert_msg, bool $as_session = false)
+    public function addAlertToastr(string $alert_status, string $alert_msg, string $alert_title = '', $as_session = null)
     {
-        if(!in_array($alert_type, $this->alertToastrCategories))
-            throw new Exception('Invalid alert type `'.$alert_type.'`');
+        // $as_session = !is_bool($as_session) ? !$this->isAjax : $as_session;
+        $as_session = $this->__asSessionAlert($as_session);
+        if(!in_array($alert_status, $this->alertToastrCategories))
+            throw new Exception('Invalid alert type `'.$alert_status.'`');
         if(empty($alert_msg))
             throw new Exception('Alert message must not be empty');
         if($as_session)
-            session_push_alert($alert_type, $alert_msg, 'toastr');
+            session_push_alert($alert_status, $alert_msg, $alert_title, 'toastr');        
         else
-            $this->alertsToastr[] = ['type'=>$alert_type, 'msg'=>$alert_msg];
+            $this->alertsToastr[] = ['status'=>$alert_status, 'msg'=>$alert_msg, 'title'=>$alert_title];
     }
+
 
 
 
@@ -616,11 +687,13 @@ class HttpResponse {
         $this->formValues = $formValues;
     }
 
-    public function setFormErrors(array $formErrors) 
+    public function setFormErrors(array $formErrors, bool $onlyFirstError = false) 
     {
         foreach($formErrors as $key=>$val) {
-            $v = $this->validateFieldError($key, $val);
-            if(!$v[0]) throw new exception($v[1]);
+            if(!$onlyFirstError) {                
+                $v = $this->validateFieldError($key, $val, $onlyFirstError);
+                if(!$v[0]) throw new exception($v[1]);
+            }            
         }
         $this->formErrors = $formErrors;
     }
@@ -808,6 +881,26 @@ class HttpResponse {
         }
     }
 
+    public function setSessionFlash()
+    {
+        $s = config_env('APP_SUCCESS_KEY', '');
+        $e = config_env('APP_ERROR_KEY', '');
+
+        if(empty($s)) throw new Exception('env.APP_SUCCESS_KEY is empty');
+        if(empty($e)) throw new Exception('env.APP_ERROR_KEY is empty');
+
+        // create success and errors session
+        if(session()->has('errors')) {
+            session()->flash($e, (session('errors')->getMessageBag()->getMessages() ?? []));
+        }
+        if(session()->has('success')) {
+            $sess = session()->get('success');
+            session()->remove('success');
+            $sess = array_merge($sess, session()->get($s));
+            session()->flash($s, $sess);
+        }
+    }
+
     /**
      * Returns `RedirectResponse` or `JsonResponse`
      * 
@@ -822,28 +915,42 @@ class HttpResponse {
      */
     public function getRedirect(string $route_url, bool $is_route_or_url, bool $isSuccess, bool $includeWith = true, bool $endProcessTime = true)
     {
+        
         $this->__evalInit();
+
         $this->setIsSuccess($isSuccess);
-        $sfk = (string)config('env.APP_SESSION_ALERTS_KEY');
+        $sfk = (string)config_env('APP_SESSION_ALERTS_KEY');
         if($endProcessTime)
             $this->setEndProcessTime();
         if($this->isAjax) {
             return $this->getJSON();
         } else {
-            // $is_valid_url = CLHF::VALIDATOR_URL($route_url);
             $is_valid_url = validate_url($route_url);
             if($is_route_or_url && !Route::has($route_url))
                 throw new exception('Route `'.$route_url.'` doesn\'t exists');
             if(!$is_route_or_url && !$is_valid_url)
                 throw new exception('Invalid URL: '.$route_url);
+                
+            $redir_to = $is_route_or_url ? route($route_url) : $route_url;
+            $redir = redirect()->to($redir_to);
 
+            // flash alerts
             if(!empty($sfk)) {
-                if(!empty($this->alertsToastr)) session()->flash($sfk.'.toastr', $this->alertsToastr);
-                if(!empty($this->alertsSwal)) session()->flash($sfk.'.swal', $this->alertsSwal);
+                // if(!empty($this->alertsToastr)) session()->flash($sfk.'.toastr', $this->alertsToastr);
+                // if(!empty($this->alertsSwal)) session()->flash($sfk.'.swal2', $this->alertsSwal);
+                session()->put($sfk.'.toastr', $this->alertsToastr);
+                session()->put($sfk.'.swal2', $this->alertsSwal);
             }
 
-            $redir = redirect()->to(route($route_url));
+            // flash inputs and errors
+            if(!empty($this->formErrors)) {
+                $redir->withInput()->withErrors($this->formErrors);
+                $this->setSessionFlash();
+            }     
+
+            // include with
             if($includeWith) $redir->with($this->getWith(true));
+
             return $redir;
         }
     }
@@ -981,10 +1088,10 @@ class HttpResponse {
      * @param boolean $isEncrypted
      * @return boolean
      */
-    public function hasLogic(bool $forced = false, string $purpose = '', bool $isEncrypted = false)
+    public function hasLogic(array $args = [], bool $forced = false, string $purpose = '', bool $isEncrypted = false)
     {
         if($forced || $this->logicTriggered < 1) {
-            $this->purposeLogic($purpose, $isEncrypted);
+            $this->purposeLogic($args, $purpose, $isEncrypted);
         }
         return is_bool($this->logicData[0]);  // && ($isTrue ? $this->logicData[0] : true);
     }
