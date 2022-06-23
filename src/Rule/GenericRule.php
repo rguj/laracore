@@ -188,7 +188,7 @@ class GenericRule {
                 'format_out'   => 'Y-m-d',
                 'format_db'    => dt_standard_format(),
                 'date_min'     => dt_parse_str('1900-01-01 00:00:00.000000', ['', ''], ['UTC', 'UTC']),
-                'date_max'     => dt_now_str(dt_standard_format()),
+                'date_max'     => dt_now_str('Y-m-d', 'UTC').' 23:59:59.999999',
                 'converter'    => function(string $str) {
                     return str_regex_eval(
                         $this->rulesArr['date']['regex'], 

@@ -33,6 +33,9 @@ class Request extends FormRequest
     public $validator;
     public array $translated = [];
     public array $firstErrors;
+    public bool $forcedError = false;
+    public array $customErrorMessages = [];
+
 
     public function __construct()
     {
@@ -143,6 +146,25 @@ class Request extends FormRequest
 	// -----------------------------------------
 	// CUSTOM FUNCTIONS	
 
+    final public function getCustomErrorMessages()
+    {
+        $e = [];
+        foreach($this->customErrorMessages as $k=>$v) {
+            $e[] = ['error', $v];
+        }
+        return $e;
+    }
+
+    final public function addCustomErrorMessage(string $err_msg)
+    {
+        $this->customErrorMessages[] = $err_msg;
+    }
+
+    final public function hasError()
+    {
+        return $this->forcedError || $this->validator->fails();
+    }
+
     final public function decryptElements()
     {
         $de = $this->getDecryptElements();
@@ -189,14 +211,21 @@ class Request extends FormRequest
      * only use this on method `passedValidation()`
      *
      * @param array $arr [ `attr`, `table`, `column`, `override_new_attr`, `mergeNeedle` ]
-     * @return void
+     * @return void|array
      */
-    final public function translate(array $arr, bool $update = true)
+    final public function translate(array $arr, bool $update = true, array $thisInputs = [])
     {
         $opt = [];
-        $inputs = $this->all();
+
+        if(!empty($thisInputs)) {
+            $update = false;
+            $inputs = $thisInputs;
+        } else {
+            $inputs = $this->all();
+        }
+
         // dump($inputs);
-        $rules = $this->rules();
+        // $rules = $this->rules();
         foreach($arr as $k=>$v) {
             list($attr, $table, $column) = $v;
 

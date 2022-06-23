@@ -44,6 +44,26 @@ if(file_exists(__DIR__.'/ThemeUtilHelper.php'))
 
 
 
+/**
+ * JSON echo & die
+ *
+ * @param mixed $var
+ * @param bool $withTrace
+ * @return void
+ */
+function jed($var, bool $withTrace = false)
+{
+    if($withTrace) {
+        $t = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1] ?? [];
+        echo json_encode(['var' => $var, 'trace' => $t]);
+    }
+    else echo json_encode($var);
+    die();
+}
+
+
+
+
 
 
 /** -----------------------------------------------
@@ -252,6 +272,19 @@ function arr_has($array, $keys)
     return Arr::has($array, $keys);
 }
 
+
+function arr_search_by_key($array, $key, $value) {
+    if(!is_array($array)) {
+        return [];
+    }
+    $results = [];
+    foreach($array as $element) {
+        if(isset($element[$key]) && $element[$key] == $value) {
+            $results[] = $element;
+        }
+    }
+    return $results;
+}
 
 
 
