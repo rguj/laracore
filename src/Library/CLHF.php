@@ -174,7 +174,7 @@ class CLHF {
             // config & UID
             $bool1 = (
                 AppFn::ARRAY_depth($config) >= 1
-                && array_key_exists('name', $config) && !AppFn::STR_IsBlankSpace($config['name'])
+                && array_key_exists('name', $config) && !str_empty($config['name'])
                 && array_key_exists('label', $config) && is_string($config['label'])
                 && array_key_exists('description', $config) && is_string($config['description'])
                 && array_key_exists('placeholder', $config) && is_string($config['placeholder'])
@@ -224,7 +224,7 @@ class CLHF {
         $form = $args[1]['form'];//$args[1];
                 
         $APP_VSK_NAME = AppFn::CONFIG_env('APP_VSK_NAME', '', 'string');
-        if(AppFn::STR_IsBlankSpace($APP_VSK_NAME))
+        if(str_empty($APP_VSK_NAME))
             throw new Exception('VSK value is empty');
 
         if(empty($configs))
@@ -326,7 +326,7 @@ class CLHF {
             $hinter_msg = $config2['bool']['is_required'] ? 'Required' : 'Optional';
             if(in_array($componentName, $components1))
                 $hinter_msg .= '<br>Max length is '.$config2['max'].'';
-            $hinter_msg .= !AppFn::STR_IsBlankSpace($config['hinter_lbl']) ? '<br>'.$config['hinter_lbl'] : '';
+            $hinter_msg .= !str_empty($config['hinter_lbl']) ? '<br>'.$config['hinter_lbl'] : '';
             $config2['hinter'] = [
                 'label' => $hinter_msg,
                 'input' => $hinter_msg,
@@ -351,14 +351,14 @@ class CLHF {
                 'required'       => $config2['bool']['is_required'] ? 'required' : '',
                 'autocomplete'   => 'autocomplete='.($config2['bool']['is_autocomplete'] ? 'on' : 'off').'',
                 'autofocus'      => $config2['bool']['is_autofocus'] ? 'autofocus' : '',
-                'hinter_input'   => !AppFn::STR_IsBlankSpace($config2['hinter']['input']) ? $attr_hinter_ipt : '',
+                'hinter_input'   => !str_empty($config2['hinter']['input']) ? $attr_hinter_ipt : '',
                 'others'         => '',
                 
             ];
             $config2['html'] = [
                 'label' => '',
                 //'required'       => $html_required,
-                //'hinter_label'   => !AppFn::STR_IsBlankSpace($config2['hinter']['label']) ? $html_hinter_lbl : '',
+                //'hinter_label'   => !str_empty($config2['hinter']['label']) ? $html_hinter_lbl : '',
             ];
 
             // LABEL CONTENT
@@ -1391,7 +1391,7 @@ class CLHF {
             throw new Exception('$return_col must only be 0, 1, or 2');
         if(!in_array(gettype($role), ['integer', 'string', 'array']))
             throw new Exception('$role must be int or string or array.');
-        if(is_string($role) && AppFn::STR_IsBlankSpace($role))
+        if(is_string($role) && str_empty($role))
             throw new Exception('`$role` must not be an empty string');
         if(is_array($role)) {
             $bool1 = (AppFn::ARRAY_depth($role) === 1 && AppFn::ARRAY_GetType($role) === 'sequential');
@@ -1401,7 +1401,7 @@ class CLHF {
             foreach($role as $key=>$val) {
                 if(!in_array(gettype($val), ['integer', 'string']))
                     throw new Exception('Index # '.$key.' must be int or string.');
-                if(is_string($val) && AppFn::STR_IsBlankSpace($val))
+                if(is_string($val) && str_empty($val))
                     throw new Exception('Index # '.$key.' must not be an empty string');
                 $arr = $generate_where($val);
                 $k = array_key_exists('id', $arr) ? 'id' : 'role';
@@ -1512,7 +1512,7 @@ class CLHF {
         try {  // fault finding
             
             // check empty string
-            if(AppFn::STR_IsBlankSpace($connection_name) === true)
+            if(str_empty($connection_name) === true)
                 throw new exception('Empty connection name.');
             
             // try PDO
@@ -1526,7 +1526,7 @@ class CLHF {
             //$db_name = DB::connection($connection_name)->getDatabaseName();//dd($db_name);
 
             // check table
-            if(!AppFn::STR_IsBlankSpace($table)) {
+            if(!str_empty($table)) {
                 if(!Schema::connection($connection_name)->hasTable($table))
                     throw new exception('Invalid table `'.$table.'`');
             }
@@ -1678,7 +1678,7 @@ class CLHF {
         $val_is_blank = true;
         $c_strings = 0;
         foreach($needle as $key=>$val) {
-            if(!is_string($key) || (is_string($key) && AppFn::STR_IsBlankSpace($key)))
+            if(!is_string($key) || (is_string($key) && str_empty($key)))
                 throw new exception('Array key must be a filled string');
             if(!in_array(gettype($val), $allowed_types)) {
                 throw new exception('Invalid value type');
@@ -1688,7 +1688,7 @@ class CLHF {
             if(is_string($val)) {
                 $c_strings++;
                 // strict mode for empty/blank space string
-                if(!AppFn::STR_IsBlankSpace($val))
+                if(!str_empty($val))
                     $val_is_blank = false;
                 $needle2[$key] = $val;
             } else {
@@ -1987,7 +1987,7 @@ class CLHF {
 	
 
     public static function DB_select(string $conn, string $sql, array $binding=[], bool $to_array=false) {
-        //$conn = AppFn::STR_IsBlankSpace($conn) ? AppFn::CONFIG_env('APP_CONNECTION', '', 'string') : $conn;
+        //$conn = str_empty($conn) ? AppFn::CONFIG_env('APP_CONNECTION', '', 'string') : $conn;
         $select = DB::connection($conn)->select($sql, $binding);
         $output = $to_array ? AppFn::OBJECT_toArray($select) : $select;
         return $output;
@@ -2217,7 +2217,7 @@ class CLHF {
         foreach($cols as $key=>$val) {  // check array value
             if(!is_string($val))
                 throw new exception('Array index '.$key.' must be string');
-            if(AppFn::STR_IsBlankSpace($val))
+            if(str_empty($val))
                 throw new exception('Array index '.$key.' is empty');
             if(!in_array($val, $table_cols))
                 throw new exception('Column `'.$ct[2].'`.`'.$val.'` not found');
@@ -2448,7 +2448,7 @@ class CLHF {
         
         # Declare empty VSK to prevent hijacking from client-side
         $APP_VSK_NAME = AppFn::CONFIG_env('APP_VSK_NAME', '', 'string');
-        if(!is_string($APP_VSK_NAME) || AppFn::STR_IsBlankSpace($APP_VSK_NAME))
+        if(!is_string($APP_VSK_NAME) || str_empty($APP_VSK_NAME))
             throw new Exception('VSK name not found');
         $inputs_override[$APP_VSK_NAME] = [];
 
@@ -2810,7 +2810,7 @@ class CLHF {
         $chmod = !is_null($chmod_dir) ? $chmod_dir : $chmod_def;
         
         $disks = config('filesystems.disks');
-        if(AppFn::STR_IsBlankSpace($disk_name) === true) {
+        if(str_empty($disk_name) === true) {
             return $disks ?? [];
         } else {
             // check disk
@@ -2820,7 +2820,7 @@ class CLHF {
             $file_dir = AppFn::STR_Sanitize($disks[$disk_name]['root']);
 
             // check disk directory value
-            if(AppFn::STR_IsBlankSpace($file_dir) === true)
+            if(str_empty($file_dir) === true)
                 throw new exception('Disk directory value is empty');   
                 
             // check if disk directory exists
@@ -2892,14 +2892,14 @@ class CLHF {
             // check $file_name_ext
             $bool = (
                 count($file_name_ext) === 2
-                && is_string($file_name_ext[0]) && !AppFn::STR_IsBlankSpace($file_name_ext[0])
-                && is_string($file_name_ext[1]) && !AppFn::STR_IsBlankSpace($file_name_ext[1])
+                && is_string($file_name_ext[0]) && !str_empty($file_name_ext[0])
+                && is_string($file_name_ext[1]) && !str_empty($file_name_ext[1])
             );
             if($bool !== true)
                 throw new Exception('Invalid structure (file_name_ext)');
             $file_basename = $file_name_ext[0];
             $file_ext = $file_name_ext[1];
-            $file_name = $file_basename.(AppFn::STR_IsBlankSpace($file_ext) !== true ? '.'.$file_ext : '');
+            $file_name = $file_basename.(str_empty($file_ext) !== true ? '.'.$file_ext : '');
 
             // check if file was received
             if($request->hasFile($file_input) !== true)
@@ -2913,7 +2913,7 @@ class CLHF {
             $file_url = CLHF::STORAGE_FileURL($file_path, 'dispose');
 
             // check file 
-            if(AppFn::STR_IsBlankSpace($file_basename) === true)
+            if(str_empty($file_basename) === true)
                 throw new exception('File name value is empty');
 
             // check file extension from client
@@ -2934,7 +2934,7 @@ class CLHF {
             // execute closure
             if(AppFn::is_closure($callback_before)) {                
                 $err_msg = $callback_before->__invoke($request->file($file_input)->getPathname()) ?? '';  // temporary file path
-                if(AppFn::STR_IsBlankSpace($err_msg) !== true)
+                if(str_empty($err_msg) !== true)
                     throw new exception($err_msg);
             }
 
@@ -2985,7 +2985,7 @@ class CLHF {
 
         $file = [
             'exists' => false,
-            'path' => $path,
+            'path' => trim($path),
             'dir' => '',
             'name' => '',
             'basename' => '',
@@ -2996,38 +2996,50 @@ class CLHF {
             'md5' => '',
         ];
 
+        // $p = storage_path('app/'.$file['path']);
+        $p = trim($file['path'], '/');
+        $p = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+        $file['path'] = $p;
+
         // CHECK IF PATH EXISTS
-        $file['exists'] = (Str::of($file['path'])->trim()->__toString()!=='' && File::exists($file['path']) && is_file($file['path']));
+        $file['exists'] = (!empty($p) && File::exists($p) && is_file($p));
+        if(!$file['exists'])
+            goto point1;
         //if($file['exists'] !== true)
-        //    throw new exception('File doesn\'t exists');               
+        //    throw new exception('File doesn\'t exists');
 
         // CHECK MIME TYPE
         $file['mime_type'] = false;
-        try { $file['mime_type'] = File::mimeType($file['path']); } catch(\Exception $ex) {}
+        try { $file['mime_type'] = File::mimeType($p); } catch(\Exception $ex) {}
         $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
-        //if(is_string($file['mime_type']) !== true || AppFn::STR_IsBlankSpace($file['mime_type']) === true)
+        //if(is_string($file['mime_type']) !== true || str_empty($file['mime_type']) === true)
         //    throw new exception('Invalid mime type');
 
         // FILE INFO PARTS
-        //$file['dir'] = File::dirname($file['path']);
-        $file['name'] = basename($file['path']);
-        $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $file['path']))->rtrim('/')->__toString();  
+        //$file['dir'] = File::dirname($p);
+        $file['name'] = basename($p);
+        $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();  
         $file['ext'] = Str::afterLast($file['name'], '.');
         $file['ext'] = ($file['name'] === $file['ext']) ? '' : $file['ext'];
         $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);  
-        $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $file['path']);
+        $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
         $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
-        $file['md5'] = $file['exists'] ? md5_file($file['path']) : '';
+        $file['md5'] = $file['exists'] ? md5_file($p) : '';
+
+        // if($path === 'stud_vacc/37f65c068b7723cd7809ee2d31d7861c.jpg') {
+        //     dd($file);
+        // }
         
         // NEW PATH
-        $ext_ = AppFn::STR_IsBlankSpace($file['ext']) !== true ? '.'.$file['ext'] : '';
+        $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
         if($basename_new === true)
             $file['path_new'] = $file['name'];
-        else if(is_string($basename_new) && AppFn::STR_IsBlankSpace($basename_new) !== true)
+        else if(is_string($basename_new) && str_empty($basename_new) !== true)
             $file['path_new'] = $basename_new.$ext_;
         else
             $file['path_new'] = AppFn::STR_GenerateRandomAlphaNum(15).$ext_;
 
+        point1:
         return $file;
     }
 
@@ -3063,7 +3075,7 @@ class CLHF {
         $file = CLHF::STORAGE_FileInfo($path, null);
         if($file['exists'] !== true)
             throw new Exception('File doesn\'t exists');
-        if(AppFn::STR_IsBlankSpace($file['mime_type']) === true)
+        if(str_empty($file['mime_type']) === true)
             throw new Exception('Invalid mime type');
                 
         // ROLE VALIDATION
@@ -3212,7 +3224,7 @@ class CLHF {
             'value' => $search_['value'] ?? '',
             'regex' => $search_['regex'] ?? '',
         ];
-        $hasSearchValue = !AppFn::STR_IsBlankSpace((string)$search['value']);
+        $hasSearchValue = !str_empty((string)$search['value']);
 
         return compact(
             'draw',

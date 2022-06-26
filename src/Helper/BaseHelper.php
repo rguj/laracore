@@ -16,6 +16,7 @@ use Carbon\CarbonImmutable;
 use Spatie\Url\Url as SpatieUrl;
 use Rguj\Laracore\Request\Request;
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
+use Rguj\Laracore\Library\StorageAccess;
 
 
 
@@ -1327,7 +1328,6 @@ function db_upsert($conn_tbl, array $attr, array $values)
     $conn = db_obj($conn_tbl);
     $merged = array_merge($values, $attr);
     $count1 = $conn->where($attr)->count();
-    
 
     $bool1 = $conn->updateOrInsert($attr, $values);
 
@@ -2441,6 +2441,155 @@ function str_keyboard_symbols(bool $escape = false) {
 
 
 
+
+
+function storage_file_info(string $path, $basename_new = null)
+{
+    /*
+        $basename_new:
+            === true ? same as $basename
+            !empty() ? $basename_new
+            else ? random 15 alphanum
+    */
+
+    $file = [
+        'exists' => false,
+        'path' => trim($path),
+        'dir' => '',
+        'name' => '',
+        'basename' => '',
+        'ext' => '',
+        'mime_type' => null,
+        'path_app' => '',  // relative path inside storage/app
+        'dir_app' => '',
+        'md5' => '',
+    ];
+
+    // $p = storage_path('app/'.$file['path']);
+    $p = str_sanitize($file['path']);
+    $p = trim($p, '/');
+    $p = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+    $file['path'] = $p;
+
+    // CHECK IF PATH EXISTS
+    $file['exists'] = (!empty($p) && File::exists($p) && is_file($p));
+    if(!$file['exists'])
+        goto point1;
+    //if($file['exists'] !== true)
+    //    throw new exception('File doesn\'t exists');
+
+    // CHECK MIME TYPE
+    $file['mime_type'] = false;
+    try { $file['mime_type'] = File::mimeType($p); } catch(\Exception $ex) {}
+    $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
+    //if(is_string($file['mime_type']) !== true || str_empty($file['mime_type']) === true)
+    //    throw new exception('Invalid mime type');
+
+    // FILE INFO PARTS
+    //$file['dir'] = File::dirname($p);
+    $file['name'] = basename($p);
+    $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();  
+    $file['ext'] = Str::afterLast($file['name'], '.');
+    $file['ext'] = ($file['name'] === $file['ext']) ? '' : $file['ext'];
+    $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);  
+    $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
+    $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
+    $file['md5'] = $file['exists'] ? md5_file($p) : '';
+
+    // if($path === 'stud_vacc/37f65c068b7723cd7809ee2d31d7861c.jpg') {
+    //     dd($file);
+    // }
+    
+    // NEW PATH
+    $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
+    if($basename_new === true)
+        $file['path_new'] = $file['name'];
+    else if(is_string($basename_new) && str_empty($basename_new) !== true)
+        $file['path_new'] = $basename_new.$ext_;
+    else
+        $file['path_new'] = str_random_alphanum(15).$ext_;
+
+    point1:
+    return $file;
+}
+
+function storage_file_stream(Request $request) {
+    /*
+        URL PARAMS:
+            p => path (encrypted)
+            m => mode (int)
+                1 => dispose
+                2 => download
+    */
+
+    // SETTINGS
+    $modes = ['dispose', 'download'];
+    $base_dir = storage_path('app/');
+    // $url_data = AppFn::URL_parse($request->fullUrl());
+    $m = ((int)($request->get('m') ?? 0)) - 1;
+    $p = (string)($request->get('p') ?? '');
+
+    // CHECK STREAM MODE
+    $mode = $modes[$m] ?? '';  // m -> stream mode
+    if(in_array($mode, $modes, true) !== true)
+        throw new Exception('Invalid stream mode');
+
+    // CHECK FILE PATH INFO
+    $crypt = crypt_sc($p, 1, true);
+    if($crypt[0] !== true)
+        throw new exception($crypt[1]);
+    $path = $base_dir.$crypt[2];
+    $path = Str::replaceFirst(storage_path('app/'), '', $path);
+
+    // CHECK FILE PATH AND MIME TYPE
+    $file = storage_file_info($path, null);
+    if($file['exists'] !== true)
+        throw new Exception('File doesn\'t exists');
+    if(str_empty($file['mime_type']) === true)
+        throw new Exception('Invalid mime type');
+            
+    // ROLE VALIDATION
+    $hasAccess = StorageAccess::check($request, $file);
+    if($hasAccess !== true)
+        abort(403, 'Access denied');
+
+    // FILE STREAM
+    $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
+    $dispositions = ['inline', 'attachment'];
+    $disposition = $dispositions[$m];
+    $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
+
+    return $filestream;
+}
+
+
+function storage_file_url(string $path, string $mode) {
+    // explode segments
+
+    // SETTINGS
+    $url_len_max = 2000;
+    $modes = ['dispose', 'download'];
+
+    // check mode
+    if(!in_array($mode, $modes))
+        throw new exception('Invalid mode');
+    $m = array_search($mode, $modes) + 1;
+
+    // check if path exists
+    $file = storage_file_info($path, true);
+
+    if($file['exists'] !== true) {
+        return '';
+        // throw new exception('File doesn\'t exists');
+    }
+
+    $url = route('file.index', ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+    $url_len = strlen($url);
+    if($url_len > $url_len_max)
+        throw new exception('File link has exceeded '.$url_len_max.' '.Str::plural('character', $url_len_max));
+    
+    return $url;
+}
 
 
 

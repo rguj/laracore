@@ -482,7 +482,7 @@ class ClientInstanceMiddleware
         $show_roles = [
             // use the short value from the database and it must coincide with the name of the config file
             // set the ordering here
-            'jappl',
+            // 'jappl',
             'admin',
             'student',
             // 'eofficer',
@@ -511,8 +511,12 @@ class ClientInstanceMiddleware
                 }
                 $m = config_unv('menu.'.$v1);
                 if(!empty($m)) {
+                    // array_unshift($m, $category($lbl[1]));
+                    // array_push($main, $m);
                     array_unshift($m, $category($lbl[1]));
-                    array_push($main, $m);
+                    foreach($m as $k2=>$v2) {
+                        array_push($main, $v2);
+                    }
                 }
             }
             if(!empty(config('unv.menu.user'))) {
@@ -523,7 +527,7 @@ class ClientInstanceMiddleware
                 array_push($main, $category('Guest'), config_unv('menu.guest'));
             }
         }
-
+        // dd($main);
         // remove empty elements
         $main2 = [];
         foreach($main as $k1=>$v2) {

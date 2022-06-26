@@ -69,6 +69,8 @@ class StorageAccess {
             'stud_pocl'  => ($is_self_file || $can_stud_photo),
             'stud_grad'  => ($is_self_file || $can_stud_photo),
             'stud_paym'  => ($is_self_file || $can_stud_photo),
+            'stud_vacc'  => ($is_self_file || $can_stud_photo),
+            default => false,
         };
     }
    

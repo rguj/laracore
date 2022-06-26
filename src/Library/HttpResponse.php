@@ -113,6 +113,7 @@ class HttpResponse {
 
         // validate $class_name
         $parent_class = 'App\Http\Controllers\Controller';
+        // dd(get_parent_class($class));
         if(get_parent_class($class) !== $parent_class) {
             throw new exception('Parent class must be '.$parent_class);
         }
@@ -873,8 +874,7 @@ class HttpResponse {
             $val = $this->validateView($view, $with, []);
             if(!$val[0]) throw new exception($val[1]);
 
-            // View::share('with', $with);
-            View::share($with);            
+            View::share($with);
             AppServiceProvider::initializeMetronic();
 
             return $val[2];
@@ -911,9 +911,10 @@ class HttpResponse {
      * @param boolean $isSuccess
      * @param boolean $includeWith
      * @param boolean $endProcessTime
+     * @param array $inputs
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
-    public function getRedirect(string $route_url, bool $is_route_or_url, bool $isSuccess, bool $includeWith = true, bool $endProcessTime = true)
+    public function getRedirect(string $route_url, bool $is_route_or_url, bool $isSuccess, bool $includeWith = true, bool $endProcessTime = true, array $inputs = [])
     {
         
         $this->__evalInit();
@@ -944,7 +945,7 @@ class HttpResponse {
 
             // flash inputs and errors
             if(!empty($this->formErrors)) {
-                $redir->withInput()->withErrors($this->formErrors);
+                $redir->withInput($inputs)->withErrors($this->formErrors);
                 $this->setSessionFlash();
             }     
 

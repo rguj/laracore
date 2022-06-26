@@ -32,7 +32,7 @@ class Request extends FormRequest
 
     public $validator;
     public array $translated = [];
-    public array $firstErrors;
+    public array $firstErrors = [];
     public bool $forcedError = false;
     public array $customErrorMessages = [];
 
@@ -84,6 +84,7 @@ class Request extends FormRequest
 	final public function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
     {
         $this->validator = $validator;
+
         $f = [];
         foreach($validator->errors()->getMessageBag()->getMessages() as $k=>$v) {
             if(!empty($v)) {
@@ -115,25 +116,157 @@ class Request extends FormRequest
      */
     public function messages()
     {
+        // dd($this);
+
         return [
-            'required'           => 'This is required',
-            'present'            => 'This must be present',        
-            'required_if'        => 'This is required',
-            'required_without'   => 'This is required',
+            // 'required'           => 'This is required',
+            // 'present'            => 'This must be present',        
+            // 'required_if'        => 'This is required',
+            // 'required_without'   => 'This is required',
 
-            'email'              => 'Invalid format',
-            'array'              => 'Must be array',
-            'integer'            => 'Must be integer',
-            'string'             => 'Must be string',   
+            // 'email'              => 'Invalid format',
+            // 'array'              => 'Must be array',
+            // 'integer'            => 'Must be integer',
+            // 'string'             => 'Must be string',   
 
-            'distinct'           => 'Must be distinct',    
-            'min'                => 'Minimum of :min :character',
-            'max'                => 'Exceeded :max :character',
-            'regex'              => 'Invalid format',
-            'exists'             => 'Invalid input',
-            'date_format'        => 'Invalid date format',
-            'in'                 => 'Invalid value',
-            'not_in'             => 'Invalid value',
+            // 'distinct'           => 'Must be distinct',    
+            // 'min'                => 'Minimum of :min :character',
+            // 'max'                => 'Exceeded :max :character',
+            // 'regex'              => 'Invalid format',
+            // 'exists'             => 'Invalid input',
+            // 'date_format'        => 'Invalid date format',
+            // 'in'                 => 'Invalid value',
+            // 'not_in'             => 'Invalid value',
+
+
+            // 'mimes'              => 'File type must be: :values',
+            // 'file'               => 'Must be a file',
+            // 'file.min'           => 'Minimum of :min KB',
+            // 'file.max'           => 'Maximum of :max KB',
+            // 'file.min_width'     => 'Minimum width is :min_width px',
+            // 'file.max_width'     => 'Maximum width is :max_width px',
+            // 'file.dimensions'     => 'Minimum dimension must be :dimensions',
+
+
+            // all
+            'accepted'         => 'The :attribute must be accepted.',
+            'active_url'       => 'The :attribute is not a valid URL.',
+            'after'            => 'The :attribute must be a date after :date.',
+            'after_or_equal'   => 'The :attribute must be a date after or equal to :date.',
+            'alpha'            => 'The :attribute may only contain letters.',
+            'alpha_dash'       => 'The :attribute may only contain letters, numbers, and dashes.',
+            'alpha_num'        => 'The :attribute may only contain letters and numbers.',
+            'latin'            => 'The :attribute may only contain ISO basic Latin alphabet letters.',
+            'latin_dash_space' => 'The :attribute may only contain ISO basic Latin alphabet letters, numbers, dashes, hyphens and spaces.',
+            'array'            => 'Must be array.',
+            'before'           => 'The :attribute must be a date before :date.',
+            'before_or_equal'  => 'The :attribute must be a date before or equal to :date.',
+            'between'          => [
+                'numeric' => 'The :attribute must be between :min and :max.',
+                'file'    => 'The :attribute must be between :min and :max kilobytes.',
+                'string'  => 'The :attribute must be between :min and :max characters.',
+                'array'   => 'The :attribute must have between :min and :max items.',
+            ],
+            'boolean'          => 'The :attribute field must be true or false.',
+            'confirmed'        => 'The :attribute confirmation does not match.',
+            'current_password' => 'The password is incorrect.',
+            'date'             => 'The :attribute is not a valid date.',
+            'date_equals'      => 'The :attribute must be a date equal to :date.',
+            'date_format'      => 'Invalid date format. Must be (:format).',
+            'different'        => 'The :attribute and :other must be different.',
+            'digits'           => 'The :attribute must be :digits digits.',
+            'digits_between'   => 'The :attribute must be between :min and :max digits.',
+            'dimensions'       => 'Invalid image dimensions.',
+            'distinct'         => 'Must be distinct.',
+            'email'            => 'Invalid format.',
+            'ends_with'        => 'The :attribute must end with one of the following: :values.',
+            'exists'           => 'Invalid input',
+            'file'             => 'Must be a file.',
+            'filled'           => 'The :attribute field must have a value.',
+            'gt'               => [
+                'numeric' => 'The :attribute must be greater than :value.',
+                'file'    => 'The :attribute must be greater than :value kilobytes.',
+                'string'  => 'The :attribute must be greater than :value characters.',
+                'array'   => 'The :attribute must have more than :value items.',
+            ],
+            'gte' => [
+                'numeric' => 'The :attribute must be greater than or equal :value.',
+                'file'    => 'The :attribute must be greater than or equal :value kilobytes.',
+                'string'  => 'The :attribute must be greater than or equal :value characters.',
+                'array'   => 'The :attribute must have :value items or more.',
+            ],
+            'image'    => 'The :attribute must be an image.',
+            'in'       => 'Invalid value.',
+            'in_array' => 'Invalid value.', //'The :attribute field does not exist in :other.',
+            'integer'  => 'Must be integer.',
+            'ip'       => 'The :attribute must be a valid IP address.',
+            'ipv4'     => 'The :attribute must be a valid IPv4 address.',
+            'ipv6'     => 'The :attribute must be a valid IPv6 address.',
+            'json'     => 'The :attribute must be a valid JSON string.',
+            'lt'       => [
+                'numeric' => 'The :attribute must be less than :value.',
+                'file'    => 'The :attribute must be less than :value kilobytes.',
+                'string'  => 'The :attribute must be less than :value characters.',
+                'array'   => 'The :attribute must have less than :value items.',
+            ],
+            'lte' => [
+                'numeric' => 'The :attribute must be less than or equal :value.',
+                'file'    => 'The :attribute must be less than or equal :value kilobytes.',
+                'string'  => 'The :attribute must be less than or equal :value characters.',
+                'array'   => 'The :attribute must not have more than :value items.',
+            ],
+            'max' => [
+                'numeric' => 'The :attribute may not be greater than :max.',
+                'file'    => 'Maximum of :max KB.',
+                'string'  => 'Exceeded :max :character.',
+                'array'   => 'The :attribute may not have more than :max items.',
+            ],
+            'mimes'     => 'File type must be: :values.',
+            'mimetypes' => 'The :attribute must be a file of type: :values.',
+            'min'       => [
+                'numeric' => 'The :attribute must be at least :min.',
+                'file'    => 'Minimum of :min KB.',
+                'string'  => 'Minimum of :min :character.',
+                'array'   => 'The :attribute must have at least :min items.',
+            ],
+            'not_in'               => 'Invalid value.',
+            'not_regex'            => 'Invalid format.',
+            'numeric'              => 'The :attribute must be a number.',
+            'password'             => 'The password is incorrect.',
+            'present'              => 'This must be present.',
+            'regex'                => 'Invalid format.',
+            'required'             => 'This is required.',
+            'required_if'          => 'This is required.',
+            'required_unless'      => 'This is required.',
+            'required_with'        => 'This is required.',
+            'required_with_all'    => 'This is required.',
+            'required_without'     => 'This is required.',
+            'required_without_all' => 'This is required.',
+            'same'                 => 'The :attribute and :other must match.',
+            'size'                 => [
+                'numeric' => 'The :attribute must be :size.',
+                'file'    => 'The :attribute must be :size kilobytes.',
+                'string'  => 'The :attribute must be :size characters.',
+                'array'   => 'The :attribute must contain :size items.',
+            ],
+            'starts_with' => 'The :attribute must start with one of the following: :values.',
+            'string'      => 'Must be string.',
+            'timezone'    => 'The :attribute must be a valid zone.',
+            'unique'      => 'The :attribute has already been taken.',
+            'uploaded'    => 'The :attribute failed to upload.',
+            'url'         => 'The :attribute format is invalid.',
+            'uuid'        => 'The :attribute must be a valid UUID.',
+            'custom'      => [
+                'attribute-name' => [
+                    'rule-name' => 'custom-message',
+                ],
+            ],
+            'reserved_word'                  => 'The :attribute contains reserved word',
+            'dont_allow_first_letter_number' => 'The \":input\" field can\'t have first letter as a number',
+            'exceeds_maximum_number'         => 'The :attribute exceeds maximum model length',
+            'db_column'                      => 'The :attribute may only contain ISO basic Latin alphabet letters, numbers, dash and cannot start with number.',
+            'attributes'                     => [],
+
         ];
     }
 
@@ -157,12 +290,13 @@ class Request extends FormRequest
 
     final public function addCustomErrorMessage(string $err_msg)
     {
+        $this->forcedError = true;
         $this->customErrorMessages[] = $err_msg;
     }
 
     final public function hasError()
     {
-        return $this->forcedError || $this->validator->fails();
+        return !empty($this->customErrorMessages) || $this->forcedError || $this->validator->fails();
     }
 
     final public function decryptElements()
