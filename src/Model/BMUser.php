@@ -134,10 +134,15 @@ class BMUser extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(\App\Models\UserTheme::class, 'user_id', 'id');
     }
 
-    public function types() 
+    // public function types() 
+    // {
+    //     return $this->hasMany(\App\Models\UserType::class, 'user_id', 'id');
+    // }
+    public function types()
     {
-        return $this->hasMany(\App\Models\UserType::class, 'user_id', 'id');
+        return $this->hasMany(\App\Models\RoleUser::class, 'user_id', 'id');
     }
+
 
     public function settings() 
     {

@@ -339,8 +339,8 @@ class HttpResponse {
     /**
      * Gets the value from the array key
      *
+     * @param array $args default `[]`
      * @param string $key default `_purpose`
-     * @param array $arr `[purpose_key => closure|value]`
      * @param boolean $isEncrypted default `false`
      * @return void
      * @throws Exception
@@ -1084,6 +1084,7 @@ class HttpResponse {
     /**
      * Check if request has logic purpose
      *
+     * @param array $args default `[]`
      * @param boolean $forced fires the logic even if the logic is already triggered
      * @param string $purpose default `_purpose`
      * @param boolean $isEncrypted

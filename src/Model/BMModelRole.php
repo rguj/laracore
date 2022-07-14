@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Rguj\Laracore\Model\BaseModel;
 
-class BMRoleUser extends BaseModel
+class BMModelRole extends BaseModel
 {
     use HasFactory;
 
@@ -22,8 +22,9 @@ class BMRoleUser extends BaseModel
     // const UPDATED_AT = 'updated_at';
     
     protected $fillable = [
-        'user_id',
+        'model_id',
         'role_id',
+        'model_type',
     ];
 
     protected $hidden = [
@@ -35,18 +36,18 @@ class BMRoleUser extends BaseModel
     ];
 
     protected $casts = [
-        'created_at' => 'datetime:Y-m-d H:i:s.u',
-        'updated_at' => 'datetime:Y-m-d H:i:s.u',
+        // 'created_at' => 'datetime:Y-m-d H:i:s.u',
+        // 'updated_at' => 'datetime:Y-m-d H:i:s.u',
     ];
 
 
 
-    public function users() {
-        return $this->hasMany(\App\Models\User::class, 'user_id', 'id');
-    }
+    // public function users() {
+    //     return $this->hasMany(\App\Models\User::class, 'user_id', 'id');
+    // }
 
-    public function roles() {
-        return $this->hasMany(\App\Models\Role::class, 'role_id', 'id');
-    }
+    // public function roles() {
+    //     return $this->hasMany(\App\Models\Role::class, 'role_id', 'id');
+    // }
 
 }

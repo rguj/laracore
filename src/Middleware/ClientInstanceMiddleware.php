@@ -26,7 +26,9 @@ use Illuminate\Support\Str;
 // use App\Providers\AppServiceProvider;
 use Rguj\Laracore\Provider\BaseAppServiceProvider as AppServiceProvider;
 use App\Core\Adapters\Theme;
+use App\Models\ModelRole;
 use App\Models\Role;
+use App\Models\RoleUser;
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -52,15 +54,19 @@ class ClientInstanceMiddleware
         [5, 'cashier', 'Cashier'],
         [6, 'cstaff', 'Clinic Staff'],
         [7, 'jappl', 'Job Applicant'],
+        [8, 'misstaff', 'MIS Staff'],
+        [9, 'osdsstaff', 'OSDS Staff'],
     ];
 
-    public const ROLE_ADMIN    = 1;
-    public const ROLE_RSTAFF   = 2;
-    public const ROLE_EOFFICER = 3;
-    public const ROLE_STUDENT  = 4;
-    public const ROLE_CASHIER  = 5;
-    public const ROLE_CSTAFF   = 6;
-    public const ROLE_JAPPL    = 7;
+    public const ROLE_ADMIN       = 1;
+    public const ROLE_RSTAFF      = 2;
+    public const ROLE_EOFFICER    = 3;
+    public const ROLE_STUDENT     = 4;
+    public const ROLE_CASHIER     = 5;
+    public const ROLE_CSTAFF      = 6;
+    public const ROLE_JAPPL       = 7;
+    public const ROLE_MISSTAFF    = 8;
+    public const ROLE_OSDSSTAFF   = 9;
 
     public const GLOBAL_THROTTLE = [5, 1];  // [ attempts, decay_mins ]
     
@@ -93,7 +99,7 @@ class ClientInstanceMiddleware
 
         //$this->home = $this->url_home;
         // $this->default_timezone = config('env.APP_TIMEZONE');
-        $this->force_register = config('env.APP_NO_USER_FORCE_REGISTER');
+        $this->force_register = (bool)config('env.APP_NO_USER_FORCE_REGISTER');
         $this->is_auth = cuser_is_auth();
         $this->is_admin = false;
 
@@ -132,10 +138,25 @@ class ClientInstanceMiddleware
         
         // set user info
         $id = cuser_id();
+        point1:
         $this->user_info = SELF::user_info_($id);
         $this->is_admin = arr_colval_exists(SELF::ROLE_ADMIN, $this->user_info['types'] ?? [], 'role_id', true);
         Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', env('APP_TIMEZONE', 'UTC')));
-        Config::set('user', $this->user_info);//dd(config('user'));
+        Config::set('user', $this->user_info);
+
+        // fix admin roles
+        if($this->is_admin) {
+            if(count(SELF::ROLES) !== count($this->user_info['types'])) {
+                foreach(SELF::ROLES as $k=>$v) {
+                    $a = arr_search_by_key($this->user_info['types'], 'role_id', $v[0]);
+                    if(empty($a)) {
+                        RoleUser::updateOrCreate(['role_id' => $v[0], 'user_id' => $this->user_info['id']], []);
+                        ModelRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v[0], 'model_type' => 'App\Models\User'], []);
+                    }
+                }
+                goto point1;
+            }
+        }
         
         // set client info
         $this->client_info = SELF::client_info_($request);
@@ -160,11 +181,17 @@ class ClientInstanceMiddleware
         }
         
         // some validation
-        $validate = $this->validate($request);//dd($validate);
+        $validate = $this->validate($request);  // added new
         if(!$validate[0]) {
-            if(!is_string($validate[2]))
-                throw new Exception('Parameter 3 must be string');
-            
+
+            // if(!is_string($validate[2])) {
+            //     throw new Exception('Parameter 3 must be string');
+            // }
+
+            if($validate[1] === 2 && (!is_string($validate[2]) || empty($validate[2]))) {
+                $validate[2] = url()->previous();
+            }
+
             switch($validate[1]) {
                 case 1:
                     throw new Exception($validate[2]);
@@ -183,11 +210,9 @@ class ClientInstanceMiddleware
         $theme_mode = config('user.settings.theme_mode') ?? '';
         $theme_mode = in_array($theme_mode, ['light', 'dark']) ? $theme_mode : 'light';
         Config::set('demoa.general.layout.aside.theme', $theme_mode);
-        // dd(12321);
         // override global menu
         Config::set('global.menu', $this->user_menu($request, false));
 
-        // dd(12344421);
         // trigger theme bootstrap
         AppServiceProvider::initializeMetronic();
         
@@ -219,7 +244,6 @@ class ClientInstanceMiddleware
         // err_mode [1 => exception, 2 => redirect]
 
         $url = route_parse_url(request()->fullUrl());
-        // dd($url);
         // https://hris2.localhost.com?mode=dark
         
         if(in_array($url->url, $this->bypassAuthRoutes))
@@ -229,6 +253,12 @@ class ClientInstanceMiddleware
         }
         
         if($this->is_auth) {
+
+            // auto fix missing user child tables
+            // fix user_state
+
+
+
             // check account state
             if(!$this->user_info['is_active']) {
                 session_push_alert('error', 'Account is deactivated');
@@ -259,12 +289,11 @@ class ClientInstanceMiddleware
                 goto point1;
             }            
             else {
-                if($url->url === $this->url_login) {
+                if($url->url === $this->url_login || $url->url === route('password.request')) {
                     goto point1;
                 }
                 // dump($url->url);
                 // dump($this->url_login);
-                // dd(3421);
                 session_push_alert('error', 'Please login first.');
                 return [false, 2, $this->url_login];
             }
@@ -313,14 +342,13 @@ class ClientInstanceMiddleware
         $tblUser = db_model_table_name(\App\Models\User::class);
         $tblRole = db_model_table_name(\App\Models\Role::class);
         $tblUserType = db_model_table_name(\App\Models\UserType::class);
-        // dd(\App\Models\User::find($id)->roles);
 
         // get user data
         $user = [];
         if(!is_null($id)) {
             $u = db_model_table_name(\App\Models\User::class);  // user table;
             $user = \App\Models\User::with([
-                'settings' => function(HasMany $q) {
+                'settings' => function(HasMany $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
 
@@ -331,29 +359,31 @@ class ClientInstanceMiddleware
                 //     $q->select(['user_id', 'ac_user_theme.theme', 'ac_user_theme.mode']);
                 // },
 
-                'state' => function(HasOne $q) {
+                'state' => function(HasOne $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
 
                     $q->select(['user_id', 'is_active']);
                 },
-                'verifyemail' => function(HasOne $q) {
+                'verifyemail' => function(HasOne $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
-
-                    $q->select(['user_id', 'verified_at']);
+                    // $q->select(['user_id', 'verified_at']);
+                    $q->where($t.'.verified_at', '<>', '')
+                        ->where($t.'.verified_at', '<>', null)
+                        ->select(['user_id', 'verified_at']);
                 },
-                'types' => function(HasMany $q) {
+                'types' => function(HasMany $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
                     $r = db_model_table_name(\App\Models\Role::class);  // role table
-
                     $q->leftJoin($r,  $r.'.id', '=',  $t.'.role_id', );
                     $q->select(['user_id',  $r.'.id AS role_id',  $r.'.title',  $r.'.short']);
                     // $q->where([ $t.'.is_valid'=>1]);
                     $q->orderBy( $t.'.role_id', 'asc');
+                    // dd($q);
                 },
-                'info' => function(HasOne $q) {
+                'info' => function(HasOne $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
 
@@ -364,12 +394,8 @@ class ClientInstanceMiddleware
             ->get()->toArr(0)
             // ->toSql()
             ;
-            //dd($user);
             
             // dd($user);
-            // dd(User::find($id)->roles()->where()->orderBy('id', 'asc'));
-            // $rs = Arr::only(User::find($id)->roles, []);
-            // dd($rs);
             
             // harmonize user settings array
             $user_settings = [];
@@ -379,16 +405,25 @@ class ClientInstanceMiddleware
             $user['settings'] = $user_settings;
 
             $user['is_active'] = arr_get($user, 'state.is_active', 0) === 1;
-            $emailverify = dt_parse(arr_get($user, 'verifyemail.verified_at', ''));
+            // $emailverify = dt_parse(arr_get($user, 'verifyemail.verified_at', ''));
+            $emailverify = dt_parse(arr_get($user, 'verifyemail.verified_at', '') ?? '');
+
+            $user['verifyemail'] = !is_array($user['verifyemail']) ? [] : $user['verifyemail'];
             $user['verify'] = [
                 'email' => [
-                    'is_verified' => $emailverify->is_valid,
-                    'verified_at' => $emailverify->string->onto,
+                    'is_verified' => (bool)($emailverify->is_valid ?? false),
+                    'verified_at' => (string)($emailverify->string->onto ?? ''),
                 ],
             ];
 
             $user['info']['avatar_url'] = SELF::getAvatarUrl($user['info']['avatar'] ?? '', $user['settings']['theme_mode'] ?? 'light');
             $user['name'] = str_sanitize($user['first_name'].' '.$user['last_name']);
+        }
+
+        if($id === 14880) {
+            // dd($user);
+            // dump(arr_get($user, 'verifyemail.verified_at'));
+            // dd($emailverify);
         }
         return $user;
     }
@@ -482,19 +517,25 @@ class ClientInstanceMiddleware
         $show_roles = [
             // use the short value from the database and it must coincide with the name of the config file
             // set the ordering here
+
             // 'jappl',
-            'admin',
             'student',
-            // 'eofficer',
-            // 'rstaff',
+            'eofficer',
+            'osdsstaff',
+
+            'admin',
         ];
         array_unique($show_roles);
 
         // get the menu of each role
         $main = [];
-        array_push($main, config_unv('menu.all'));
+        array_push($main, ...config_unv('menu.all'));
+        $rs = array_column((array)config('user.types'), 'short');
         if(cuser_is_auth()) {
             foreach($show_roles as $k1=>$v1) {
+                if(!in_array($v1, $rs))
+                    continue;
+
                 $lbl = [false, ''];
                 foreach(config('user.types') as $k2=>$v2) {
                     if($v2['short'] === $v1) {
@@ -509,6 +550,7 @@ class ClientInstanceMiddleware
                     if(!file_exists(config_path('/core/menu/'.$v1.'.php')))
                         throw new exception('Role `'.$v1.'` not found. [File]');
                 }
+
                 $m = config_unv('menu.'.$v1);
                 if(!empty($m)) {
                     // array_unshift($m, $category($lbl[1]));
@@ -524,10 +566,12 @@ class ClientInstanceMiddleware
             }
         } else {            
             if(!empty(config('unv.menu.guest'))) {
-                array_push($main, $category('Guest'), config_unv('menu.guest'));
+                // dd(config_unv('menu.guest'));
+                array_push($main, $category('Guest'), ...config_unv('menu.guest'));
+                // dd($main);
             }
         }
-        // dd($main);
+        
         // remove empty elements
         $main2 = [];
         foreach($main as $k1=>$v2) {
@@ -655,7 +699,7 @@ class ClientInstanceMiddleware
             //     'path'  => 'documentation/getting-started/changelog',
             // ],
         );
-        // dd($data);
+        
         return $data;
     }
 

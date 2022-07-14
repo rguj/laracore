@@ -11,7 +11,7 @@ use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 function cuser_has_role2($val)
 {
     /** @var \Spatie\Permission\Models\Permission */
-    $user = cuser_data();
+    $user = auth()->user();
     return cuser_is_auth() ? $user->hasRole($val) : false;
     // return arr_colval_exists($needle, config('user.types') ?? [], $col_key, $strict);
 }
@@ -40,9 +40,13 @@ function cuser_id()
     return cuser_is_auth() ? auth()->id() : null;
 }
 
+// function cuser_data()
+// {
+//     return cuser_is_auth() ? auth()->user() : null;
+// }
 function cuser_data()
 {
-    return cuser_is_auth() ? auth()->user() : null;
+    return config('user');
 }
 
 function cuser_is_auth()
@@ -89,6 +93,20 @@ function cuser_is_jappl()
 {
     return cuser_has_role_id(ClientInstanceMiddleware::ROLE_JAPPL);
 }
+
+function cuser_is_osdsstaff()
+{
+    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_OSDSSTAFF);
+}
+
+function cuser_is_misstaff()
+{
+    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_MISSTAFF);
+}
+
+
+
+
 
 function cuser_has_rstaffp($needle, string $col_key, bool $strict=false)
 {

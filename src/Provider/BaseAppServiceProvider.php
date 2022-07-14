@@ -201,7 +201,7 @@ class BaseAppServiceProvider extends ServiceProvider
     {        
         // FORCE SCHEME
         if(env('FORCE_HTTPS', false)) {
-            //URL::forceScheme('https');
+            URL::forceScheme('https');
             $this->app['request']->server->set('HTTPS', true);
         }
 

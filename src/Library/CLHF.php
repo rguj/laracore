@@ -32,6 +32,8 @@ use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\HttpResponse;
 use Rguj\Laracore\Library\StorageAccess;
 use Rguj\Laracore\Library\WebClient;
+
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 // ----------------------------------------------------------
 
 class CLHF {
@@ -860,45 +862,65 @@ class CLHF {
         return $bool1;
     }
 
+
+
+
+    /**
+     * Gets the user statuses
+     * 
+     * @param int $user_id
+     * @return <int, bool> `[user_exists, is_active, is_verified, passed_all]`
+     */
     public static function AUTH_UserExists2($user_id) {
-        $output = [false, false, false, false];  // [user_exists, is_active, is_verified, passed_all]
-        if(!is_int($user_id))
-            goto point1;
-
-        // $user_data = CLHF::DB_LookUp('users', ['id'=>$user_id], true);
-        $user_data = DB::table('users')->where(['id'=>$user_id])->get()->toArr();
-        
-        $user_count = count($user_data);
-        $dt_now = DT::now('UTC');
-        if($user_count > 0) {
-            $output[0] = true;
-
-            // user state
-            // $user_state_data = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0] ?? [];
-            $user_state_data = DB::table('user_state')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
-
-            $user_state = (($user_state_data['is_active'] ?? 0) === 1);
-            if($user_state === true) {
-                $output[1] = true;
-            }
-
-            // user email verified (column `verified_at`)
-            //$user_ev_code = $user_ev_data['code'] ?? '';
-
-            // $user_ev_data = CLHF::DB_LookUp('user_verifyemail', ['user_id'=>$user_id], true)[0] ?? [];
-            $user_ev_data = DB::table('user_verifyemail')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
-
-            $user_ev = DT::createDateTimeUTC(($user_ev_data['verified_at'] ?? ''));
-            $valid_va_dt = DT::isCarbonObject($user_ev) ? ($user_ev <= $dt_now) : false;
-
-            if($valid_va_dt === true) {
-                $output[2] = true;
-            }
-            $output[3] = ($output[0]===true && $output[1]===true && $output[2]===true);
-        }
-        point1:
-        return $output;
+        // [user_exists, is_active, is_verified, passed_all]
+        $user = ClientInstanceMiddleware::user_info_((int)$user_id);
+        $email = (string)($user['email'] ?? '');
+        $user_exists = !empty($user) && !empty($email);
+        $is_active = ((int)($user['state']['is_active'] ?? 0)) === 1;
+        $is_verified = ((int)($user['verify']['email']['is_verified'] ?? 0)) === 1;
+        $passed_all = $user_exists && $is_active && $is_verified;
+        return [$user_exists, $is_active, $is_verified, $passed_all];
     }
+
+    // public static function AUTH_UserExists3($user_id) {
+    //     $output = [false, false, false, false];  // [user_exists, is_active, is_verified, passed_all]
+    //     if(!is_int($user_id))
+    //         goto point1;
+
+    //     // $user_data = CLHF::DB_LookUp('users', ['id'=>$user_id], true);
+    //     $user_data = DB::table('users')->where(['id'=>$user_id])->get()->toArr();
+        
+    //     $user_count = count($user_data);
+    //     $dt_now = DT::now('UTC');
+    //     if($user_count > 0) {
+    //         $output[0] = true;
+
+    //         // user state
+    //         // $user_state_data = CLHF::DB_LookUp('user_state', ['user_id'=>$user_id], true)[0] ?? [];
+    //         $user_state_data = DB::table('user_state')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
+
+    //         $user_state = (($user_state_data['is_active'] ?? 0) === 1);
+    //         if($user_state === true) {
+    //             $output[1] = true;
+    //         }
+
+    //         // user email verified (column `verified_at`)
+    //         //$user_ev_code = $user_ev_data['code'] ?? '';
+
+    //         // $user_ev_data = CLHF::DB_LookUp('user_verifyemail', ['user_id'=>$user_id], true)[0] ?? [];
+    //         $user_ev_data = DB::table('user_verifyemail')->where(['user_id'=>$user_id])->get()->toArr()[0] ?? [];
+
+    //         $user_ev = DT::createDateTimeUTC(($user_ev_data['verified_at'] ?? ''));
+    //         $valid_va_dt = DT::isCarbonObject($user_ev) ? ($user_ev <= $dt_now) : false;
+
+    //         if($valid_va_dt === true) {
+    //             $output[2] = true;
+    //         }
+    //         $output[3] = ($output[0]===true && $output[1]===true && $output[2]===true);
+    //     }
+    //     point1:
+    //     return $output;
+    // }
   
     /**
      * Get the user data

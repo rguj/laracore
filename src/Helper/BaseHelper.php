@@ -287,6 +287,14 @@ function arr_search_by_key($array, $key, $value) {
     return $results;
 }
 
+function arr_search_column(array $a, $column, $val) {
+    $c = array_search($val, array_column($a, $column), true);
+    if($c === false) {
+        return [];
+    }
+    return $a[$c];
+};
+
 
 
 
@@ -1287,7 +1295,7 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
         DB::commit();
     } catch(\Exception $ex) {
         DB::rollBack();
-        // dd($ex);
+        dd($ex);
     }
 
     // if($id <= 0)
@@ -1602,8 +1610,12 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
     $output[0] = true;
     $output[1] = [$format_fm, $format_to];
     $output[2] = [$tz_fm, $tz_to];
-    $output[3] = [$dt, $dt2];
+    $output[3] = [$dt_, $dt2];
     $output[4] = [$str_fm, $str_to];
+
+    // if(cuser_id() === 14880) {
+    //     dd([$dt_, $dt2]);
+    // }
     $dt = $output;
     point1:        
     return (object)[
@@ -2386,7 +2398,8 @@ function str_limit(string $str, $limit = 100, $end = '...')
     return Str::of($str)->limit($limit, $end);
 }
 
-function str_random_alphanum(int $min_length = 10, int $max_length = 0) {
+function str_random_alphanum(int $min_length = 10, int $max_length = 0)
+{
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $charactersLength = strlen($characters);
     $randomString = '';
@@ -2408,7 +2421,8 @@ function str_random_alphanum(int $min_length = 10, int $max_length = 0) {
  * @param \Closure $true_func Params (string $pattern, string $subject, mixed $output)
  * @return null|mixed
  */
-function str_regex_eval(string $pattern, string $subject, $true_func=null) {
+function str_regex_eval(string $pattern, string $subject, $true_func=null)
+{
     $output = null;
     if(str_preg_match($pattern, $subject)) {
         if(var_is_closure($true_func) !== true) {
@@ -2420,8 +2434,10 @@ function str_regex_eval(string $pattern, string $subject, $true_func=null) {
     return $output;
 }
 
-function str_keyboard_symbols(bool $escape = false) {
-    $output = $symbols = "!@#$%^&*()-_=+[{]};:'".'"'."\|,<.>/?`~";  // double quotes intentionally isolated
+function str_keyboard_symbols(bool $escape = false)
+{
+    $output = '';
+    $symbols = "!@#$%^&*()-_=+[{]};:'".'"'."\|,<.>/?`~";  // double quotes intentionally isolated
     if(!$escape) goto point1;    
     $pcs = str_split($symbols);
     foreach($pcs as $key=>$val) {
@@ -2430,6 +2446,17 @@ function str_keyboard_symbols(bool $escape = false) {
     point1:
     return $output;
 }
+
+function str_replace_last($search, $replace, $subject)
+{
+    return Str::replaceLast($search, $replace, $subject);
+}
+
+
+
+
+
+
 
 
 
@@ -2640,7 +2667,10 @@ function validate_ipv6(string $ipv6)
     return validate_simple(['ipv6' => $ipv6], ['ipv6' => 'required|ipv6']);
 }
 
-
+function validate_email(string $email)
+{
+    return validate_simple(['email' => $email], ['email' => 'required|regex:'.'/^([A-Za-z0-9_]+){1}([\.]?[A-Za-z0-9_]+)*([@]){1}(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/u']);
+}
 
 
 
