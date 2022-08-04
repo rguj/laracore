@@ -323,7 +323,7 @@ function blade_error(string $key)  // render attr errors
     if(!session()->has('errors')) return '';
     $errors = session('errors')->get($key) ?? [];
     if(empty($errors)) return '';
-    $str = '<div class="text-danger">';
+    $str = '<div class="text-danger lbl-error-msg">';
     foreach($errors as $error) {
         $str .= '<div class="mt-2">'.$error.'</div>';
     }
@@ -1987,37 +1987,11 @@ function request_rules(string $requestClass)
  */
 
 
+
 function route_parse_url(string $url, bool $adjustScheme = true)
 {
-	if(!Str::startsWith($url, ['http://', 'https://']))
-		throw new exception('$url must starts with `http` or `https`');
-
-	$d = SpatieUrl::fromString($url);
-	$u = explode(':', $d->getUserInfo());
-
-	$fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
-	$isUrlHttps = Str::startsWith($url, 'https');
-	$isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https');
-	$shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
-	$scheme = $shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps);
-	$fullUrl = $scheme.strstr($url, ':');
-
-	$r = [
-		'scheme' => $scheme, //$d->getScheme(),
-		'host' => $d->getHost(),
-		'port' => $d->getPort(),
-		'user' => $u[0] ?? '',
-		'password' => $u[1] ?? null,
-		'path' => $d->getPath(),
-		'query' => $d->getAllQueryParameters(),
-		'fragment' => $d->getFragment(),
-		'is_scheme_adjusted' => $shouldAdjust,
-		'obj' => $d,
-	];
-	$r['scheme'] = $scheme;
-	$r['url'] = $scheme.'://'.$r['host'].(!empty($r['port']) ? ':'.$r['port'] : '').$r['path'];
-	$r['fullUrl'] = $fullUrl;
-	return (object)$r;
+	// return url_parse($url, $adjustScheme);
+	return url_parse($url);
 }
 
 
@@ -2234,16 +2208,43 @@ function session_push(string $key, $val)
     session()->push($key, $val);
 }
 
-function session_push_alert(string $status, string $msg, string $title = '', string $alert_type = 'toastr')
+/**
+ * Pushes an alert to the session
+ * 
+ * `bs_class` => `[ primary, secondary, success, danger, warning, info, light, dark ]`
+ *
+ * @param string $status
+ * @param string $msg
+ * @param string $title
+ * @param string $alert_type
+ * @param boolean $safe_mode
+ * @return void
+ */
+function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', bool $safe_mode = false) : void
 {
-    //bs_class => [ primary, secondary, success, danger, warning, info, light, dark ]
     $alert_types = ['swal2', 'toastr'];
-    if(!in_array($alert_type, $alert_types))
-        throw new exception('Invalid alert type `'.$alert_type.'`');
+
+    try {  
+        if(!is_string($status)) throw new exception('$status must be string');
+        if(!is_string($msg)) throw new exception('$msg must be string');
+        if(!is_string($title)) throw new exception('$title must be string');
+        if(!is_string($alert_type)) throw new exception('$alert_type must be string');
+        // $alert_type = !empty($alert_type) ? $alert_type : $alert_type[1];
+        if(!in_array($alert_type, $alert_types, true)) throw new exception('Invalid alert type');
+    } catch(\Exception $ex) {
+        if(webclient_is_dev()) {
+            // dump($ex);
+            // dump(func_get_args());
+            // dump($alert_types);
+            // dd(in_array($alert_type, $alert_types, true));
+        }
+        if($safe_mode) goto point1;
+        else throw new exception($ex->getMessage());
+    }
+
     $val = ['status' => $status, 'msg' => $msg, 'type' => $alert_type, 'title' => $title];
-    // session_push(config('env.APP_SESSION_ALERTS_KEY').'.'.$alert_type, $val);
-    // dd(config_env('APP_SESSION_ALERTS_KEY'));
     session_push(config_env('APP_SESSION_ALERTS_KEY'), $val);
+    point1:
 }
 
 
@@ -2552,7 +2553,6 @@ function storage_file_stream(Request $request) {
     // SETTINGS
     $modes = ['dispose', 'download'];
     $base_dir = storage_path('app/');
-    // $url_data = AppFn::URL_parse($request->fullUrl());
     $m = ((int)($request->get('m') ?? 0)) - 1;
     $p = (string)($request->get('p') ?? '');
 
@@ -2626,6 +2626,183 @@ function storage_file_url(string $path, string $mode) {
 
 
 
+
+
+
+/** -----------------------------------------------
+ * URL
+ */
+
+function url_parse(string $url, string $defaultScheme = 'https')
+{
+    // if(!Str::startsWith($url, ['http://', 'https://']))
+    // 	throw new exception('$url must starts with `http` or `https`');
+
+    $url = trim($url);
+    $urlOld = $url;
+    $is_scheme_adjusted = false;
+    $allowed_schemes = ['http://', 'https://', 'ftp://', 'ftps://', 'ftpes://'];
+
+    $replaceFirst = ['//', '://'];
+    foreach($replaceFirst as $k=>$v) {
+        if(Str::startsWith($url, $v)) {
+            $url = Str::replaceFirst($v, '', $url);
+            break;  // check only once
+        }
+    }
+
+    if(Str::startsWith($url, ['//', '://'])) {
+        $url = Str::replaceFirst('://', '', $url);
+    }
+    
+    if(!Str::startsWith($url, $allowed_schemes)) {
+        $url = $defaultScheme.'://'.$url;
+        $is_scheme_adjusted = true;
+    }
+
+    $fn0 = function() use($url) {
+        return [
+            'is_valid' => false,
+            // 'fullUrl' => '',
+            'url' => '',
+            'scheme' => '',
+            'username' => null,
+            'password' => null,
+            'host' => '',
+            'port' => null,
+            'path' => '',
+            'query' => [],
+            'fragment' => '',  // string only, not exploded
+
+            'credentialRaw' => '',
+            'queryRaw' => '',
+            'urlRaw' => $url,
+            'pathArr' => [],
+            'fragmentArr' => [],
+            'schemeHostPath' => '',
+
+            'is_scheme_adjusted' => false,
+            'is_path_root' => false,
+            'has_port' => false,
+            'has_username' => false,
+            'has_password' => false,
+            'has_credential' => false,
+            'has_query' => false,
+            'has_fragment' => false,
+            
+            'obj' => null,
+        ];
+    };
+
+    $queryStr = function(array $query) {
+        $s = '';
+        $x = -1;
+        foreach($query as $k=>$v) {
+            $x++;
+            $s .= (($x > 0) ? '&' : '').$k.'='.($v ?? null);
+        }
+        return $s;
+    };
+
+    try {
+        if(in_array($url, $allowed_schemes, true)) {
+            throw new exception('Only scheme was present');
+        }
+
+        $r = $fn0();       
+        $d = SpatieUrl::fromString($url);
+
+        $u = explode(':', $d->getUserInfo());
+
+        $fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
+        // $isUrlHttps = Str::startsWith($url, 'https://');
+        // $isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https://');
+        // $shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
+        $username = (string)($u[0] ?? '');
+        
+        // dd($d->getScheme());
+        // $r['scheme'] = (string)($shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps));
+        $r['scheme'] = !empty($d->getScheme()) ? $d->getScheme() : $defaultScheme;
+        $r['host'] = $d->getHost();
+        $r['port'] = $d->getPort();
+        $r['username'] = !empty($username) ? $username : null;
+        $r['password'] = ($u[1] ?? null);
+        $r['path'] = $d->getPath();
+        $r['query'] = $d->getAllQueryParameters();
+        $r['fragment'] = $d->getFragment();
+        $r['queryRaw'] = $queryStr($r['query']);
+        $r['is_scheme_adjusted'] = $is_scheme_adjusted;
+        $r['is_path_root'] = empty(trim(trim($r['path'], '/')));
+        $r['schemeHostPath'] = $r['scheme'].'://'.$r['host'].$r['path'];
+
+        $r['has_port'] = !empty($r['port']);
+        $r['has_query'] = !empty($r['query']);
+        $r['has_fragment'] = !empty($r['fragment']);
+        $r['has_username'] = !empty($r['username']);
+        $r['has_password'] = !empty($r['password']);
+        $r['has_credential'] = $r['has_username'] && $r['has_password'];
+
+        $r['credentialRaw'] = $r['has_credential'] ? $r['username'].':'.$r['password'] : '';
+        $path2 = ($r['path'][0] ?? '') === '/' ? substr($r['path'], 1) : $r['path'];
+        $fragment2 = ($r['fragment'][0] ?? '') === '/' ? substr($r['fragment'], 1) : $r['fragment'];
+        $r['pathArr'] = $r['is_path_root'] ? [] : (array)explode('/', $path2);
+        $r['fragmentArr'] = (array)explode('/', $fragment2);
+        $r['url'] = $r['scheme'].'://'
+            .($r['has_credential'] ? $r['credentialRaw'].'@' : '')
+            .$r['host'].($r['has_port'] ? ':'.$r['port'] : '').$r['path']
+            .($r['has_query'] ? '?'.$r['queryRaw'] : '')
+            .($r['has_fragment'] ? '#'.$r['fragment'] : '')
+        ;
+        
+        $r['obj'] = $d;
+        $r['is_valid'] = true;
+
+    // } catch(\Exception $ex) {
+    } catch(\Throwable $ex) {
+        
+        // dd($ex);
+        $r = $fn0();
+    }
+
+    point1:
+    return (object)$r;
+}
+
+function url_parse2(string $url, bool $adjustScheme = true)
+{
+    // if(!Str::startsWith($url, ['http://', 'https://']))
+	// 	throw new exception('$url must starts with `http` or `https`');
+    if(!Str::startsWith($url, ['http://', 'https://', '://'])) {
+        $url .= 'https://';
+    }
+
+	$d = SpatieUrl::fromString($url);
+	$u = explode(':', $d->getUserInfo());
+
+	$fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
+	$isUrlHttps = Str::startsWith($url, 'https');
+	$isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https');
+	$shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
+	$scheme = $shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps);
+	$fullUrl = $scheme.strstr($url, ':');
+
+	$r = [
+		'scheme' => $scheme, //$d->getScheme(),
+		'host' => $d->getHost(),
+		'port' => $d->getPort(),
+		'user' => $u[0] ?? '',
+		'password' => $u[1] ?? null,
+		'path' => $d->getPath(),
+		'query' => $d->getAllQueryParameters(),
+		'fragment' => $d->getFragment(),
+		'is_scheme_adjusted' => $shouldAdjust,
+		'obj' => $d,
+	];
+	$r['scheme'] = $scheme;
+	$r['url'] = $scheme.'://'.$r['host'].(!empty($r['port']) ? ':'.$r['port'] : '').$r['path'];
+	$r['fullUrl'] = $fullUrl;
+	return (object)$r;
+}
 
 
 
@@ -2782,10 +2959,38 @@ function vv(string $key, bool $strict=false)
 
 function webclient_is_dev()
 {
-    return !empty(env('DEV_KEY')) && ((string)($_COOKIE['dev'] ?? '')) === env('DEV_KEY');
+    // return !empty(env('DEV_KEY')) && ((string)($_COOKIE['dev'] ?? '')) === env('DEV_KEY');
+    return !empty(env('DEV_KEY')) && ((string)(request()->cookie('dev') ?? '')) === env('DEV_KEY');
 }
 
 function webclient_timezone()
 {
     return (string)config('user.settings.timezone', 'Asia/Taipei');
+}
+
+/**
+ * Gets the intended URL
+ *
+ * @return string `default '/'`
+ */
+function webclient_intended()
+{
+    $curr_url = url()->current();
+    $prev_url = url()->previous();
+    
+    $parsed_prev_url = url_parse($prev_url);
+    $prev_url_path = $parsed_prev_url->url ?? '';
+
+    $except = [  // guest pages
+        // route('index.index'),               // /
+        route('login'),                     // /login
+        route('register'),                  // /register
+        // route('auth.fb.redirect'),          // /auth/facebook/redirect
+        // route('auth.fb.callback'),          // /auth/facebook/callback
+        // route('auth.fb.deletion'),          // /auth/facebook/deletion
+    ];
+    //$URIs_ignored = in_array($curr_url, $except) ? $except : [];
+    $URIs_ignored = $except;
+    $bool1 = (!empty($prev_url_path) && !in_array($prev_url_path, $URIs_ignored) && $curr_url !== $prev_url);
+    return $bool1 ? $prev_url : '/';
 }

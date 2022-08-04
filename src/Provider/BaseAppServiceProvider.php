@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Artisan;
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use App\Core\Adapters\Theme;
 use Rguj\Laracore\Macro\EloquentCollectionMacro;
+use Rguj\Laracore\Library\WebClient;
+use Rguj\Laracore\Request\Request;
 
 class BaseAppServiceProvider extends ServiceProvider
 
@@ -68,7 +70,6 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
 
-
     protected function checkRequirement()
     {
         //$required_php = (string)env('PHP_MIN_VERSION', '8.1.2');
@@ -99,6 +100,8 @@ class BaseAppServiceProvider extends ServiceProvider
             if(!str_version_ge(app()->version(), $required_laravel)) {
                 die('Laravel version must be '.$required_laravel.' or up.');
             }
+
+            $this->evalBrowser();
         }
         
 
@@ -264,6 +267,104 @@ class BaseAppServiceProvider extends ServiceProvider
         // }
 
 
+    }
+
+
+
+
+
+
+
+
+
+
+
+    
+
+    protected function evalBrowser()
+    {
+        // CHECK BROWSER
+        $vb = function() {                
+            $flagged = false;
+            // $invalid_type = false;
+            // $invalid_name = false;
+            // $invalid_browser = false;
+            // $invalid_referrer = false;
+            $err_msg = '';
+            try {
+                $ua = WebClient::__getUA();
+                if(empty($ua)) {
+                    // $invalid_browser = true;
+                    throw new exception('Failed to get user-agent info');
+                }
+
+                $ba = config('browser.requirement');
+        
+                if(!array_key_exists($ua['device']['type'], $ba)) {
+                    config()->set('browser.is_valid_type', false);
+                    throw new exception('Invalid device type');
+                }
+                config()->set('browser.type', $ua['device']['type']);
+        
+                if(!array_key_exists($ua['browser']['name'], $ba[$ua['device']['type']])) {
+                    config()->set('browser.is_valid_name', false);
+                    throw new exception('Invalid device name');
+                }
+                config()->set('browser.name', $ua['browser']['name']);
+        
+                $version_required = $ba[$ua['device']['type']][$ua['browser']['name']];
+                $version_current = $ua['browser']['version'];
+                config()->set('browser.version.required', $version_required);
+                config()->set('browser.version.current', $version_current);
+        
+                // $flagged = false;
+                if(str_version_compare($version_current, $version_required, '<')) {
+                    config()->set('browser.is_outdated', true);
+                    $flagged = true;
+                }
+
+                $http_referrer = $_SERVER['HTTP_REFERER'] ?? '';
+                $allowed_host = (array)config('browser.allowed_host');
+                $blocked_host = (array)config('browser.blocked_host');
+                $up = url_parse($http_referrer);
+                
+                if(
+                    // in_array($http_referrer, $block_referrer, true)
+                    ($up->is_valid && in_array($up->host, $blocked_host, true))
+                    || ($up->is_valid && !in_array($up->host, $allowed_host, true))
+                    || (!str_empty($http_referrer) && !$up->is_valid)
+                ) {
+                    config()->set('browser.is_blocked_referrer', true);
+                    $flagged = true;
+                }
+
+                if($flagged) {
+                    if(!config('browser.is_valid_type')) {
+                        throw new exception('Unsupported referrer');
+                    }
+                    if(!config('browser.is_valid_name')) {
+                        throw new exception('Unsupported referrer');
+                    }
+                    if(!config('browser.is_outdated')) {
+                        throw new exception('Unsupported browser');
+                    }
+                    if(!config('browser.is_blocked_referrer')) {
+                        throw new exception('Unsupported referrer');
+                    }
+                }
+
+            } catch(\Exception $ex) {
+                // dd($ex);
+                $err_msg = $ex->getMessage();
+
+                config()->set('browser.is_valid', false);
+                config()->set('browser.err_msg', $err_msg);
+                abort(response()->view('errors.unsupported-browser', config('browser'), 406));
+            }
+            point1:
+
+        };
+        $vb();
     }
 
 

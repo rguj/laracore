@@ -12,7 +12,6 @@ use Rguj\Laracore\Library\AppFn;
 use Rguj\Laracore\Library\CLHF;
 use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\WebClient;
-use Rguj\Laracore\Library\Prologue;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
@@ -87,6 +86,7 @@ class ClientInstanceMiddleware
     private $url_verify_email;
     private $url_api;
     private $url_home;
+    private $url_intended;
     
 
     public function __construct()
@@ -96,6 +96,7 @@ class ClientInstanceMiddleware
         $this->url_verify_email = route('verification.notice');
         $this->url_api = route('api.index');
         $this->url_home = route('home.index');
+        $this->url_intended = webclient_intended();
 
         //$this->home = $this->url_home;
         // $this->default_timezone = config('env.APP_TIMEZONE');
@@ -167,7 +168,8 @@ class ClientInstanceMiddleware
         
         // some logic for debugging
         $has_dev_key = webclient_is_dev();
-        if($this->is_admin || $has_dev_key) {
+        // if($this->is_admin || $has_dev_key) {
+        if($this->is_admin) {
             app('debugbar')->enable();
             Config::set('app.debug', true);
         } else {
@@ -182,6 +184,9 @@ class ClientInstanceMiddleware
         
         // some validation
         $validate = $this->validate($request);  // added new
+        if(webclient_is_dev()) {
+            
+        }
         if(!$validate[0]) {
 
             // if(!is_string($validate[2])) {
@@ -229,12 +234,21 @@ class ClientInstanceMiddleware
 
     public static function logout(BaseRequest $request, string $redirect = '/')
     {
+        // $fb = session_get_alerts(true);
+
         Auth::guard('web')->logout();
         session()->forget('app.feedbacks');
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         $redirect_to = !empty($redirect) ? redirect()->to($redirect) : '/';
         session_push_alert('success', 'Logged out successfully');
+        
+        // unset($fb['swal2']); unset($fb['toastr']);
+        // foreach($fb as $k=>$v) {
+        //     session_push_alert($v['status'], $v['msg'], $v['title'], $v['type']);
+        // }
+        // session_push_alert('success', 'Logged out successfully');
+
         return redirect()->to($redirect_to);
     }
 
@@ -243,44 +257,64 @@ class ClientInstanceMiddleware
         // returns [success, err_mode, err_data]
         // err_mode [1 => exception, 2 => redirect]
 
-        $url = route_parse_url(request()->fullUrl());
-        // https://hris2.localhost.com?mode=dark
+        // $fb = session_get_alerts(true);
+        $url = url_parse(request()->fullUrl());
+        $schemeHostPath = $url->schemeHostPath;
         
-        if(in_array($url->url, $this->bypassAuthRoutes))
-            goto point1;        
+        if(in_array($schemeHostPath, $this->bypassAuthRoutes))
+            goto point1;
+
+        if(webclient_is_dev()) {
+            // dd($this->user_info);
+        }
+
         if(in_array($url->path, ['', '/'])) {
             goto point1;
-        }
+        }     
         
         if($this->is_auth) {
 
             // auto fix missing user child tables
             // fix user_state
+            // in login script [DONE]
 
 
 
             // check account state
-            if(!$this->user_info['is_active']) {
-                session_push_alert('error', 'Account is deactivated');
-                $logout = $this->logout($request, route('index.index'));
-                return [false, 2, $logout];
-            } 
+            // if(!$this->user_info['is_active']) {
+            //     session_push_alert('error', 'Account is deactivated');
+            //     $logout = $this->logout($request, route('index.index'));
+
+
+            //     unset($fb['swal2']);
+            //     unset($fb['toastr']);
+            //     foreach($fb as $k=>$v) {
+            //         session_push_alert($v['status'], $v['msg'], $v['title'], $v['type']);
+            //     }
+
+
+            //     return [false, 2, $logout];
+            // }
+
+
+
             
             // check email verify
             if(!$this->user_info['verify']['email']['is_verified']) {
-                if($url->url !== $this->url_verify_email) {
+                if($schemeHostPath !== $this->url_verify_email) {
                     session_push_alert('info', 'Please verify your email first');
                     return [false, 2, $this->url_verify_email];
                 }
             } else {
-                if($url->url === $this->url_verify_email) {
+                if($schemeHostPath === $this->url_verify_email) {
                     session_push_alert('success', 'Account is already verified.');
-                    return [false, 2, $this->url_home];
+                    // return [false, 2, $this->url_home];
+                    return [false, 2, $this->url_intended];
                 }
             }
         } else {
             // check if no user
-            $is_url_registration = ($url->url === $this->url_register);
+            $is_url_registration = ($schemeHostPath === $this->url_register);
             if($this->force_register && config_unv('users_count') < 1 && !$is_url_registration) {
                 session_push_alert('info', 'Please register first');
                 return [false, 2, $this->url_register];
@@ -289,10 +323,10 @@ class ClientInstanceMiddleware
                 goto point1;
             }            
             else {
-                if($url->url === $this->url_login || $url->url === route('password.request')) {
+                if($schemeHostPath === $this->url_login || $schemeHostPath === route('password.request')) {
                     goto point1;
                 }
-                // dump($url->url);
+                // dump($schemeHostPath);
                 // dump($this->url_login);
                 session_push_alert('error', 'Please login first.');
                 return [false, 2, $this->url_login];
@@ -315,7 +349,8 @@ class ClientInstanceMiddleware
         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
         $disk = Storage::disk('user_avatar');
         $url = $disk->path($file);
-        $file_url = CLHF::STORAGE_FileURL($url, 'dispose');
+        // $file_url = CLHF::STORAGE_FileURL($url, 'dispose');
+        $file_url = storage_file_url($url, 'dispose');
 
         // if file avatar exist in storage folder
         if(!empty($file_url)) {
@@ -381,7 +416,6 @@ class ClientInstanceMiddleware
                     $q->select(['user_id',  $r.'.id AS role_id',  $r.'.title',  $r.'.short']);
                     // $q->where([ $t.'.is_valid'=>1]);
                     $q->orderBy( $t.'.role_id', 'asc');
-                    // dd($q);
                 },
                 'info' => function(HasOne $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
@@ -421,9 +455,7 @@ class ClientInstanceMiddleware
         }
 
         if($id === 14880) {
-            // dd($user);
-            // dump(arr_get($user, 'verifyemail.verified_at'));
-            // dd($emailverify);
+            
         }
         return $user;
     }
@@ -566,9 +598,7 @@ class ClientInstanceMiddleware
             }
         } else {            
             if(!empty(config('unv.menu.guest'))) {
-                // dd(config_unv('menu.guest'));
                 array_push($main, $category('Guest'), ...config_unv('menu.guest'));
-                // dd($main);
             }
         }
         

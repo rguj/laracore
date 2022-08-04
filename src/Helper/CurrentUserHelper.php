@@ -40,6 +40,17 @@ function cuser_id()
     return cuser_is_auth() ? auth()->id() : null;
 }
 
+function cuser_is_verified()
+{
+    return cuser_is_auth() ? (bool)(cuser_data()['verify']['email']['is_verified'] ?? false) : false;
+}
+
+function cuser_is_active()
+{
+    return cuser_is_auth() && cuser_data()['state']['is_active'] === 1;
+}
+
+
 // function cuser_data()
 // {
 //     return cuser_is_auth() ? auth()->user() : null;
