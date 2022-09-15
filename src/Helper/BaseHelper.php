@@ -17,6 +17,7 @@ use Spatie\Url\Url as SpatieUrl;
 use Rguj\Laracore\Request\Request;
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use Rguj\Laracore\Library\StorageAccess;
+use App\Models\User;
 
 
 
@@ -45,6 +46,14 @@ if(file_exists(__DIR__.'/ThemeUtilHelper.php'))
 
 
 
+
+
+
+
+/** -----------------------------------------------
+ * SHORTCUTS
+ */
+
 /**
  * JSON echo & die
  *
@@ -61,6 +70,35 @@ function jed($var, bool $withTrace = false)
     else echo json_encode($var);
     die();
 }
+
+/**
+ * Same as `view_variable()`
+ *
+ * @param string $key
+ * @param boolean $strict
+ * @return mixed
+ * @see `view_variable()`
+ */
+function vv(string $key, bool $strict=false)
+{
+    return view_variable($key, $strict);
+}
+
+function cond_return(bool $cond, $true, $false)
+{
+    return $cond ? $true : $false;
+}
+
+function _____()
+{
+
+}
+
+
+
+
+
+
 
 
 
@@ -304,6 +342,105 @@ function arr_search_column(array $a, $column, $val) {
 
 
 
+
+
+/** -----------------------------------------------
+ * AUTH
+ */
+
+/**
+ * Check if user_id has role/s
+ *
+ * This doesn't throw exception
+ *
+ * @param int $user_id
+ * @param int|string|array $roles
+ * @return bool
+ */
+function auth_is_authorized(int $user_id, $roles, bool $flag = false) {
+    $bool = false;
+    $cacheRoles = (array)config('roles');
+
+    if(!is_int($user_id) || $user_id <= 0)
+        goto point1;
+
+    $db_role_ids = DB::table('unv_role_user')->where(['user_id' => $user_id])->pluck('role_id')->toArray();
+
+    // reform $roles
+    if(!(is_int($roles) || is_string($roles) || is_array($roles)))
+        goto point1;
+
+    if(is_string($roles)) {
+       $roles = [trim($roles)];
+    }
+
+    // eliminate invalid $roles entries
+    $roleIDs = [];
+    foreach($roles as $k=>$v) {
+        if(is_string($v)) {
+            $search1 = arr_search_by_key($cacheRoles, 1, $v);
+            $search2 = arr_search_by_key($cacheRoles, 2, $v);
+            if(!empty($search1)) $roleIDs[] = $search1[0];
+            if(!empty($search2)) $roleIDs[] = $search2[0];
+        }        
+        elseif(is_int($v)) {
+            $search3 = arr_search_by_key($cacheRoles, 0, $v);
+            if(!empty($search3)) $roleIDs[] = $search3[0];
+        }
+    }
+    // $roleIDs = array_unique($roleIDs);
+    $user_role_ids = array_unique(array_column($roleIDs, 0));
+    sort($user_role_ids);
+    // dump($db_role_ids);
+    // dd($user_role_ids);
+    $success = !empty($db_role_ids) && !empty($user_role_ids);
+    foreach($user_role_ids as $k=>$v) {
+        if(!in_array($v, $db_role_ids, true)) {
+
+            $success = false;
+            break;
+        }
+    }
+    $bool = $success;
+
+    point1:
+    return $bool;
+}
+
+/**
+ * Gets user statuses
+ *
+ * @param int $user_id
+ * @return <int,bool>
+ */
+function auth_user_status(int $user_id)
+{
+    $user_exists = $is_active = $is_verified = $passed_all = false;
+    if(empty($user_id))
+        goto point1;
+    $user = (array)config('user');
+    $email = (string)($user['email'] ?? '');
+    $user_exists = !empty($user) && !empty($email);
+    $is_active = ((int)($user['state']['is_active'] ?? 0)) === 1;
+    $is_verified = ((int)($user['verify']['email']['is_verified'] ?? 0)) === 1;
+    $passed_all = $user_exists && $is_active && $is_verified;
+    point1:
+    return [$user_exists, $is_active, $is_verified, $passed_all];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /** -----------------------------------------------
  * BLADE
  */
@@ -457,15 +594,6 @@ function class_controller_method(string $class, string $method, array $args = []
 
 
 
-
-/** -----------------------------------------------
- * CONDITION
- */
-
-function cond_return(bool $cond, $true, $false)
-{
-    return $cond ? $true : $false;
-}
 
 
 
@@ -751,115 +879,25 @@ function component_analysis($data, $args)
  * CONFIG
  */
 
-function var_types() {
-    return [
-        'NULL',
-        'string',
-        'integer',
-        'float',
-        'double',
-        //'real',  // removed
-        'boolean',
-        'array',
-        'object',
-        'resource',
-    ];
-}
 
-/**
- * Gets the official PHP data type
- *
- * @param string $type
- * @return string
- * @throws \Exception
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * CONFIG
  */
-function var_type_official(string $type)
-{
-    $type = strtolower($type);
-    $o = [  // overrides
-        'null'  => 'NULL',
-        'str'   => 'string',
-        'int'   => 'integer',
-        'bool'  => 'boolean',
-        'arr'   => 'array',
-        'obj'   => 'object',
-        'res'   => 'resource',
-        'real'  => 'float',  // real converted to float
-    ];
-
-
-    // try {
-        $type = array_key_exists($type, $o) ? $o[$type] : $type;
-        $types = var_types();
-        if(!in_array($type, $types, true))
-            throw new exception('Invalid type: '.$type);
-        $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
-        $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
-        // if(!in_array($type2, $types, true))
-        if(!array_key_exists($type2, $t))
-            throw new exception('Invalid data type: '.$type2);
-    // } catch(\Throwable $ex) {
-        // dump($o);
-        // dump($t);
-        // dump($type);
-        // dump($type2);
-        // dd($ex);
-    // }
-    return $t[$type2];
-}
-
-/**
- * Casts variable to the specified type
- *
- * @param mixed $var
- * @param string $type
- * @return mixed
- */
-function var_cast($var, string $type)
-{
-    /*return match($type) {
-        'NULL'      => null,
-        'string'    => (string) $var,
-        'integer'   => (integer) $var,
-        'float'     => (float) $var,
-        'double'    => (double) $var,
-        //'real'      => (real) $var,  // removed
-        'array'     => (array) $var,
-        'boolean'   => (boolean) $var,
-        'object'    => (object) $var,
-        default     => $var,
-    };*/
-        $type2 = var_type_official($type);
-        settype($var, strtolower($type2));
-    return $var;
-}
-
-function var_is_closure($obj) {
-    $bool = false;
-    try {
-        $reflection = new \ReflectionFunction($obj);
-        $bool = (bool)$reflection->isClosure();
-    } catch(\Throwable $th) {}
-    return $bool;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Get the specified configuration value.
@@ -912,7 +950,6 @@ function config_env($key = null, $default = null) {
 	return config(CONFIG_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
 }
 
-
 /**
  * Get universal config
  *
@@ -939,9 +976,8 @@ function config_unv($key = null, $default = null) {
 
 
 /** -----------------------------------------------
- * SECURITY
+ * CRYPT - SECURITY
  */
-
 
 /**
  * Encrypt/Decrypt a value
@@ -1022,6 +1058,720 @@ function crypt_de_merge_get(Request &$request, string $key, bool $is_post, bool 
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * DATATABLE
+ */
+
+/**
+ * Gets the parsed column definition of datatable
+ *
+ * @param Request $request
+ * @param array $columns
+ * @return array
+ */
+function datatable_columns(Request $request, array $columns)
+{
+    $d = datatable_request_parse($request, $columns);
+    return (array)($d['col'] ?? []);
+}
+
+/**
+ * Parses datatable client request query with analysis
+ *
+ * @param Request $request
+ * @param array $columns
+ * @return array `$pr` parsed request
+ */
+function datatable_request_parse(Request $request, array $columns) {
+    if(!$request->isMethod('GET'))
+        throw new exception('Invalid request method');
+
+    $req2 = $request;  // deep copy request
+    $req2->merge(compact('columns'));  // merge columns
+    
+    $draw = (int)$req2->query('draw');      // draw requests
+    $length = (int)$req2->query('length');  // items limit
+    $start = (int)$req2->query('start');    // item start        
+    $search_ = (array)($req2->query('search') ?? []);  // global search keywords
+    $_ = (string)$req2->query('_');        
+    $columnsRaw = (array)($req2->query('columns') ?? []);
+    $order = (array)($req2->query('order') ?? []);
+
+    // $start = $start <= 0 ? 1 : $start;
+    $start = $start <= 0 ? 0 : $start;
+    $length = $length <= -1 ? -1 : $length;
+    $itemStartClient = $start * $length;
+    // $columnsRaw = (array)($req2->query('columns') ?? []);
+    $columnsClient = $columnsServer = [];
+    
+    // reform order
+    // order [ [ column => '', dir => 'asc|desc' ] ]
+    $order = [];
+    foreach(($req2->query('order') ?? []) as $key=>$val) {
+        $order[$key] = [
+            'column' => (int)$val['column'],
+            'dir' => $val['dir'],
+        ];
+    }
+
+    $func_opt = function(array $arr) {
+        $opt = [];
+
+        $opt['attr'] = (string)arr_get($arr, 'attr');
+        $opt['db'] = (string)arr_get($arr, 'db');
+        $opt['label'] = (string)arr_get($arr, 'label');
+
+        $opt['searchable'] = (bool)arr_get($arr, 'searchable');
+        $opt['sortable'] = (bool)arr_get($arr, 'sortable');
+        $opt['class'] = (string)arr_get($arr, 'class');
+
+        $opt['type'] = (string)arr_get($arr, 'type');
+        $opt['type'] = $opt['type'] === 'int' ? 'integer' : $opt['type'];
+        $opt['type'] = !in_array($opt['type'], ['integer', 'string']) ? 'string' : $opt['type'];
+
+        $opt['frontend_type'] = array_key_exists('frontend_key', $arr) ? (string)$arr['frontend_key'] : 'string';
+
+        $opt['search'] = [
+            'value' => (string)arr_get($arr, 'search.value'),
+            'regex' => (string)arr_get($arr, 'search.regex'),
+        ];
+
+        $opt['formatter'] = arr_get($arr, 'formatter');
+        // dd($opt['formatter']('sample'));
+        if(!is_callable($opt['formatter']) || is_null($opt['formatter']('sample'))) {
+            unset($opt['formatter']);
+        }
+        // $opt['formatter'] = is_callable($opt['formatter']) && !is_null($opt['formatter']('sample')) ? $opt['formatter'] : null;
+        
+        $opt['same_as'] = str_sanitize((string)arr_get($arr, 'same_as'));
+        $opt['same_as'] = !empty($opt['same_as']) ? $opt['same_as'] : null;
+        $opt['visible'] = array_key_exists('visible', $arr) ? (bool)arr_get($arr, 'visible') : true;
+        
+        if(array_key_exists('width', $arr)) {
+            $opt['width'] = (string)arr_get($arr, 'width');
+        }
+
+        if(array_key_exists('default_content', $arr)) {
+            $opt['default_content'] = (string)arr_get($arr, 'default_content');
+        }
+
+        return $opt;
+    };
+
+    // record ascendancy
+    $ascendancy = [];
+    foreach($columnsRaw as $key1=>$val1) {
+        $ascendancy[] = $val1['attr'];
+    }
+
+    // parse columns
+    $x = -1;
+    $columns = [];
+    $hasSearchColumn = false;
+    $columnsClone = [];
+    $columnsAttrDB = [];
+    $columnsDB = [];
+    $columnsDBAlias = [];
+    $columnsOriginal = [];
+    $columnsAll = [];
+    $columnsAttrType = [];
+    $columnsFormatter = [];
+    $columnsDBBlank = [];
+    $dbOrder = [];
+    // dd($columnsRaw);
+    foreach($columnsRaw as $key1=>$val1) {
+        $x++;
+        $val1['attr'] = str_sanitize($val1['attr']);
+        $hasFormatter = false;
+        $formatted_value_sample = null;
+
+        // validate attr characters
+        if(!str_preg_match('/^([a-zA-Z_])+([0-9])*$/u', $val1['attr']))
+            throw new exception('Invalid attribute characters: '.$val1['attr']);
+
+        // parse columns same_as
+        if(array_key_exists('same_as', $val1)) {
+            // analyze ascendancy
+            $ord_cur = array_search($val1['attr'], $ascendancy);  // get order # of target
+            $ord_tar = array_search($val1['same_as'], $ascendancy);  // get order # of current
+            if($ord_cur === false) throw new exception('Attribute `'.$val1['attr'].'` doesn\'t exists');
+            if($ord_tar === false) throw new exception('Parent attribute `'.$val1['same_as'].'` doesn\'t exists');
+            if($ord_cur <= $ord_tar) throw new exception('Target key `'.$val1['same_as'].'` must be in the upper order.');
+            $columnsClone[$val1['attr']] = $columns[$ord_tar]['attr'];
+            $columns[$x] = array_merge($columns[$ord_tar], ['attr' => $val1['attr'], 'dt' => $x, 'same_as' => $columns[$ord_tar]['attr']]);
+
+            if(!empty($columns[$ord_tar]['formatter']) && is_callable($columns[$ord_tar]['formatter'])) {
+                $columnsFormatter[$val1['attr']] = $columns[$ord_tar]['formatter'];
+            }
+        } else {
+            $columns[$x]['dt'] = $x;
+            $columns[$x]['attr'] = $val1['attr'];
+            $columns[$x]['db'] = $val1['db'];
+            $columns[$x]['label'] = $val1['label'];
+            $columns[$x] = array_merge($columns[$x], $func_opt($val1));
+                            
+            if(!empty($val1['formatter']) && is_callable($val1['formatter']) && !is_null($val1['formatter']('sample'))) {
+                $columnsFormatter[$val1['attr']] = $val1['formatter'];
+
+                // try a sample of formatter
+                $hasFormatter = true;
+                settype($formatted_value_sample, $columns[$x]['type']);
+                $formatted_value_sample = $val1['formatter']($formatted_value_sample);
+            }
+        }
+
+        // REMOVE LITERAL 'false'
+        $columns[$x]['search']['regex'] = strtolower($columns[$x]['search']['regex']) === 'false' ? '' : $columns[$x]['search']['regex'];
+
+        if(!$hasSearchColumn) {
+            $hasSearchColumn = str_filled($columns[$x]['search']['value']) || str_filled($columns[$x]['search']['regex']);
+        }
+
+        if(str_empty((string)$columns[$x]['same_as']) && !str_empty($columns[$x]['db']) && !array_key_exists($columns[$x]['attr'], $columnsAttrDB)) {
+            $columnsAttrDB[$columns[$x]['attr']] = $columns[$x]['db'];
+            $columnsDB[] = $columns[$x]['db'];
+            // $columnsDBAlias[] = $columns[$x]['db'].' AS '.$columns[$x]['attr'];
+        }
+
+        $columnsAttrType[$columns[$x]['attr']] = $columns[$x]['type'];
+
+        // catch db blank
+        if(!str_empty($columns[$x]['attr']) && str_empty($columns[$x]['db']) && !in_array($columns[$x]['attr'], $columnsDBBlank, true)) {
+            $columnsDBBlank[] = $columns[$x]['attr'];
+        }
+
+        if(!str_empty($columns[$x]['attr']) && str_empty((string)$columns[$x]['same_as']) && !in_array($columns[$x]['attr'], $columnsOriginal, true)) {
+            $columnsOriginal[] = $columns[$x]['attr'];
+        }
+
+        // form frontend data
+        $frontend = [];  // ???
+
+        $frontend['data'] = $columns[$x]['attr'];
+
+        if(array_key_exists('label', $columns[$x]))
+            $frontend['title'] = trim((string)$columns[$x]['label']);
+            
+        $frontend['type'] = trim((string)$columns[$x]['frontend_type']);
+
+        if(array_key_exists('searchable', $columns[$x]))
+            $frontend['searchable'] = (bool)$columns[$x]['searchable'];
+
+        if(array_key_exists('sortable', $columns[$x]))
+            $frontend['orderable'] = (bool)$columns[$x]['sortable'];
+
+        if(array_key_exists('class', $columns[$x]))
+            $frontend['className'] = trim((string)$columns[$x]['class']);
+
+        if(array_key_exists('visible', $columns[$x]))
+            $frontend['visible'] = (bool)$columns[$x]['visible'];
+
+        if(array_key_exists('width', $columns[$x]))
+            $frontend['width'] = (string)$columns[$x]['width'];
+
+        if(array_key_exists('default_content', $columns[$x])) {
+            $frontend['defaultContent'] = trim((string)$columns[$x]['default_content']);
+        }
+
+        // if($val1['attr'] === 'action') {
+        //     // dd(4242);
+        //     dd($columns[$x]);
+        //     dd(array_key_exists('default_content', $columns[$x]));
+        // }
+
+        // if()
+    
+        $columnsClient[$x] = $frontend;
+    }
+    $columnsAll = array_merge($columnsOriginal, array_keys($columnsClone));
+
+    // form db column alias
+    foreach($columnsAll as $k=>$v) {
+        if(!array_key_exists($v, $columnsAttrDB))
+            continue;
+        if(array_key_exists($v, $columnsClone)) {
+            $columnsDBAlias[] = $columnsAttrDB[$columnsClone[$v]].' AS '.$v;
+        } else {
+            $columnsDBAlias[] = $columnsAttrDB[$v].' AS '.$v;
+        }
+    }
+
+    // global search
+    $search = [
+        'value' => (string)($search_['value'] ?? ''),
+        'regex' => (string)($search_['regex'] ?? ''),
+    ];
+    // REMOVE LITERAL 'false'
+    $search['regex'] = strtolower($search['regex']) === 'false' ? '' : $search['regex'];
+    $hasSearchGlobal = str_filled($search['value']) || str_filled($search['regex']);
+
+    // db order
+    dd($order);
+    foreach($order as $k=>$v) {
+        // $dbOrder[] = ;
+    }
+
+    // create where raw (ignoring same_as OR attr with the same db_col_name)
+    $searchableColumns = [];
+    $searchAttrSpecific = $searchDBSpecific = $searchDBRawSpecific = [];
+    $searchAttrGlobal = $searchDBGlobal = $searchDBRawGlobal = [];
+    $searchAttrAll = $searchDBAll = $searchDBRawAll = [];
+    foreach($columns as $k=>$v) {
+        if(($v['searchable'] ?? false)) {
+
+            $a = !empty($v['same_as']) ? $v['same_as'] : $v['attr'];
+
+            // assign each column the search value
+            $searchableColumns[] = $v['attr'];
+            if(!empty($v['search']['value'])) {
+                $searchAttrSpecific[$a][] = $v['search']['value'];
+                $searchDBSpecific[$columnsAttrDB[$a]] = $v['search']['value'];
+            }
+            if(!empty($v['search']['regex'])) {
+                $searchAttrSpecific[$a][] = $v['search']['regex'];
+                $searchDBSpecific[$columnsAttrDB[$a]] = $v['search']['regex'];
+            }
+
+            // assign global search value
+            if(!empty($search['value'])) {
+                $searchAttrGlobal[$a][] = $search['value'];
+                $searchDBGlobal[$columnsAttrDB[$a]] = $search['value'];
+            }
+            if(!empty($search['regex'])) {
+                $searchAttrGlobal[$a][] = $search['regex'];
+                $searchDBGlobal[$columnsAttrDB[$a]] = $search['regex'];
+            }
+        }
+    }
+    $searchAttrAll = array_merge_recursive($searchAttrSpecific, $searchAttrGlobal);
+    $searchDBAll = array_merge_recursive($searchDBSpecific, $searchDBGlobal);
+
+    $searchAttr = [
+        'specific' => $searchAttrSpecific,
+        'global' => $searchAttrGlobal,
+        'all' => $searchAttrAll,
+    ];
+    $searchDB = [];
+    $searchSQL = [
+        'lines' => [],
+        'query' => '',
+        'bindings' => [],
+    ];
+    $searchDB = [];
+    $fullLines = [];
+    
+    $prev_k2 = '';
+    foreach($searchAttr as $k1=>$v1) {
+        foreach($v1 as $k2=>$v2) {
+            foreach($v2 as $k3=>$v3) {
+                $is_int = $columnsAttrType[$k2] === 'integer';
+                $o = $is_int ? '=' : 'LIKE';  // operator
+                // $v3_1 = $is_int ? $v3 : "'%".$v3."%'";
+                $v3_1 = $is_int ? $v3 : "%".$v3."%";
+                $is_empty_value = str_empty((string)$v3);
+                $arr0 = [$columnsAttrDB[$k2], $o, $v3_1];
+                $str0 = implode(' ', $arr0);
+                $searchDB[$k1][$k2][] = $arr0;
+                $fullLine = $columnsAttrDB[$k2].' '.$o.' '.$v3_1;
+                $line = $columnsAttrDB[$k2].' '.$o.' ?';                    
+                if(!$is_empty_value && !in_array($fullLine, $fullLines, true)) {
+                    $searchSQL['lines'][] = $line;
+                    $searchSQL['query'] .= (!empty($searchSQL['query']) ? ' OR ' : '');
+                    $searchSQL['query'] .= $line;
+                    $searchSQL['bindings'][] = $v3_1;
+                    $fullLines[] = $fullLine;
+                }
+            }
+            $prev_k2 = $k2;
+        }
+    }
+    // dd($searchSQL);
+
+    // all search
+    $hasSearch = $hasSearchColumn || $hasSearchGlobal;
+
+    $recordsTotal = 0;
+    $recordsFiltered = 0;
+    $recordsPaginate = 0;
+    // $pageNum = 0;
+    $row = [];
+
+    $extra = [
+        'client' => [
+            'draw' => $draw,
+            'order' => $order,
+            'start' => $start,
+            'length' => $length,
+            'search' => $search,
+            '_' => $_,
+
+            'itemstart' => $itemStartClient,      // predicted item start based on client reqeust (start * length)
+            'hasSearchColumn' => $hasSearchColumn,
+            'hasSearchGlobal' => $hasSearchGlobal,
+            'hasSearch' => $hasSearch,
+        ],
+        'col' => [
+            'raw' => $columnsRaw,                 // raw columns data from request
+            'type' => $columnsAttrType,           // data type of columns
+            'formatter' => $columnsFormatter,     // columns value formatter/morph
+            'dbblank' => $columnsDBBlank,         // empty db columns that is excluded in sql search
+            'original' => $columnsOriginal,       // unique columns
+            'clone' => $columnsClone,             // columns copying unique columns
+            'all' => $columnsAll,                 // original and cloned columns
+
+            'eval' => $columns,                   // evaluated columns data
+            'frontend' => $columnsClient,         // structure for client processing
+            'searchable' => $searchableColumns,   // searchable columns
+            'search' => $searchAttr,              // attribute search
+        ],
+
+        'db' => [
+            'attr' => $columnsAttrDB,             // columns attribute => db_col_name
+            'col' => $columnsDB,                  // unique db columns
+            'alias' => $columnsDBAlias,           // columns alias
+            'search' => $searchDB,                // db column search
+            'order' => $dbOrder,                  // db order
+        ],
+
+        'sql' => $searchSQL,
+
+        'count' => [
+            'unfiltered' => $recordsTotal,
+            'filtered' => $recordsFiltered,
+            'paginated' => $recordsPaginate,
+        ],
+
+        'row' => $row,                            // []
+    ];
+
+    return array_merge(compact(
+        'draw',
+        'order',
+        // 'columns',          // evaluated columns data
+        'start',
+        'length',
+        'search',
+        '_',
+
+        // added
+        // 'pageNum',
+    ), $extra);
+}
+
+/**
+ * Renders data for frontend datatablejs
+ * 
+ * - set `request.length` to `-1` to get all rows respective on the query
+ * - `$columnsToSearch` is not from 
+ *
+ * @param Request $request
+ * @param array $columns the parsed columns definition
+ * @param array|string|\Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query class or model
+ * @param bool $withDataKey include array key pointer in data rows e.g. `[key=>value]`
+ * @param bool $toJSON to JSON or array
+ * @return array|\Illuminate\Http\JsonResponse
+ */
+function datatable_paginate(Request $request, array $columns, $query, bool $withDataKey = true, bool $toJSON = false) {
+    /*  OPTIONS: 
+        attr - column unique name
+        db - db table column
+        db_fake - ???
+        dt - datatable sequence #
+        label - the display title in datatable
+        class - css classes
+        sortable - if column is sortable
+        searchable - if column is searchable
+        type - server-side column type
+        frontend_type - frontend column type (date, num, num-fmt, html-num, html-num-fmt, html, string)  https://datatables.net/reference/option/columns.type
+        formatter - formats value: function($value) { // your code }
+        same_as - copy the precedent column's content
+    */
+    
+    $is_success = false;
+    $err_msg = '';
+    $data = [];
+    // $columns = $columns2 = [];
+    $columns2 = [];
+    $countUnfiltered = 0;
+    $countFiltered = 0;
+    $pageDraw = 0;
+
+    // in seconds
+    $timeCountUnfiltered = 0;
+    $timeCountFiltered = 0;
+    $timeDataFiltered = 0;
+
+    $request2 = $request;
+
+    $func_time = function(array $log) {
+        // in seconds
+        // make sure you put `DB::enableQueryLog();` before the query line
+        $time = (float)($log['time'] ?? 0);
+        return round(($time > 0) ? ($time / 1000) : 0, 5);
+    };
+
+    $func_array_values_recursive = function(array $arr) {
+        $o = [];
+        foreach($arr as $k=>$v) {
+            $o[$k] = array_values($v);
+        }
+        return $o;
+    };
+
+    if(is_string($query) && class_exists($query)) {
+        $query = new $query();
+    }
+
+    DB::enableQueryLog();
+
+    /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query */
+    $query3 = $query2 = $query;
+    $countUnfiltered = $query2->count('id');
+
+    if(!(is_object($query2) && (array_key_exists('Illuminate\Database\Eloquent\Model', class_parents($query2)) || method_exists($query2, 'get')))) {
+        $err_msg = '$query has no method get()';
+        // throw new exception($err_msg);
+        goto point01;
+    }
+    
+    // parse request data
+    try {
+        $pr = datatable_request_parse($request2, $columns);  // parsed request
+    } catch(\Exception $ex) {
+        // dd($ex);
+        $err_msg = $ex->getMessage();
+        goto point01;
+    }        
+    // dd($pr);
+
+    // $pr getter function
+    $prget = function($key, string $type = '') use($pr) {
+        if(!arr_has($pr, $key)) throw new exception('Key `'.$key.'` not found in $pr');
+        $var = arr_get($pr, $key);
+        if(!empty($type)) settype($var, $type);
+        return $var;
+    };
+
+    $pageDraw = $prget('draw', 'int');
+    $itemsLimit = $prget('length', 'int');
+    $itemStart = $prget('start', 'int');
+
+    $paginateCols = $prget('db.col', 'array');
+    $colAlias = $prget('db.alias', 'array');
+    $columns = $columns2 = $prget('col.eval', 'array');
+    $SQLStr = $prget('sql.query', 'string');
+    $SQLBindings = $prget('sql.bindings', 'array');
+    $formatter = $prget('col.formatter', 'array');
+    $dbblank = $prget('col.dbblank', 'array');
+    $itemStartClient = $prget('client.itemstart', 'int');
+    $d = null;
+
+    if(!empty($SQLStr)) {
+        $query3 = $query->whereRaw($SQLStr, $SQLBindings);
+    }
+    
+    $countFiltered = $query3->count('id');
+
+    // change values according to client data
+    $perPage = 0;
+    $page = 0;
+    if($itemsLimit === -1) {    
+        $itemStart = 0;  // set to 0 because its literally show all
+        $itemsLimit = $countFiltered;
+        $page = 1;
+        $perPage = $countFiltered;
+    }
+    else if($itemsLimit === 0) {  // ok
+        point01:  // portal of invalid $itemStart
+        $itemStart = 0;
+        $itemsLimit = 1; // set to 1 to override the default 15
+        $page = 0;
+        $perPage = 0; 
+
+        $query3 = $query3->whereRaw('FALSE = TRUE');
+    }
+    else if($itemsLimit > 0) {  // ok
+        if($itemStart > $countFiltered) {  // ok
+            goto point01;  // invalid itemStart index, return empty
+        }
+        $itemStart = $itemStart;  // page number based from client data     
+        $itemsLimit = $itemsLimit;
+        $page = (int)ceil(($itemStart + 1) / $itemsLimit);
+        $perPage = $itemsLimit;
+    }
+
+    // paginate
+    dd($pr);
+    $d = $query3->simplePaginate($itemsLimit, $colAlias, 'page', $page);
+    // dd($d);
+    // dd(obj_reflect($d->items(), true));
+    // dd($pr);
+
+    // GET COUNT_UNFILTERED, COUNT_FILTERED, COUNT_PAGINATE
+    $query_logs = DB::getQueryLog();
+    // dump($query_logs); dd($d);
+    DB::disableQueryLog();  // disable logging
+    $timeCountUnfiltered = $func_time($query_logs[0]);
+    $timeCountFiltered = $func_time($query_logs[1]);
+    $timeDataFiltered = $func_time($query_logs[2]);
+    $sqlCountUnfiltered = (string)($query_logs[0]['query'] ?? '');
+    $sqlCountFiltered = (string)($query_logs[1]['query'] ?? '');
+    $sqlDataFiltered = (string)($query_logs[2]['query'] ?? '');
+
+    // get items
+    $data_kv = obj_reflect($d->items(), true);
+    $data_kv2 = [];
+
+    // invoke formatter & include defaultContent|null
+    foreach($data_kv as $k=>$v) {
+        foreach($v as $k2=>$v2) {
+            if(array_key_exists($k2, $formatter)) {
+                $data_kv2[$k][$k2] = $formatter[$k2]($v2);
+            } else {
+                $data_kv2[$k][$k2] = $v2;
+            }
+        }
+    }
+
+    $data_v = $func_array_values_recursive($data_kv2);
+    $data = $withDataKey ? $data_kv2 : $data_v;
+
+    $countPaginate = count($data);
+    $pr['count']['unfiltered'] = $countUnfiltered;
+    $pr['count']['filtered'] = $countFiltered;
+    $pr['count']['paginated'] = $countPaginate;
+    $pr['row'] = $data;
+
+    $pageQuotient = $perPage > 0 ? (($countFiltered > $perPage) ? ($countFiltered / $perPage) : 1) : 0;
+    $pageInt = (int)floor($pageQuotient);
+    $pageMod = ($pageInt > 0) ? ($countFiltered % $perPage) : 0;
+    $itemsLast = $pageMod <= 0 ? $perPage : $pageMod;
+    $itemsLastDeficit = $itemsLast < $perPage ? $perPage - $itemsLast : 0;
+
+    $onEachSide = $d->onEachSide;
+    $pageTotal = $pageInt;
+    $pageCurrent = $countPaginate > 0 ? $d->currentPage() : 0;
+    $pagingProgress_ = $pageTotal > 0 ? ($pageCurrent / $pageTotal) : 0;
+    $pagingProgress = round($pagingProgress_, 5);
+    $pagingRemaining = (1.0 - $pagingProgress);
+    
+    $hasItemsBehind = $pageCurrent > 1;
+    $hasItemsOnward = $pageCurrent < $pageTotal;
+    $pagesBehind = $pageCurrent <= 1 ? 0 : ($pageCurrent - 1);
+    $pagesOnward = $pageTotal <= 0 ? 0 : ($pageTotal - $pageCurrent);
+    $itemsFirst = ($countPaginate >= $perPage) ? $perPage : $countPaginate;
+    $itemsCurrent = $countPaginate;
+
+    $isPageFirst = $pageCurrent === 1;
+    $isPageLast = $pageCurrent === $pageTotal;
+    $isPageMiddle = $pageCurrent > 1 && !$isPageFirst && !$isPageLast;
+    $isEmpty = $countPaginate === 0;
+    $isFilled = !$isEmpty;
+    $isPageOneOnly = $pageTotal === 1;
+    $isPageLastDeficit = $itemsLastDeficit > 0;
+    $isPageFilled = $itemsCurrent > 0 ;
+
+    $itemsBehind = $pagesBehind <= 0 ? 0 : $perPage;
+    $itemsOnward = $pagesOnward <= 0 ? 0 : ($pagesOnward > 1 ? $perPage : $itemsLast);
+    $itemsBehindAll = $pagesBehind * $perPage;
+    $itemsOnwardAll = ($pagesOnward > 0) ? (($perPage * ($pagesOnward - 1)) + $itemsLast) : 0;
+    $itemsCurrentStart = $itemsBehindAll + ($isPageFilled ? 1 : 0);
+    $itemsCurrentEnd = $itemsCurrentStart + ($isPageFilled ? $itemsCurrent - 1 : 0);
+    
+    $isClientItemStartExists = $itemStartClient <= $countFiltered;
+    $isClientItemStartDisplayed = $isClientItemStartExists && ($itemStartClient >= $itemsCurrentStart && $itemStartClient <= $itemsCurrentEnd);
+    
+    // $pr['pageNum'] = $pageCurrent;
+    // dd($itemStartClient);
+    // dump($pr);
+
+    // paging analytics
+    $pr['analytics'] = compact(
+        'onEachSide',
+        'pageTotal',
+        'pageCurrent',
+
+        'pagesBehind',
+        'pagesOnward',
+
+        'pagingProgress',
+        'pagingRemaining',
+
+        'itemsFirst',
+        'itemsLast',
+        'itemsLastDeficit',
+        'itemsCurrent',
+        'itemsCurrentStart',
+        'itemsCurrentEnd',
+        'itemsBehind',
+        'itemsOnward',
+        'itemsBehindAll',
+        'itemsOnwardAll',
+        
+        'isPageFilled',
+        'isPageFirst',
+        'isPageLast',
+        'isPageMiddle',
+        'isPageLastDeficit',
+        'isClientItemStartExists',
+        'isClientItemStartDisplayed',
+        
+        'isEmpty',
+        'isFilled',
+
+        'hasItemsBehind',
+        'hasItemsOnward',
+
+        'countUnfiltered',
+        'countFiltered',
+        'countPaginate',
+
+        'timeCountUnfiltered',
+        'timeCountFiltered',
+        'timeDataFiltered',
+        
+        'sqlCountUnfiltered',
+        'sqlCountFiltered',
+        'sqlDataFiltered',
+        // '',
+    );
+    
+    // dd($pr['analytics']);
+    // dd($pr);
+
+    $is_success = true;
+
+    point1:
+    // dd($err_msg);
+    $arr = [
+        "success" => $is_success,
+        "draw" => $pageDraw,
+        "data" => $data,
+        // "columns" => $pr['col']['frontend'],
+        "recordsTotal" => $countUnfiltered,
+        "recordsFiltered" => $countFiltered,
+        "request" => $pr['client'],
+        "analytics" => $pr['analytics'],
+    ];
+
+    // dd($arr);
+
+    return $toJSON ? response()->json($arr) : $arr;
+}
 
 
 
@@ -1142,6 +1892,7 @@ function db_param($conn_tbl, bool $strict = false) {
  */
 function db_check(string $connection, string $table = '') {
     $output = [false, ''];
+    $table = trim(preg_replace('/\s+/u', ' ', $table));
     try {        
         // check empty string
         if(str_empty($connection) === true)
@@ -1152,12 +1903,16 @@ function db_check(string $connection, string $table = '') {
             /** @var \Illuminate\Database\Connection $c */
             $c = DB::connection($connection);
             $c->getPdo();
+            if(!$c->getDatabaseName()){
+                throw new exception('Invalid DB name');
+            }
+
         } catch(\Exception $ex2) {
             throw new exception('Invalid connection: '.$connection.'');
         }
 
         // check table
-        if(str_filled($table)) {
+        if(!empty($table)) {
             if(!Schema::connection($connection)->hasTable($table))
                 throw new exception('Invalid table: '.$table.'');
         }
@@ -1295,7 +2050,7 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
         DB::commit();
     } catch(\Exception $ex) {
         DB::rollBack();
-        dd($ex);
+        // dd($ex);
     }
 
     // if($id <= 0)
@@ -1331,6 +2086,14 @@ function db_sql_with_binding($builder)
     return $query;
 }
 
+/**
+ * Update or Insert to database
+ *
+ * @param string|array<int, string> $conn_tbl
+ * @param array $attr
+ * @param array $values
+ * @return array<int,bool|int|array<int,mixed>>
+ */
 function db_upsert($conn_tbl, array $attr, array $values)
 {
     $conn = db_obj($conn_tbl);
@@ -1881,7 +2644,9 @@ function obj_reflect($obj, bool $to_array=false, $default=null)
 
 
 
-
+/** -----------------------------------------------
+ * REQUEST
+ */
 
 /**
  * Gets the rules of FormRequest class
@@ -1985,8 +2750,6 @@ function request_rules(string $requestClass)
 /** -----------------------------------------------
  * ROUTE
  */
-
-
 
 function route_parse_url(string $url, bool $adjustScheme = true)
 {
@@ -2257,6 +3020,228 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
 
 
 
+
+/** -----------------------------------------------
+ * SOCKET
+ */
+
+/**
+ * IP & Port check
+ *
+ * @param string $ip
+ * @param int|array $port single or multiple ports
+ * @return bool
+ */
+function socket_check(string $ip, $port = 80, float $timeout = 0.5)
+{        
+    $is_success = false;
+    if(!(is_int($port) || is_array($port)))
+        throw new exception('$port must be int or int[]');
+    $port = is_int($port) ? [$port] : $port;
+    $port_range = [0, 65536];
+    $ports = [];
+    foreach($port as $k=>$v) {
+        if($v >= $port_range[0] && $v <= $port_range[1]) {
+            $ports[] = $v;
+        }
+    }
+    $ports = array_unique($ports);
+    $em = '';
+    try {
+        if(empty($ports))
+            throw new exception('Port is empty');
+        $error_report = [];
+        $is_success = true;
+        $firstError = '';
+        foreach($ports as $k=>$v) {
+            $error_code = null;
+            $error_message = null;
+            $fp = @fsockopen($ip, $v, $error_code, $error_message, $timeout);
+            if(!$fp) {                    
+                $error_report[$v] = [$error_code, $error_message];
+                $firstError = !empty($firstError) ? $firstError : 'Connection failed';
+                // dd($firstError);
+            } else {
+                $error_report[$v] = [];
+            }
+        }
+        if(!empty($firstError)) {
+            throw new exception($firstError);
+        }            
+    } catch(\Exception $ex) {
+        $em = $ex->getMessage();
+        $is_success = false;
+    }
+    return [$is_success, $em, $error_report];
+}
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * STORAGE
+ */
+
+function storage_file_info(string $path, $basename_new = null)
+{
+    /*
+        $basename_new:
+            === true ? same as $basename
+            !empty() ? $basename_new
+            else ? random 15 alphanum
+    */
+
+    $file = [
+        'exists' => false,
+        'path' => trim($path),
+        'dir' => '',
+        'name' => '',
+        'basename' => '',
+        'ext' => '',
+        'mime_type' => null,
+        'path_app' => '',  // relative path inside storage/app
+        'dir_app' => '',
+        'md5' => '',
+    ];
+
+    // $p = storage_path('app/'.$file['path']);
+    $p = str_sanitize($file['path']);
+    $p = trim($p, '/');
+    $p = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+    $file['path'] = $p;
+
+    // CHECK IF PATH EXISTS
+    $file['exists'] = (!empty($p) && File::exists($p) && is_file($p));
+    if(!$file['exists'])
+        goto point1;
+    //if($file['exists'] !== true)
+    //    throw new exception('File doesn\'t exists');
+
+    // CHECK MIME TYPE
+    $file['mime_type'] = false;
+    try { $file['mime_type'] = File::mimeType($p); } catch(\Exception $ex) {}
+    $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
+    //if(is_string($file['mime_type']) !== true || str_empty($file['mime_type']) === true)
+    //    throw new exception('Invalid mime type');
+
+    // FILE INFO PARTS
+    //$file['dir'] = File::dirname($p);
+    $file['name'] = basename($p);
+    $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();  
+    $file['ext'] = Str::afterLast($file['name'], '.');
+    $file['ext'] = ($file['name'] === $file['ext']) ? '' : $file['ext'];
+    $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);  
+    $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
+    $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
+    $file['md5'] = $file['exists'] ? md5_file($p) : '';
+
+    // if($path === 'stud_vacc/37f65c068b7723cd7809ee2d31d7861c.jpg') {
+    //     dd($file);
+    // }
+    
+    // NEW PATH
+    $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
+    if($basename_new === true)
+        $file['path_new'] = $file['name'];
+    else if(is_string($basename_new) && str_empty($basename_new) !== true)
+        $file['path_new'] = $basename_new.$ext_;
+    else
+        $file['path_new'] = str_random_alphanum(15).$ext_;
+
+    point1:
+    return $file;
+}
+
+function storage_file_stream(Request $request) {
+    /*
+        URL PARAMS:
+            p => path (encrypted)
+            m => mode (int)
+                1 => dispose
+                2 => download
+    */
+
+    // SETTINGS
+    $modes = ['dispose', 'download'];
+    $base_dir = storage_path('app/');
+    $m = ((int)($request->get('m') ?? 0)) - 1;
+    $p = (string)($request->get('p') ?? '');
+
+    // CHECK STREAM MODE
+    $mode = $modes[$m] ?? '';  // m -> stream mode
+    if(in_array($mode, $modes, true) !== true)
+        throw new Exception('Invalid stream mode');
+
+    // CHECK FILE PATH INFO
+    $crypt = crypt_sc($p, 1, true);
+    if($crypt[0] !== true)
+        throw new exception($crypt[1]);
+    $path = $base_dir.$crypt[2];
+    $path = Str::replaceFirst(storage_path('app/'), '', $path);
+
+    // CHECK FILE PATH AND MIME TYPE
+    $file = storage_file_info($path, null);
+    if($file['exists'] !== true)
+        throw new Exception('File doesn\'t exists');
+    if(str_empty($file['mime_type']) === true)
+        throw new Exception('Invalid mime type');
+            
+    // ROLE VALIDATION
+    $hasAccess = StorageAccess::check($request, $file);
+    if($hasAccess !== true)
+        abort(403, 'Access denied');
+
+    // FILE STREAM
+    $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
+    $dispositions = ['inline', 'attachment'];
+    $disposition = $dispositions[$m];
+    $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
+
+    return $filestream;
+}
+
+function storage_file_url(string $path, string $mode) {
+    // explode segments
+
+    // SETTINGS
+    $url_len_max = 2000;
+    $modes = ['dispose', 'download'];
+
+    // check mode
+    if(!in_array($mode, $modes))
+        throw new exception('Invalid mode');
+    $m = array_search($mode, $modes) + 1;
+
+    // check if path exists
+    $file = storage_file_info($path, true);
+
+    if($file['exists'] !== true) {
+        return '';
+        // throw new exception('File doesn\'t exists');
+    }
+
+    $url = route('file.index', ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+    $url_len = strlen($url);
+    if($url_len > $url_len_max)
+        throw new exception('File link has exceeded '.$url_len_max.' '.Str::plural('character', $url_len_max));
+    
+    return $url;
+}
+
+
+
+
+
+
+
+
+
 /** -----------------------------------------------
  * STRING
  */
@@ -2471,154 +3456,6 @@ function str_replace_last($search, $replace, $subject)
 
 
 
-function storage_file_info(string $path, $basename_new = null)
-{
-    /*
-        $basename_new:
-            === true ? same as $basename
-            !empty() ? $basename_new
-            else ? random 15 alphanum
-    */
-
-    $file = [
-        'exists' => false,
-        'path' => trim($path),
-        'dir' => '',
-        'name' => '',
-        'basename' => '',
-        'ext' => '',
-        'mime_type' => null,
-        'path_app' => '',  // relative path inside storage/app
-        'dir_app' => '',
-        'md5' => '',
-    ];
-
-    // $p = storage_path('app/'.$file['path']);
-    $p = str_sanitize($file['path']);
-    $p = trim($p, '/');
-    $p = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
-    $file['path'] = $p;
-
-    // CHECK IF PATH EXISTS
-    $file['exists'] = (!empty($p) && File::exists($p) && is_file($p));
-    if(!$file['exists'])
-        goto point1;
-    //if($file['exists'] !== true)
-    //    throw new exception('File doesn\'t exists');
-
-    // CHECK MIME TYPE
-    $file['mime_type'] = false;
-    try { $file['mime_type'] = File::mimeType($p); } catch(\Exception $ex) {}
-    $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
-    //if(is_string($file['mime_type']) !== true || str_empty($file['mime_type']) === true)
-    //    throw new exception('Invalid mime type');
-
-    // FILE INFO PARTS
-    //$file['dir'] = File::dirname($p);
-    $file['name'] = basename($p);
-    $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();  
-    $file['ext'] = Str::afterLast($file['name'], '.');
-    $file['ext'] = ($file['name'] === $file['ext']) ? '' : $file['ext'];
-    $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);  
-    $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
-    $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
-    $file['md5'] = $file['exists'] ? md5_file($p) : '';
-
-    // if($path === 'stud_vacc/37f65c068b7723cd7809ee2d31d7861c.jpg') {
-    //     dd($file);
-    // }
-    
-    // NEW PATH
-    $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
-    if($basename_new === true)
-        $file['path_new'] = $file['name'];
-    else if(is_string($basename_new) && str_empty($basename_new) !== true)
-        $file['path_new'] = $basename_new.$ext_;
-    else
-        $file['path_new'] = str_random_alphanum(15).$ext_;
-
-    point1:
-    return $file;
-}
-
-function storage_file_stream(Request $request) {
-    /*
-        URL PARAMS:
-            p => path (encrypted)
-            m => mode (int)
-                1 => dispose
-                2 => download
-    */
-
-    // SETTINGS
-    $modes = ['dispose', 'download'];
-    $base_dir = storage_path('app/');
-    $m = ((int)($request->get('m') ?? 0)) - 1;
-    $p = (string)($request->get('p') ?? '');
-
-    // CHECK STREAM MODE
-    $mode = $modes[$m] ?? '';  // m -> stream mode
-    if(in_array($mode, $modes, true) !== true)
-        throw new Exception('Invalid stream mode');
-
-    // CHECK FILE PATH INFO
-    $crypt = crypt_sc($p, 1, true);
-    if($crypt[0] !== true)
-        throw new exception($crypt[1]);
-    $path = $base_dir.$crypt[2];
-    $path = Str::replaceFirst(storage_path('app/'), '', $path);
-
-    // CHECK FILE PATH AND MIME TYPE
-    $file = storage_file_info($path, null);
-    if($file['exists'] !== true)
-        throw new Exception('File doesn\'t exists');
-    if(str_empty($file['mime_type']) === true)
-        throw new Exception('Invalid mime type');
-            
-    // ROLE VALIDATION
-    $hasAccess = StorageAccess::check($request, $file);
-    if($hasAccess !== true)
-        abort(403, 'Access denied');
-
-    // FILE STREAM
-    $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
-    $dispositions = ['inline', 'attachment'];
-    $disposition = $dispositions[$m];
-    $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
-
-    return $filestream;
-}
-
-
-function storage_file_url(string $path, string $mode) {
-    // explode segments
-
-    // SETTINGS
-    $url_len_max = 2000;
-    $modes = ['dispose', 'download'];
-
-    // check mode
-    if(!in_array($mode, $modes))
-        throw new exception('Invalid mode');
-    $m = array_search($mode, $modes) + 1;
-
-    // check if path exists
-    $file = storage_file_info($path, true);
-
-    if($file['exists'] !== true) {
-        return '';
-        // throw new exception('File doesn\'t exists');
-    }
-
-    $url = route('file.index', ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
-    $url_len = strlen($url);
-    if($url_len > $url_len_max)
-        throw new exception('File link has exceeded '.$url_len_max.' '.Str::plural('character', $url_len_max));
-    
-    return $url;
-}
-
-
 
 
 
@@ -2633,6 +3470,169 @@ function storage_file_url(string $path, string $mode) {
  * URL
  */
 
+/**
+ * Quick parse of url string
+ *
+ * @param string $url
+ * @param integer $component
+ * @return void
+ * @before `url_parse()`
+ */
+function url_parse_short(string $url, int $component = -1)
+{
+    $types = [
+        'scheme' => 'string',
+        'host' => 'string',
+        'port' => 'int',
+        'user' => 'string',
+        'pass' => 'string',
+        'path' => 'string',
+        'query' => 'string',
+        'fragment' => 'string',
+    ];
+    $a = parse_url($url, $component);
+    $fn_arr_get = function(string $key) use($a, $types) {
+        $val = $val2 = ($a[$key] ?? null);
+        if(!empty($val2) && array_key_exists($key, $types)) {
+            settype($val2, $types[$key]);
+        }
+        return $val2;            
+    };
+    $ret = ['is_valid' => ($a !== false)];
+    $ret['urlRaw'] = $ret['is_valid'] ? $url : '';
+    $ret['urlRawDecode'] = $ret['is_valid'] ? urldecode($url) : '';
+    foreach($types as $k=>$v) {
+        $ret[$k] = $fn_arr_get($k);
+    }
+    $ret['username'] = $ret['user'];
+    $ret['password'] = $ret['pass'];
+    $ret['credentialRaw'] = $ret['user'].(!empty($ret['pass']) ? ':'.$ret['pass'] : '');
+    $ret['queryRaw'] = (string)($ret['query'] ?? '');
+    // dd(urldecode($ret['queryRaw']));
+
+    $ret['queryRawDecode'] = urldecode($ret['queryRaw']);
+
+    parse_str($ret['queryRaw'], $ret['query']);
+    $ret['urlParsed'] = $ret['is_valid'] ? $ret['scheme'].'://'
+        .(!empty($ret['credentialRaw']) ? $ret['credentialRaw'].'@' : '')
+        .$ret['host'].(!empty($ret['port']) ? ':'.$ret['port'] : '').$ret['path']
+        .(!empty($ret['queryRaw']) ? '?'.$ret['queryRaw'] : '')
+        .(!empty($ret['fragment']) ? '#'.$ret['fragment'] : '')
+    : '';
+    $ret['is_same_url'] = $ret['urlRaw'] === $ret['urlParsed'];
+    return $ret;
+}
+
+/**
+ * Comprehensive parsing of url string
+ *      *
+ * @param string $url
+ * @param string $defaultScheme
+ * @return object
+ * 
+ * @requires `\Illuminate\Support\Str`
+ * @depends `url_parse_short()`
+ */
+function url_parse_(string $url, string $defaultScheme = 'https')
+{
+    // if(!Str::startsWith($url, ['http://', 'https://']))
+    // 	throw new exception('$url must starts with `http` or `https`');
+
+    $url = trim($url);
+    $urlOld = $url;
+    $is_scheme_adjusted = false;
+    $allowed_schemes = ['http://', 'https://', 'ftp://', 'ftps://', 'ftpes://'];
+
+    $replaceFirst = ['//', '://'];
+    foreach($replaceFirst as $k=>$v) {
+        if(Str::startsWith($url, $v)) {
+            $url = Str::replaceFirst($v, '', $url);
+            break;  // check only once
+        }
+    }
+
+    if(Str::startsWith($url, ['//', '://'])) {
+        $url = Str::replaceFirst('://', '', $url);
+    }
+    
+    if(!Str::startsWith($url, $allowed_schemes)) {
+        $url = $defaultScheme.'://'.$url;
+        $is_scheme_adjusted = true;
+    }
+    
+    $parsed = url_parse_short($url);
+    // dd($parsed);
+    if(!$parsed['is_valid']) {
+        goto point1;
+    }
+
+    $has_username = !empty($parsed['username']);
+    $has_password = !empty($parsed['password']);
+    $has_port = !empty($parsed['port']);
+    $has_credential = $has_username && $has_password;
+    $has_query = !empty($parsed['query']);
+    $has_fragment = !empty($parsed['fragment']);
+
+    try {
+        $is_path_root = empty(trim(trim($parsed['path'], '/')));
+    } catch(\Throwable $ex) {
+        dd($parsed);
+    }
+
+
+    $schemeHostPath = $parsed['scheme'].'://'.$parsed['host'].$parsed['path'];
+    $pathQueryFragment = $parsed['path'].($has_query ? '?'.$parsed['queryRaw'] : '').($has_fragment ? '#'.$parsed['fragment'] : '');
+    $path2 = ($parsed['path'][0] ?? '') === '/' ? substr($parsed['path'], 1) : $parsed['path'];
+    $pathArr = $is_path_root ? [] : (array)explode('/', $path2);
+    $fragment2 = (string)(($parsed['fragment'][0] ?? '') === '/' ? substr($parsed['fragment'], 1) : $parsed['fragment']);
+    $fragmentArr = (array)explode('/', $fragment2);
+
+    point1:
+    $ret = [
+        'is_valid' => $parsed['is_valid'],
+        'scheme' => $parsed['scheme'],
+        'username' => $parsed['username'],
+        'password' => $parsed['password'],
+        'host' => $parsed['host'],
+        'port' => $parsed['port'],
+        'path' => $parsed['path'],
+        'query' => $parsed['query'],
+        'fragment' => $parsed['fragment'],  // string only, not exploded
+
+        'credentialRaw' => $parsed['credentialRaw'],
+        'queryRaw' => $parsed['queryRaw'],
+        'queryRawDecode' => $parsed['queryRawDecode'],
+        'queryDepth' => arr_depth($parsed['query']),
+
+        'urlRaw' => $parsed['urlRaw'],
+        'urlRawDecode' => $parsed['urlRawDecode'],
+        'urlParsed' => $parsed['urlParsed'],
+
+        'segmentsPath' => $pathArr,
+        'segmentsFragment' => $fragmentArr,
+
+        'is_scheme_adjusted' => $is_scheme_adjusted,
+        'is_path_root' => $is_path_root,
+        'has_port' => $has_port,
+        'has_username' => $has_username,
+        'has_password' => $has_password,
+        'has_credential' => $has_credential,
+        'has_query' => $has_query,
+        'has_fragment' => $has_fragment,
+
+        'countSegmentFragment' => count($fragmentArr),
+        'countSegmentPath' => count($pathArr),
+
+        'schemeHostPath' => $schemeHostPath,
+        'pathQueryFragment' => $pathQueryFragment,
+        
+        // 'obj' => null,
+    ];
+
+    return (object)$ret;
+}
+
+// OLD
 function url_parse(string $url, string $defaultScheme = 'https')
 {
     // if(!Str::startsWith($url, ['http://', 'https://']))
@@ -2680,6 +3680,7 @@ function url_parse(string $url, string $defaultScheme = 'https')
             'pathArr' => [],
             'fragmentArr' => [],
             'schemeHostPath' => '',
+            'pathQueryFragment' => '',
 
             'is_scheme_adjusted' => false,
             'is_path_root' => false,
@@ -2742,6 +3743,8 @@ function url_parse(string $url, string $defaultScheme = 'https')
         $r['has_password'] = !empty($r['password']);
         $r['has_credential'] = $r['has_username'] && $r['has_password'];
 
+        $r['pathQueryFragment'] = $r['path'].($r['has_query'] ? '?'.$r['queryRaw'] : '').($r['has_fragment'] ? '#'.$r['fragment'] : '');
+
         $r['credentialRaw'] = $r['has_credential'] ? $r['username'].':'.$r['password'] : '';
         $path2 = ($r['path'][0] ?? '') === '/' ? substr($r['path'], 1) : $r['path'];
         $fragment2 = ($r['fragment'][0] ?? '') === '/' ? substr($r['fragment'], 1) : $r['fragment'];
@@ -2768,7 +3771,7 @@ function url_parse(string $url, string $defaultScheme = 'https')
     return (object)$r;
 }
 
-function url_parse2(string $url, bool $adjustScheme = true)
+/*function url_parse2(string $url, bool $adjustScheme = true)
 {
     // if(!Str::startsWith($url, ['http://', 'https://']))
 	// 	throw new exception('$url must starts with `http` or `https`');
@@ -2802,7 +3805,7 @@ function url_parse2(string $url, bool $adjustScheme = true)
 	$r['url'] = $scheme.'://'.$r['host'].(!empty($r['port']) ? ':'.$r['port'] : '').$r['path'];
 	$r['fullUrl'] = $fullUrl;
 	return (object)$r;
-}
+}*/
 
 
 
@@ -2864,6 +3867,41 @@ function validate_email(string $email)
 /** -----------------------------------------------
  * VAR
  */
+ 
+/**
+ * Casts variable to the specified type
+ *
+ * @param mixed $var
+ * @param string $type
+ * @return mixed
+ */
+function var_cast($var, string $type)
+{
+    /*return match($type) {
+        'NULL'      => null,
+        'string'    => (string) $var,
+        'integer'   => (integer) $var,
+        'float'     => (float) $var,
+        'double'    => (double) $var,
+        //'real'      => (real) $var,  // removed
+        'array'     => (array) $var,
+        'boolean'   => (boolean) $var,
+        'object'    => (object) $var,
+        default     => $var,
+    };*/
+        $type2 = var_type_official($type);
+        settype($var, strtolower($type2));
+    return $var;
+}
+
+function var_is_closure($obj) {
+    $bool = false;
+    try {
+        $reflection = new \ReflectionFunction($obj);
+        $bool = (bool)$reflection->isClosure();
+    } catch(\Throwable $th) {}
+    return $bool;
+}
 
 /**
  * Stringify the value
@@ -2879,6 +3917,66 @@ function var_stringify($var) {
     elseif(is_string($var)) return '"'.$var.'"';
     return (string)$var;
 }
+
+
+function var_types() {
+    return [
+        'NULL',
+        'string',
+        'integer',
+        'float',
+        'double',
+        //'real',  // removed
+        'boolean',
+        'array',
+        'object',
+        'resource',
+    ];
+}
+
+/**
+ * Gets the official PHP data type
+ *
+ * @param string $type
+ * @return string
+ * @throws \Exception
+ */
+function var_type_official(string $type)
+{
+    $type = strtolower($type);
+    $o = [  // overrides
+        'null'  => 'NULL',
+        'str'   => 'string',
+        'int'   => 'integer',
+        'bool'  => 'boolean',
+        'arr'   => 'array',
+        'obj'   => 'object',
+        'res'   => 'resource',
+        'real'  => 'float',  // real converted to float
+    ];
+
+
+    // try {
+        $type = array_key_exists($type, $o) ? $o[$type] : $type;
+        $types = var_types();
+        if(!in_array($type, $types, true))
+            throw new exception('Invalid type: '.$type);
+        $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
+        $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
+        // if(!in_array($type2, $types, true))
+        if(!array_key_exists($type2, $t))
+            throw new exception('Invalid data type: '.$type2);
+    // } catch(\Throwable $ex) {
+        // dump($o);
+        // dump($t);
+        // dump($type);
+        // dump($type2);
+        // dd($ex);
+    // }
+    return $t[$type2];
+}
+
+
 
 
 
@@ -2905,7 +4003,7 @@ function var_stringify($var) {
  * @param string $separator
  * @return string
  */
-function view_title(string $title, bool $include_app_name=true, string $separator = ' | ') 
+function view_title(string $title, bool $include_app_name=true, string $separator = ' | ')
 {
     $app_name = trim($include_app_name ? (string)env('APP_NAME') : '');
     $ea = empty($app_name);  // empty app name
@@ -2938,35 +4036,22 @@ function view_variable(string $key, bool $strict=false)
     }
 }
 
-/**
- * Same as `view_variable()`
- *
- * @param string $key
- * @param boolean $strict
- * @return mixed
- * @see `view_variable()`
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * WEBCLIENT
  */
-function vv(string $key, bool $strict=false)
-{
-    return view_variable($key, $strict);
-}
-
-
-
-
-
-
-
-function webclient_is_dev()
-{
-    // return !empty(env('DEV_KEY')) && ((string)($_COOKIE['dev'] ?? '')) === env('DEV_KEY');
-    return !empty(env('DEV_KEY')) && ((string)(request()->cookie('dev') ?? '')) === env('DEV_KEY');
-}
-
-function webclient_timezone()
-{
-    return (string)config('user.settings.timezone', 'Asia/Taipei');
-}
 
 /**
  * Gets the intended URL
@@ -2994,3 +4079,58 @@ function webclient_intended()
     $bool1 = (!empty($prev_url_path) && !in_array($prev_url_path, $URIs_ignored) && $curr_url !== $prev_url);
     return $bool1 ? $prev_url : '/';
 }
+
+function webclient_is_dev()
+{
+    // return !empty(env('DEV_KEY')) && ((string)($_COOKIE['dev'] ?? '')) === env('DEV_KEY');
+    return !empty(env('DEV_KEY')) && ((string)(request()->cookie('dev') ?? '')) === env('DEV_KEY');
+}
+
+function webclient_timezone()
+{
+    return (string)config('user.settings.timezone', 'Asia/Taipei');
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * WEBSITE
+ */
+
+function website_check(string $url)
+{
+    try {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        $http_respond = trim(strip_tags(curl_exec($ch)));
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if(!in_array($http_code, ["200", "302"])) {
+            throw new exception('Invalid http code');
+        }
+    } catch(\Throwable $ex) {
+        return false;
+    }
+    return true;
+}
+
+
+
+
+
+
+

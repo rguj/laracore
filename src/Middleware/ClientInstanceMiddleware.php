@@ -158,6 +158,7 @@ class ClientInstanceMiddleware
                 goto point1;
             }
         }
+        Config::set('roles', SELF::ROLES);
         
         // set client info
         $this->client_info = SELF::client_info_($request);
@@ -256,6 +257,9 @@ class ClientInstanceMiddleware
     private function validate(BaseRequest $request) {
         // returns [success, err_mode, err_data]
         // err_mode [1 => exception, 2 => redirect]
+
+        // check useragent browser
+        $this->evalBrowser();
 
         // $fb = session_get_alerts(true);
         $url = url_parse(request()->fullUrl());
@@ -536,6 +540,147 @@ class ClientInstanceMiddleware
 
 
 
+    public function evalBrowser(bool $skipRootPath = true)
+    {
+        $skip = [
+            '/',
+            'check/iops',
+        ];
+
+        $ua = WebClient::__getUA();
+        // config()->set('browser', []);
+
+        // if($skipRootPath && request()->path() === '/') {
+        if($skipRootPath && in_array(request()->path(), $skip)) {
+            goto point2;
+        }
+
+        // CHECK BROWSER
+        $vb = function() use($ua) {                
+            $flagged = false;
+            // $invalid_type = false;
+            // $invalid_name = false;
+            // $invalid_browser = false;
+            // $invalid_referrer = false;
+            $err_msg = '';
+            try {
+                // $ua = WebClient::__getUA();
+                if(empty($ua)) {
+                    // $invalid_browser = true;
+                    throw new exception('Failed to get user-agent info');
+                }
+                $ba = config('browser.requirement');
+        
+                if(!array_key_exists($ua['device']['type'], $ba)) {
+                    config()->set('browser.is_valid_type', false);
+                    throw new exception('Invalid device type');
+                }
+                config()->set('browser.type', $ua['device']['type']);
+        
+                if(!array_key_exists($ua['browser']['name'], $ba[$ua['device']['type']])) {
+                    config()->set('browser.is_valid_name', false);
+                    throw new exception('Invalid device name');
+                }
+                config()->set('browser.name', $ua['browser']['name']);
+        
+                $version_required = $ba[$ua['device']['type']][$ua['browser']['name']];
+                $version_current = $ua['browser']['version'];
+                config()->set('browser.version.required', $version_required);
+                config()->set('browser.version.current', $version_current);
+        
+                // $flagged = false;
+                if(str_version_compare($version_current, $version_required, '<')) {
+                    config()->set('browser.is_outdated', true);
+                    $flagged = true;
+                }
+
+                $http_referrer = $_SERVER['HTTP_REFERER'] ?? '';
+                $allowed_host = (array)config('browser.allowed_host');
+                $blocked_host = (array)config('browser.blocked_host');
+                $up = url_parse($http_referrer);
+                
+                if(
+                    // in_array($http_referrer, $block_referrer, true)
+                    ($up->is_valid && in_array($up->host, $blocked_host, true))
+                    || ($up->is_valid && !in_array($up->host, $allowed_host, true))
+                    || (!str_empty($http_referrer) && !$up->is_valid)
+                ) {
+                    config()->set('browser.is_blocked_referrer', true);
+                    $flagged = true;
+                }
+
+                if($flagged) {
+                    if(!config('browser.is_valid_type')) {
+                        throw new exception('Unsupported referrer');
+                    }
+                    if(!config('browser.is_valid_name')) {
+                        throw new exception('Unsupported referrer');
+                    }
+                    if(!config('browser.is_outdated')) {
+                        throw new exception('Unsupported browser');
+                    }
+                    if(!config('browser.is_blocked_referrer')) {
+                        throw new exception('Unsupported referrer');
+                    }
+                }
+
+            } catch(\Exception $ex) {
+                $err_msg = $ex->getMessage();
+
+                if(!in_array($ua['device']['name'] ?? '', (array)config('browser.bypass_device_name'))) {
+                    config()->set('browser.is_valid', false);
+                    config()->set('browser.err_msg', $err_msg);
+                    //abort(response()->view('errors.unsupported-browser', config('browser'), 406));
+                }
+
+            }
+            point1:
+
+        };
+        $vb();
+        point2:
+        config()->set('browser.useragent', $ua);
+
+        // updatemybrowser.org minumum requirements
+        $umb = [];
+        $buo = [];  // https://browser-update.org
+        $buo_keys = [
+            'edge' => 'e',
+            'ie' => 'i',
+            'chrome' => 'c',
+            'firefox' => 'f',
+            'opera' => 'o',
+            // 'opera android' => 'o_a',
+            'safari' => 's',
+            'yandex' => 'y',
+            'vivaldi' => 'v',
+            'ucbrowser' => 'uc',
+            'iosbrowser' => 'ios',
+            'samsung' => 'samsung',
+        ];
+        $device_type = (string)config('browser.useragent.device.type');
+        $req = !empty($device_type) ? (array)config('browser.requirement.'.$device_type) : [];
+        foreach($req as $k=>$v) {
+            $k2 = strtolower($k);
+            $v2 = (float)$v;
+            $umb[$k2] = $v2;
+            if(array_key_exists($k2, $buo_keys)) {
+                $buo[$buo_keys[$k2]] = $v;
+            }
+        }
+        config()->set('browser.umb', $umb);
+        config()->set('browser.buo', $buo);
+
+
+    }
+
+
+
+
+
+
+
+
     
     public function user_menu(BaseRequest $request, bool $strict = true)
     {
@@ -553,6 +698,7 @@ class ClientInstanceMiddleware
             // 'jappl',
             'student',
             'eofficer',
+            'rstaff',
             'osdsstaff',
 
             'admin',

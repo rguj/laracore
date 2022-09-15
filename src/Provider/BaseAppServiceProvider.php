@@ -101,7 +101,7 @@ class BaseAppServiceProvider extends ServiceProvider
                 die('Laravel version must be '.$required_laravel.' or up.');
             }
 
-            $this->evalBrowser();
+            // $this->evalBrowser();
         }
         
 
@@ -281,10 +281,23 @@ class BaseAppServiceProvider extends ServiceProvider
 
     
 
-    protected function evalBrowser()
+    /*protected function evalBrowser(bool $skipRootPath = true)
     {
+        $skip = [
+            '/',
+            'check/iops',
+        ];
+
+        $ua = WebClient::__getUA();
+        // config()->set('browser', []);
+
+        // if($skipRootPath && request()->path() === '/') {
+        if($skipRootPath && in_array(request()->path(), $skip)) {
+            goto point2;
+        }
+
         // CHECK BROWSER
-        $vb = function() {                
+        $vb = function() use($ua) {                
             $flagged = false;
             // $invalid_type = false;
             // $invalid_name = false;
@@ -292,12 +305,11 @@ class BaseAppServiceProvider extends ServiceProvider
             // $invalid_referrer = false;
             $err_msg = '';
             try {
-                $ua = WebClient::__getUA();
+                // $ua = WebClient::__getUA();
                 if(empty($ua)) {
                     // $invalid_browser = true;
                     throw new exception('Failed to get user-agent info');
                 }
-
                 $ba = config('browser.requirement');
         
                 if(!array_key_exists($ua['device']['type'], $ba)) {
@@ -354,18 +366,33 @@ class BaseAppServiceProvider extends ServiceProvider
                 }
 
             } catch(\Exception $ex) {
-                // dd($ex);
                 $err_msg = $ex->getMessage();
 
-                config()->set('browser.is_valid', false);
-                config()->set('browser.err_msg', $err_msg);
-                abort(response()->view('errors.unsupported-browser', config('browser'), 406));
+                if(!in_array($ua['device']['name'] ?? '', (array)config('browser.bypass_device_name'))) {
+                    config()->set('browser.is_valid', false);
+                    config()->set('browser.err_msg', $err_msg);
+                    abort(response()->view('errors.unsupported-browser', config('browser'), 406));
+                }
+
             }
             point1:
 
         };
         $vb();
-    }
+        point2:
+        config()->set('browser.useragent', $ua);
+
+        // updatemybrowser.org minumum requirements
+        $umb = [];
+        $device_type = (string)config('browser.useragent.device.type');
+        $req = !empty($device_type) ? (array)config('browser.requirement.'.$device_type) : [];
+        foreach($req as $k=>$v) {
+            $umb[$k] = (float)$v;
+        }
+        config()->set('browser.umb', $umb);
+
+
+    }*/
 
 
 }

@@ -15,28 +15,6 @@ use Exception;
  */
 
 class WebClient {
-
-    const DEFAULT_VALUES = [
-        'agent' => null,
-        'os' => ['', ''],
-        'browser' => ['', ''],
-        'device' => [
-            'type' => '',
-            'name' => '',
-            'phone_type' => '',
-            'mobile_grade' => '',
-            'is_desktop' => false,
-            'is_phone' => false,
-            'is_mobile' => false,
-            'is_robot' => false,
-        ],
-        'languages' => [],
-
-        'prev_url' => '',
-        'ip_address' => '',
-        'timezone' => '',
-        'server' => '',
-    ];
     
     public static function getKeys() {
         $arr = [
@@ -67,91 +45,95 @@ class WebClient {
     public static function __getUA()
     {
         $agent = new Agent();
-        $clientUAInfo = SELF::DEFAULT_VALUES;
+        $keys = SELF::getKeys();
+        $device_type = '';
+        $phone_type = '';
+        
+        $baseInfo = [
+            $keys['ip_address'] => $_SERVER['REMOTE_ADDR'],
+            $keys['os'] => ['', ''],
+            $keys['browser'] => ['', ''],
+            $keys['device'] => [
+                'type' => '',
+                'name' => '',
+                'phone_type' => '',
+                'mobile_grade' => '',
+                'is_desktop' => false,
+                'is_phone' => false,
+                'is_mobile' => false,
+                'is_robot' => false,
+            ],
+            $keys['languages'] => [],
+            $keys['agent'] => $agent,
+        ];
 
         try {
+
             // operating system
-            $clientUAInfo['os'] = ['name' => $agent->platform(),'version' => $agent->version($agent->platform())];
+            $os = ['name' => $agent->platform(),'version' => $agent->version($agent->platform())];
 
             // browser
-            $clientUAInfo['browser'] = ['name' => $agent->browser(),'version' => $agent->version($agent->browser())];
+            $browser = ['name' => $agent->browser(),'version' => $agent->version($agent->browser())];
 
             // device type
             if($agent->isDesktop())
-                $clientUAInfo['device']['type'] = 'desktop';
+                $device_type = 'desktop';
             else if($agent->isPhone())
-                $clientUAInfo['device']['type'] = 'phone';
-            // else
-            //     throw new exception('Invalid device type.');
+                $device_type = 'phone';
+            else
+                throw new exception('Invalid device type.');
 
             // phone type
-            if($clientUAInfo['device']['type'] == 'phone') {
+            if($device_type == 'phone') {
                 if($agent->isMobile())
-                    $clientUAInfo['device']['phone_type'] = 'mobile';
+                    $phone_type = 'mobile';
                 else if($agent->isTablet())
-                    $clientUAInfo['device']['phone_type'] = 'mobile';
-                // else
-                //     throw new exception('Invalid phone type.');
+                    $phone_type = 'mobile';
+                else
+                    throw new exception('Invalid phone type.');
             }
 
-            $clientUAInfo['device']['name'] = $agent->device();
-            $clientUAInfo['device']['mobile_grade'] = $agent->mobileGrade();
-            $clientUAInfo['device']['is_desktop'] = $agent->isDesktop();
-            $clientUAInfo['device']['is_phone'] = $agent->isPhone();
-            $clientUAInfo['device']['is_mobile'] = $agent->isMobile();
-            $clientUAInfo['device']['is_robot'] = $agent->isRobot();
+            // forming device info array
+            $device = [
+                'type' => $device_type,
+                'name' => $agent->device(),
+                'phone_type' => $phone_type,
+                'mobile_grade' => $agent->mobileGrade(),
+                'is_desktop' => $agent->isDesktop(),
+                'is_phone' => $agent->isPhone(),
+                'is_mobile' => $agent->isTablet(),
+                'is_robot' => $agent->isRobot(),
+            ];
 
             // languages
-            $clientUAInfo['languages'] = $agent->languages();
-            $clientUAInfo['agent'] = $agent;
+            $languages = $agent->languages();
+
+            // forming final data
+            $keys = SELF::getKeys();
+            $clientUAInfo = [
+                $keys['ip_address'] => $_SERVER['REMOTE_ADDR'],
+                // $keys['prev_url'] => SELF::nextURL(),
+                // $keys['timezone'] => $timezone,
+                $keys['os'] => $os,
+                $keys['browser'] => $browser,
+                $keys['device'] => $device,
+                $keys['languages'] => $languages,
+                $keys['agent'] => $agent,
+                // $keys['server'] => $server,
+            ];
 
         } catch(\Exception $ex) {
-            
+            $clientUAInfo = $baseInfo;
         }
 
         return $clientUAInfo;
     }
 
 
-    public static function getClientUAInfo(Request $request = null, bool $throw = true) {
-        $ua = SELF::__getUA();
-
-        // 'prev_url' => '',
-        // 'ip_address' => '',
-        // 'timezone' => '',
-        // 'server' => '',
-
-        $data = [false, '', []];
-
-        try {
-            // IPv4
-            $ip_address = !is_null($request) ? $request->ip() : $_SERVER['REMOTE_ADDR'];
-            $ip_address = $ip_address === '::1' ? '127.0.0.1' : $ip_address;
-            if($throw && !validate_ipv4($ip_address))
-                throw new exception('IP Address is not v4.');
-            $ua['ip_address'] = $ip_address;
-    
-            // TIME ZONE
-            $timezone = (string)(config('user.settings.timezone') ?? '');
-            if($throw && !dt_is_timezone($timezone))
-                throw new exception('Time zone `'.$timezone.'` is invalid.');
-            $ua['timezone'] = $timezone;
-    
-            // PREV URL
-            $ua['prev_url'] = SELF::nextURL(); 
-
-            $data[0] = true;
-            $data[2] = $ua;
-        } catch(\Exception $ex) {
-            $data[1] = $ex->getMessage();
-        }
-
-        return $data;
-    }
 
 
 
-    public static function getClientUAInfo2(Request $request = null) {
+    public static function getClientUAInfo(Request $request = null) {
         $agent = new Agent();
         $keys = SELF::getKeys();
         $device_type = '';

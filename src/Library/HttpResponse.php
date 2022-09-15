@@ -44,6 +44,8 @@ use Rguj\Laracore\Request\Request as BaseRequest;
 class HttpResponse {
 
     private $request;
+    /** @var \Rguj\Laracore\Request\Request $resolvedRequest */
+    private $resolvedRequest;  // resolved request
     private $class;
     private $reflection;
     private $reflectionParent;
@@ -54,6 +56,7 @@ class HttpResponse {
     private array $routeNames;
     private array $constants;
     private array $constantsIndex;
+    private int $classInheritanceIndex;
 
     private bool $isThemeLRPM = false;
     private bool $isDevMode = false;
@@ -113,10 +116,15 @@ class HttpResponse {
 
         // validate $class_name
         $parent_class = 'App\Http\Controllers\Controller';
+        $class_parents = class_parents($class);
         // dd(get_parent_class($class));
-        if(get_parent_class($class) !== $parent_class) {
+        // if(get_parent_class($class) !== $parent_class) {
+        //     throw new exception('Parent class must be '.$parent_class);
+        // }
+        if(!array_key_exists($parent_class, $class_parents)) {
             throw new exception('Parent class must be '.$parent_class);
         }
+        $this->classInheritanceIndex = array_search($parent_class, array_keys($class_parents));
 
         // get class and request
         $this->class = $class;
@@ -287,6 +295,7 @@ class HttpResponse {
         $this->routeName = str_sanitize($this->request->route()->getName());
         $this->routeNames = route_names(true);
         $this->request = $this->request;
+        $this->resolvedRequest = resolve(BaseRequest::class);
         $this->method = $this->request->method();
         $this->isAjax = $this->request->ajax();
         $this->isDevMode = (bool)config('app.debug', false);
@@ -338,9 +347,10 @@ class HttpResponse {
 
     /**
      * Gets the value from the array key
+     * - this will fire the purpose logic function
      *
      * @param array $args default `[]`
-     * @param string $key default `_purpose`
+     * @param string $key default `'_purpose'`
      * @param boolean $isEncrypted default `false`
      * @return void
      * @throws Exception
@@ -1083,6 +1093,7 @@ class HttpResponse {
 
     /**
      * Check if request has logic purpose
+     * - this will fire the purpose logic closure
      *
      * @param array $args default `[]`
      * @param boolean $forced fires the logic even if the logic is already triggered
@@ -1099,6 +1110,46 @@ class HttpResponse {
     }
 
     
+
+
+
+
+
+    
+
+    public function parseColumns(array $columns)
+    {
+        return datatable_columns($this->resolvedRequest, $columns);
+    }
+
+    public function isDatatablePaginateRequest()
+    {
+        /** @var \Rguj\Laracore\Request\Request $r */
+        $r = $this->resolvedRequest;
+        return (
+            (
+                (cuser_is_admin() && $r->has('test'))
+                ? true
+                : ($r->ajax() && $r->method() === 'GET')
+            )
+            && $r->has(['draw', 'start', 'length', 'columns', 'order', 'search', '_',])
+            // && $r->has('draw')
+            // && $r->has('start')
+            // && $r->has('length')
+            // && $r->has('columns')
+            // && $r->has('order')
+            // && $r->has('search')
+            // && $r->has('_')
+        );
+    }
+
+
+
+
+
+
+
+
     
 
 

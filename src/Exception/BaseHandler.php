@@ -39,7 +39,13 @@ class BaseHandler extends ExceptionHandler
     }
 
     final public function render($request, Throwable $exception)
-    {
+    {        
+        $canIgnite = webclient_is_dev() || cuser_is_admin();
+        config()->set('app.debug', $canIgnite);
+
+        if($canIgnite) app('debugbar')->enable();
+        else app('debugbar')->disable();
+
         if ($this->isHttpException($exception)) {
             /** @var \Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e */
             $e = $exception;
@@ -47,12 +53,16 @@ class BaseHandler extends ExceptionHandler
             $title = view_title('Error '.$code, true);
             $message = str_sanitize($e->getMessage());
             $message = !empty($message) ? $message : STATIC::__HTTP_STATUS__[$code] ?? 'Unknown Error';
-            return response()->view('errors.error', ['code'=>$code, 'title'=>$title, 'message'=>$message], $code);
+            $up = url_parse(request()->fullUrl());
+            $data = ['code'=>$code, 'title'=>$title, 'message'=>$message, 'pathQueryFragment' => (string)$up->pathQueryFragment];
+            return response()->view('errors.error', $data, $code);
         } else {
-            if(!(bool)config('app.debug') && (get_class($exception) === 'Exception')) {
+            // dump(get_class($exception));
+            $error_classes = ['Exception', 'ParseError', 'Error'];
+            if(!$canIgnite && in_array(get_class($exception), $error_classes)) {
                 abort(500);  // if not admin, recall itself as HttpException
             }
-        }        
+        }
         return parent::render($request, $exception);
     }
 
