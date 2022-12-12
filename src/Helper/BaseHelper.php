@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\File;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -3906,6 +3908,7 @@ function url_parse(string $url, string $defaultScheme = 'https')
         $r['queryRaw'] = $queryStr($r['query']);
         $r['is_scheme_adjusted'] = $is_scheme_adjusted;
         $r['is_path_root'] = empty(trim(trim($r['path'], '/')));
+        $r['schemeHost'] = $r['scheme'].'://'.$r['host'];
         $r['schemeHostPath'] = $r['scheme'].'://'.$r['host'].$r['path'];
 
         $r['has_port'] = !empty($r['port']);
