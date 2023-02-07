@@ -292,7 +292,7 @@ class HttpResponse {
         // setters
         $this->constants = $this->reflection->getConstants() ?? [];
         $this->dbPermissions = Permission::all('title')->pluck('title')->toArray();
-        $this->routeName = str_sanitize($this->request->route()->getName());
+        $this->routeName = str_sanitize((string)($this->request->route()->getName()));
         $this->routeNames = route_names(true);
         $this->request = $this->request;
         $this->resolvedRequest = resolve(BaseRequest::class);
