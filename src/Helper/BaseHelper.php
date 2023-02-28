@@ -4348,7 +4348,6 @@ function website_check(string $url, bool $ignore_ssl = false, array $options = [
 		
 		$http_respond = trim(strip_tags(curl_exec($ch)));
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		dd($ch);
 		curl_close($ch);
 		if(!in_array($http_code, ["200", "302"])) {
 			throw new exception('Invalid http code');
