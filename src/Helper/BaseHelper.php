@@ -4325,33 +4325,38 @@ function webclient_timezone()
  */
 function website_check(string $url, bool $ignore_ssl = false, array $options = [])
 {
+	// $ignore_ssl not working
+		
 	$defaultOptions = [
 		CURLOPT_URL => $url,
 		CURLOPT_RETURNTRANSFER => 1,
 		CURLOPT_TIMEOUT => 15,
 	];
 	$defaultOptions = $ignore_ssl ? [CURLOPT_SSL_VERIFYHOST => 0, CURLOPT_SSL_VERIFYPEER => 0, ] : $defaultOptions;
-	$finalOptions = array_merge($defaultOptions, $options);
-    try {
-        $ch = curl_init();
-        /*curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);*/
+	$finalOptions = [];
+	foreach($defaultOptions as $k=>$v) { $finalOptions[$k] = $v; }
+	foreach($options as $k=>$v) { $finalOptions[$k] = $v; }
+	try {
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 		
 		foreach($finalOptions as $k=>$v) {
 			curl_setopt($ch, $k, $v);
 		}
 		
-        $http_respond = trim(strip_tags(curl_exec($ch)));
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if(!in_array($http_code, ["200", "302"])) {
-            throw new exception('Invalid http code');
-        }
-    } catch(\Throwable $ex) {
-        return false;
-    }
-    return true;
+		$http_respond = trim(strip_tags(curl_exec($ch)));
+		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		dd($ch);
+		curl_close($ch);
+		if(!in_array($http_code, ["200", "302"])) {
+			throw new exception('Invalid http code');
+		}
+	} catch(\Throwable $ex) {
+		return false;
+	}
+	return true;
 }
 
 
