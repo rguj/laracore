@@ -411,8 +411,6 @@ function auth_is_authorized(int $user_id, $roles, bool $flag = false) {
     // $roleIDs = array_unique($roleIDs);
     $user_role_ids = array_unique(array_column($roleIDs, 0));
     sort($user_role_ids);
-    // dump($db_role_ids);
-    // dd($user_role_ids);
     $success = !empty($db_role_ids) && !empty($user_role_ids);
     foreach($user_role_ids as $k=>$v) {
         if(!in_array($v, $db_role_ids, true)) {
@@ -770,8 +768,6 @@ function component_analysis($data, $args)
 		$config2['min'] = $RULES[$config['name']]['min'] ?? 0;
 		$config2['max'] = $RULES[$config['name']]['max'] ?? 0;
 		$config2['value'] = old($config2['name'], $VALUES[$config2['name']] ?? null);  // INTELLIGENT VALUE PICKER
-        // dump(old($config2['name']));
-        // dump($config2['value']);
 		$config2['preloads'] = $PRELOADS[$config['name']] ?? [];
 
 		$config2['label'] = $config['label'];
@@ -1152,13 +1148,13 @@ function datatable_columns(Request $request, array $columns)
 function datatable_request_parse(Request $request, array $columns) {
     if(!$request->isMethod('GET'))
         throw new exception('Invalid request method');
-
+    
     $req2 = $request;  // deep copy request
     $req2->merge(compact('columns'));  // merge columns
     
     $draw = (int)$req2->query('draw');      // draw requests
     $length = (int)$req2->query('length');  // items limit
-    $start = (int)$req2->query('start');    // item start        
+    $start = (int)$req2->query('start');    // item start
     $search_ = (array)($req2->query('search') ?? []);  // global search keywords
     $_ = (string)$req2->query('_');        
     $columnsRaw = (array)($req2->query('columns') ?? []);
@@ -1204,7 +1200,6 @@ function datatable_request_parse(Request $request, array $columns) {
         ];
 
         $opt['formatter'] = arr_get($arr, 'formatter');
-        // dd($opt['formatter']('sample'));
         if(!is_callable($opt['formatter']) || is_null($opt['formatter']('sample'))) {
             unset($opt['formatter']);
         }
@@ -1245,7 +1240,7 @@ function datatable_request_parse(Request $request, array $columns) {
     $columnsFormatter = [];
     $columnsDBBlank = [];
     $dbOrder = [];
-    // dd($columnsRaw);
+    
     foreach($columnsRaw as $key1=>$val1) {
         $x++;
         $val1['attr'] = str_sanitize($val1['attr']);
@@ -1339,12 +1334,6 @@ function datatable_request_parse(Request $request, array $columns) {
         if(array_key_exists('default_content', $columns[$x])) {
             $frontend['defaultContent'] = trim((string)$columns[$x]['default_content']);
         }
-
-        // if($val1['attr'] === 'action') {
-        //     // dd(4242);
-        //     dd($columns[$x]);
-        //     dd(array_key_exists('default_content', $columns[$x]));
-        // }
 
         // if()
     
@@ -1453,8 +1442,6 @@ function datatable_request_parse(Request $request, array $columns) {
             $prev_k2 = $k2;
         }
     }
-    // dd($searchSQL);
-
     // all search
     $hasSearch = $hasSearchColumn || $hasSearchGlobal;
 
@@ -1530,6 +1517,7 @@ function datatable_request_parse(Request $request, array $columns) {
  * Renders data for frontend datatablejs
  * 
  * - set `request.length` to `-1` to get all rows respective on the query
+ * - doesn't support illegal `itemStart` that is not modulus zero to `pageLength`
  *
  * @param Request $request
  * @param array $columns the parsed columns definition
@@ -1539,25 +1527,27 @@ function datatable_request_parse(Request $request, array $columns) {
  * @return array|\Illuminate\Http\JsonResponse
  */
 function datatable_paginate(Request $request, array $columns, $query, bool $withDataKey = true, bool $toJSON = false) {
-    /*  OPTIONS: 
-        attr - column unique name
-        db - db table column
-        db_fake - ???
-        dt - datatable sequence #
-        label - the display title in datatable
-        class - css classes
-        sortable - if column is sortable
-        searchable - if column is searchable
-        type - server-side column type
-        frontend_type - frontend column type (date, num, num-fmt, html-num, html-num-fmt, html, string)  https://datatables.net/reference/option/columns.type
-        formatter - formats value: function($value) { // your code }
-        same_as - copy the precedent column's content
+    
+    /*      $columns OPTIONS:         
+        attr          (required) - column unique name
+        db            (required) - db table column
+        label         (required) - the display title in datatable
+        db_fake       (disabled) - ???
+        dt            (optional) - datatable sequence #
+        class         (optional) - css classes
+        sortable      (optional) - if column is sortable       (default: false)
+        searchable    (optional) - if column is searchable     (default: false)
+        type          (optional) - server-side column type     (default: "string")
+        frontend_type (optional) - frontend column type        (default: "string") 
+                                   (date, num, num-fmt, html-num, html-num-fmt, html, string)
+                                   https://datatables.net/reference/option/columns.type
+        formatter     (optional) - formats value: function($value) { // your code }      (default: null)
+        same_as       (optional) - copy the precedent column's characteristics           (default: "")
     */
     
     $is_success = false;
     $err_msg = '';
     $data = [];
-    // $columns = $columns2 = [];
     $columns2 = [];
     $countUnfiltered = 0;
     $countFiltered = 0;
@@ -1605,11 +1595,9 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     try {
         $pr = datatable_request_parse($request2, $columns);  // parsed request
     } catch(\Exception $ex) {
-        // dd($ex);
         $err_msg = $ex->getMessage();
         goto point01;
-    }        
-    // dd($pr);
+    }
 
     // $pr getter function
     $prget = function($key, string $type = '') use($pr) {
@@ -1671,17 +1659,13 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     foreach($pr['db']['order'] as $k=>$v) {
         $query3 = $query3->orderBy($k, $v);
     }
-    // dd($query3);
 
     // paginate
     $d = $query3->simplePaginate($itemsLimit, $colAlias, 'page', $page);
-    // dd($d);
-    // dd(obj_reflect($d->items(), true));
-    // dd($pr);
 
     // GET COUNT_UNFILTERED, COUNT_FILTERED, COUNT_PAGINATE
     $query_logs = DB::getQueryLog();
-    // dump($query_logs); dd($d);
+
     DB::disableQueryLog();  // disable logging
     $timeCountUnfiltered = $func_time($query_logs[0]);
     $timeCountFiltered = $func_time($query_logs[1]);
@@ -1715,12 +1699,14 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     $pr['row'] = $data;
 
     $pageQuotient = $perPage > 0 ? (($countFiltered > $perPage) ? ($countFiltered / $perPage) : 1) : 0;
-    $pageInt = (int)floor($pageQuotient);
+    // $pageInt = (int)floor($pageQuotient);
+    $pageInt = (int)ceil($pageQuotient);
+
     $pageMod = ($pageInt > 0) ? ($countFiltered % $perPage) : 0;
     $itemsLast = $pageMod <= 0 ? $perPage : $pageMod;
     $itemsLastDeficit = $itemsLast < $perPage ? $perPage - $itemsLast : 0;
 
-    $onEachSide = $d->onEachSide;
+    $onEachSide = $d->onEachSide;  // control how many additional links are displayed on each side of the current page within the middle, sliding window of links generated by the paginator - https://laravel.com/docs/8.x/pagination#adjusting-the-pagination-link-window
     $pageTotal = $pageInt;
     $pageCurrent = $countPaginate > 0 ? $d->currentPage() : 0;
     $pagingProgress_ = $pageTotal > 0 ? ($pageCurrent / $pageTotal) : 0;
@@ -1731,6 +1717,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     $hasItemsOnward = $pageCurrent < $pageTotal;
     $pagesBehind = $pageCurrent <= 1 ? 0 : ($pageCurrent - 1);
     $pagesOnward = $pageTotal <= 0 ? 0 : ($pageTotal - $pageCurrent);
+
     $itemsFirst = ($countPaginate >= $perPage) ? $perPage : $countPaginate;
     $itemsCurrent = $countPaginate;
 
@@ -1754,8 +1741,6 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     $isClientItemStartDisplayed = $isClientItemStartExists && ($itemStartClient >= $itemsCurrentStart && $itemStartClient <= $itemsCurrentEnd);
     
     // $pr['pageNum'] = $pageCurrent;
-    // dd($itemStartClient);
-    // dump($pr);
 
     // paging analytics
     $pr['analytics'] = compact(
@@ -1808,13 +1793,10 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         // '',
     );
     
-    // dd($pr['analytics']);
-    // dd($pr);
 
     $is_success = true;
 
     point1:
-    // dd($err_msg);
     $arr = [
         "success" => $is_success,
         "draw" => $pageDraw,
@@ -1825,8 +1807,6 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         "request" => $pr['client'],
         "analytics" => $pr['analytics'],
     ];
-
-    // dd($arr);
 
     return $toJSON ? response()->json($arr) : $arr;
 }
@@ -2108,7 +2088,6 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
         DB::commit();
     } catch(\Exception $ex) {
         DB::rollBack();
-        // dd($ex);
     }
 
     // if($id <= 0)
@@ -2434,9 +2413,6 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
     $output[3] = [$dt_, $dt2];
     $output[4] = [$str_fm, $str_to];
 
-    // if(cuser_id() === 14880) {
-    //     dd([$dt_, $dt2]);
-    // }
     $dt = $output;
     point1:        
     return (object)[
@@ -2706,7 +2682,6 @@ function dt_translate_unique(string $dt_str) {
         $opt['ms_decimal'] = $ms_2;
         $opt['ms_round'] = (int)round($ms_2);
 
-        // dd($opt);
 
         // $part1 = $opt['year'];  // year
         // $part2 = '';  // month_day
@@ -2719,7 +2694,6 @@ function dt_translate_unique(string $dt_str) {
         $opt['month_day'] = $month_day;
         $opt['month_day_pad'] = $month_day_;
 
-        // dd($dt_new);
         $hms = ((int)$opt['hour'] * 60 * 60) + ((int)$opt['minute'] * 60) + ((int)$opt['second']);
         $hms_ = str_pad((string)$hms, 5, '0', STR_PAD_RIGHT);
         $opt['hms'] = $hms;
@@ -2727,30 +2701,19 @@ function dt_translate_unique(string $dt_str) {
 
         $opt['u'] = ($opt['year'].$opt['month_day_pad'].$opt['hms_pad'].$opt['ms_round']);
 
-        dd($opt);
 
 
         // $s2 = (15 * 60 * 60) + (10 * 60) + (59);
-        // dd($s2);
-        // dump($s2);
-        // dd(Carbon::createFromTimestamp($s2, 'UTC'));
-        // dd(date('r', $s2));
-        // dump($dt_new);
-        // dd($s);
 
         // $opt['short'] = substr($long, 2, 2).substr($long, 4, 2).substr($long, 6, 2).substr($long, 8, 2).substr($long, 10, 2).substr($long, 12, 2).substr($long, 14, 1);
 
 
-        dd($opt);
-
 
     } catch(\Exception $ex) {
         $err_msg = $ex->getMessage();
-        dd($err_msg);
     }
 
     point1:
-    //dd($output);
     return $output;
 }
 
@@ -3132,6 +3095,31 @@ function session_push(string $key, $val)
 }
 
 /**
+ * Gets a session value
+ *
+ * @param int|string|null $key
+ * @return mixed
+ */
+function session_get($key)
+{
+    return session($key);
+}
+
+/**
+ * Sets a session value
+ *
+ * @param string $key
+ * @param mixed $val
+ * @return void
+ */
+function session_set(string $key, $val)
+{
+    // if(is_null(session()->get($key)))
+    //     session()->put($key, null); // create key if not exists
+    session()->put($key, $val);
+}
+
+/**
  * Pushes an alert to the session
  * 
  * `bs_class` => `[ primary, secondary, success, danger, warning, info, light, dark ]`
@@ -3156,10 +3144,7 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
         if(!in_array($alert_type, $alert_types, true)) throw new exception('Invalid alert type');
     } catch(\Exception $ex) {
         if(webclient_is_dev()) {
-            // dump($ex);
-            // dump(func_get_args());
-            // dump($alert_types);
-            // dd(in_array($alert_type, $alert_types, true));
+            
         }
         if($safe_mode) goto point1;
         else throw new exception($ex->getMessage());
@@ -3220,7 +3205,6 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
             if(!$fp) {                    
                 $error_report[$v] = [$error_code, $error_message];
                 $firstError = !empty($firstError) ? $firstError : 'Connection failed';
-                // dd($firstError);
             } else {
                 $error_report[$v] = [];
             }
@@ -3300,10 +3284,6 @@ function storage_file_info(string $path, $basename_new = null)
     $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
     $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
     $file['md5'] = $file['exists'] ? md5_file($p) : '';
-
-    // if($path === 'stud_vacc/37f65c068b7723cd7809ee2d31d7861c.jpg') {
-    //     dd($file);
-    // }
     
     // NEW PATH
     $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
@@ -3682,7 +3662,6 @@ function url_parse_short(string $url, int $component = -1)
     $ret['password'] = $ret['pass'];
     $ret['credentialRaw'] = $ret['user'].(!empty($ret['pass']) ? ':'.$ret['pass'] : '');
     $ret['queryRaw'] = (string)($ret['query'] ?? '');
-    // dd(urldecode($ret['queryRaw']));
 
     $ret['queryRawDecode'] = urldecode($ret['queryRaw']);
 
@@ -3735,7 +3714,6 @@ function url_parse_(string $url, string $defaultScheme = 'https')
     }
     
     $parsed = url_parse_short($url);
-    // dd($parsed);
     if(!$parsed['is_valid']) {
         goto point1;
     }
@@ -3750,7 +3728,7 @@ function url_parse_(string $url, string $defaultScheme = 'https')
     try {
         $is_path_root = empty(trim(trim($parsed['path'], '/')));
     } catch(\Throwable $ex) {
-        dd($parsed);
+        
     }
 
 
@@ -3895,7 +3873,6 @@ function url_parse(string $url, string $defaultScheme = 'https')
         // $shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
         $username = (string)($u[0] ?? '');
         
-        // dd($d->getScheme());
         // $r['scheme'] = (string)($shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps));
         $r['scheme'] = !empty($d->getScheme()) ? $d->getScheme() : $defaultScheme;
         $r['host'] = $d->getHost();
@@ -3937,8 +3914,6 @@ function url_parse(string $url, string $defaultScheme = 'https')
 
     // } catch(\Exception $ex) {
     } catch(\Throwable $ex) {
-        
-        // dd($ex);
         $r = $fn0();
     }
 
