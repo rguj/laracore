@@ -1844,10 +1844,12 @@ function db_model_table_name(string $class)
 /**
  * Gets the relation info
  * 
- * - do not forget to typehint the `$q` in the closure as stated in `@usage` below
+ * - do not forget to typehint the `$q` in the closure as stated in `@usage` below.
+ * - when accessing the parent, use the template below, although you will cause an additional db query.
  * 
+ * @usage closure variable typehint: `/** @var \Illuminate\Database\Query\Builder $q *\/ list($t, $p) = db_relation_info($q);`
  * 
- * @usage `/** @var \Illuminate\Database\Query\Builder $q *\/ list($t, $p) = db_relation_info($q);`
+ * @usage access parent template: `$q->join($p, $p.'.id', '=', $t.'.foreign_id'); $q->select([$p.'.id as parent_foreign_id', $t.'.*']);`
  *
  * @param \Illuminate\Database\Eloquent\Relations\Relation $query
  * @return <int,string>
