@@ -17,7 +17,7 @@
     "minimum-stability": "stable",
 	"prefer-stable": true,
     "require": {
-		"php": "^8.0",
+		"php": "^7.0||^8.0||^9.0",
         "psr/http-message": "^1.0",
         "maatwebsite/excel": "^3.1",
         "psr/simple-cache": "^2.0||3.0",
@@ -34,7 +34,7 @@
         "spatie/url": "^2.0",
         "syamsoul/laravel-datatable-ssp": "^2.3",
         "yajra/laravel-datatables-buttons": "^4.10",
-        "yajra/laravel-datatables-oracle": "^9.0"
+        "yajra/laravel-datatables-oracle": "^9.00"
     },
     "require-dev": {
 		"phpunit/phpunit": "^9.5",
