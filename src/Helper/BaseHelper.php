@@ -1163,6 +1163,7 @@ function datatable_request_parse(Request $request, array $columns) {
     // $start = $start <= 0 ? 1 : $start;
     $start = $start <= 0 ? 0 : $start;
     $length = $length <= -1 ? -1 : $length;
+    // $itemStartClient = $start * $length;
     $itemStartClient = $start * $length;
     // $columnsRaw = (array)($req2->query('columns') ?? []);
     $columnsClient = $columnsServer = [];
@@ -1581,9 +1582,13 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 
     DB::enableQueryLog();
 
+    
+    // intelligent getter of countable column. if failed, it assumes `id`
+    $countable_id = (string)($columns[0]['db'] ?? 'id');
+
     /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query */
     $query3 = $query2 = $query;
-    $countUnfiltered = $query2->count('id');
+    $countUnfiltered = $query2->count($countable_id);
 
     if(!(is_object($query2) && (array_key_exists('Illuminate\Database\Eloquent\Model', class_parents($query2)) || method_exists($query2, 'get')))) {
         $err_msg = '$query has no method get()';
@@ -1625,7 +1630,8 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         $query3 = $query->whereRaw($SQLStr, $SQLBindings);
     }
     
-    $countFiltered = $query3->count('id');
+    // dd();
+    $countFiltered = $query3->count($countable_id);
 
     // change values according to client data
     $perPage = 0;
@@ -1654,6 +1660,9 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         $page = (int)ceil(($itemStart + 1) / $itemsLimit);
         $perPage = $itemsLimit;
     }
+
+    // ???? fix laravel pagination plus one
+    // $itemsLimit = $itemsLimit > 0 ? $itemsLimit - 1 : 0;
 
     // order
     foreach($pr['db']['order'] as $k=>$v) {
@@ -2719,6 +2728,42 @@ function dt_translate_unique(string $dt_str) {
     return $output;
 }
 
+/**
+ * Gets the location in a date range
+ *
+ * @param string $start_at
+ * @param string $end_at
+ * @param Carbon $date_at
+ * @return string `['lesser', 'greater', 'within']`
+ */
+function dt_range_location(string $start_at, string $end_at, Carbon $date_at)
+{
+    $opt = '';
+    try {
+        // strip time if there is
+        $len = strlen($date_at->format('Y-m-d'));            
+        $start_at = strlen($start_at) > $len ? substr($start_at, 0, $len) : $start_at;
+        $end_at = strlen($end_at) > $len ? substr($end_at, 0, $len) : $end_at;
+
+        $start_at_ = Carbon::createFromFormat('Y-m-d', $start_at, config('app.app_timezone'))->startOfDay();
+        $end_at_ = Carbon::createFromFormat('Y-m-d', $end_at, config('app.app_timezone'))->endOfDay();
+
+        if($start_at_ > $end_at) throw new exception('Invalid range');
+
+        if($date_at < $start_at_) {
+            $opt = 'lesser';
+        }
+        else if($date_at > $end_at_) {
+            $opt = 'greater';
+        }
+        else if($date_at >= $start_at_ && $date_at <= $end_at_) {
+            $opt = 'within';
+        }
+    } catch(\Exception $ex) { }
+    return $opt;
+}
+
+
 
 
 
@@ -3034,6 +3079,47 @@ function route_generate_auth_platform(string $platform)
         // Route::get($config, [$class, $val])->name($route_name);
         Route::get("/guest/$platform/$val", [$class, $val])->name($route_name);
     }
+}
+
+/**
+ * Generates action url from resource index route
+ * 
+ * @param string $route
+ * @param string $action
+ * @param int $id
+ * @param bool $wrapAnchor
+ * @param array $attr
+ * @param mixed $value
+ * @return string
+ */
+function route_url_action(string $route, string $action, int $id, bool $wrapAnchor = false, array $attr = [], $value = 'link')
+{
+    if(!Route::has($route))
+        throw new exception('Non-existent route: '.$route);
+    $v = '';
+    switch($action) {
+        case 'show':
+            $v = route('preload.hrpft.index').'/'.$id.'/show';
+            $attr = array_merge($attr, ['href' => $v]);
+            break;
+        default:
+            throw new exception('Invalid action: `'.$action.'`');
+            break;
+    }
+    $pre = $wrapAnchor ? '<a '.(arr_implode_html_attr(' ', $attr)).'>' : '';
+    $suf = $wrapAnchor ? '</a>' : '';
+    $value = $wrapAnchor ? $value : $v;
+    return $pre.$value.$suf;
+}
+
+
+function arr_implode_html_attr(string $glue, array $attributes)
+{
+    $dataAttributes = array_map(function($value, $key) {
+        return $key.'="'.$value.'"';
+    }, array_values($attributes), array_keys($attributes));    
+    $dataAttributes = implode($glue, $dataAttributes);
+    return $dataAttributes;
 }
 
 
