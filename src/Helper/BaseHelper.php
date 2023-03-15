@@ -3099,7 +3099,7 @@ function route_url_action(string $route, string $action, int $id, bool $wrapAnch
     $v = '';
     switch($action) {
         case 'show':
-            $v = route('preload.hrpft.index').'/'.$id.'/show';
+            $v = route($route).'/'.$id.'/show';
             $attr = array_merge($attr, ['href' => $v]);
             break;
         default:

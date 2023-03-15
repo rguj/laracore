@@ -1,0 +1,136 @@
+<?php
+
+namespace App\Traits\Operations;
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
+
+trait FetchOperation
+{
+
+
+
+    /**
+     * Define which routes are needed for this operation.
+     *
+     * @param  string  $segment  Name of the current entity (singular). Used as first URL segment.
+     * @param  string  $routeName  Suffix of the route name.
+     * @param  string  $controller  Name of the current CrudController.
+     */
+    // protected function setupFetchRoutes($segment, $routeName, $controller, bool $isPost = false)
+    protected function setupFetchRoutes($segment, $routeName, $controller)
+    {
+        if(!in_array($routeName, ['pfr'], true)) {
+            goto point1;
+        }
+        
+        preg_match_all('/(?<=^|;)fetch([^;]+?)(;|$)/', implode(';', get_class_methods($this)), $matches);
+
+        $segment = Str::of($segment)->ltrim('/')->rtrim('/')->__toString();
+        $segment2 = Str::replace('/', '.', $segment);
+
+        /*$c = (new \ReflectionClass($this::class))->getMethods();
+
+        $i = [];
+        foreach($c as $k=>$v) {
+            $n = $v->getName();
+            if($n !== 'fetch' && Str::startsWith($n, ['fetch'])) {
+                $n2 = Str::replaceFirst('fetch', '', $n);
+                $i[] = [$k, $n, lcfirst($n2)];  // method_index, method_name, lcfirst_method_name
+            }
+        }
+        foreach($i as $k=>$v) {
+            Route::post($segment.'/fetch/'.$v[2], [
+                'as'        => $segment2.'.fetch.'.$v[2],
+                'uses'      => $controller.'@'.$v[1],
+                'operation' => 'fetch',
+            ]);
+        }*/
+
+        foreach($matches[1] as $k=>$v) {
+            $v2 = lcfirst($v);
+            Route::post($segment.'/fetch/'.$v2, [
+                'as'        => $segment2.'.fetch.'.lcfirst($v2),
+                'uses'      => $controller.'@fetch'.$v,
+                'operation' => 'fetch',
+            ]);
+        }
+
+        point1:
+    }
+
+    public function setupFetchOperation()
+    {
+        // $this->crud->setOperationSetting();
+
+        // dd($this->crud->route);
+
+        $this->crud->setOperation('fetch');
+        
+    }
+
+    
+    public function fetch(array $attr)
+    {
+        // $this->crud->hasAccessOrFail('fetch');
+
+
+        // $d = null;
+        // try {
+        //     if(!class_exists($attr['model']))
+        //         throw new exception('Class doesn\'t exists');
+
+        //     $m = new ($attr['model']);
+        //     if(is_callable($attr['query'])) {
+        //         $m = $attr['query']($m);
+        //     }
+
+        //     $d = $m->get();
+
+        // } catch(\Exception $ex) {
+        //     throw new exception($ex->getMessage());
+        // }
+        // return $d;
+
+
+        dd(datatable_paginate(request(), $attr['model'], false, false));
+    }
+
+
+
+
+    // /**
+    //  * Add the default settings, buttons, etc that this operation needs.
+    //  */
+    // protected function setupDeleteDefaults()
+    // {
+    //     $this->crud->allowAccess('delete');
+
+    //     $this->crud->operation('delete', function () {
+    //         $this->crud->loadDefaultOperationSettingsFromConfig();
+    //     });
+
+    //     $this->crud->operation(['list', 'show'], function () {
+    //         $this->crud->addButton('line', 'delete', 'view', 'crud::buttons.delete', 'end');
+    //     });
+    // }
+
+    // /**
+    //  * Remove the specified resource from storage.
+    //  *
+    //  * @param  int  $id
+    //  * @return string
+    //  */
+    // public function destroy($id)
+    // {
+    //     $this->crud->hasAccessOrFail('delete');
+
+    //     // get entry ID from Request (makes sure its the last ID for nested resources)
+    //     $id = $this->crud->getCurrentEntryId() ?? $id;
+
+    //     return $this->crud->delete($id);
+    // }
+
+
+
+}
