@@ -1579,7 +1579,6 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     if(is_string($query) && class_exists($query)) {
         $query = new $query();
     }
-
     DB::enableQueryLog();
 
     
@@ -1630,7 +1629,6 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         $query3 = $query->whereRaw($SQLStr, $SQLBindings);
     }
     
-    // dd();
     $countFiltered = $query3->count($countable_id);
 
     // change values according to client data

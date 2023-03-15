@@ -118,12 +118,11 @@ trait FetchOperation
 
 
         // $this->crud->hasAccessOrFail('fetch');
-
         // $ses_key = 'route.'.request()->route()->getName();
 
+        // dd($attr);
+        
         $attr['searchable_attributes'] = (array)($attr['searchable_attributes'] ?? []);
-
-
         $attr['request']['draw'] = 1;  // always 1, implement session autoincrement later
         // $attr['request']['length'] = (int)($attr['request']['length'] ?? 0);
         $attr['request']['length'] = (int)($attr['paginate'] ?? -1);  // 0
@@ -132,7 +131,6 @@ trait FetchOperation
         $attr['request']['_'] = (string)($attr['_'] ?? '');
         $attr['request']['columns'] = $this->morphColumnsRequest($attr['columns'] ?? [], $attr['searchable_attributes']);  // not validated, assumes correct array structure
         $attr['request']['order'] = $this->morphOrderRequest($attr['order'] ?? [], $attr['request']['columns']);
-
         // dd($attr);
 
         $d = null;
@@ -151,7 +149,6 @@ trait FetchOperation
             /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $m */
             $m = is_string($attr['model']) ? (new $attr['model']()) : $attr['model'];
             // dd($m);
-
             // dd($m->get());
             // dd($m->toSql());
 
@@ -169,6 +166,9 @@ trait FetchOperation
             $r->query->set('_', $attr['request']['_']);
             $r->query->set('columns', $attr['request']['columns']);
             $r->query->set('order', $attr['request']['order']);
+
+            // mutate order
+
            
             $d = datatable_paginate($r, $attr['request']['columns'], $m, false, false);
 
@@ -205,8 +205,14 @@ trait FetchOperation
         foreach($colDef as $k=>$v) {
             $o[$v['attr']] = $k;
         }
+        // dump($orderRaw);
+        // dd($colDef);
+        // dd($o);
         // traverse order for some correction
         foreach($orderRaw as $k=>$v) {
+            // dump($k);
+            // dump($o);
+            // dd(array_key_exists($k, $o));
             if(array_key_exists($k, $o)) {
                 $order[] = [
                     'column' => (int)($o[$k] ?? 0),
