@@ -205,14 +205,8 @@ trait FetchOperation
         foreach($colDef as $k=>$v) {
             $o[$v['attr']] = $k;
         }
-        // dump($orderRaw);
-        // dd($colDef);
-        // dd($o);
         // traverse order for some correction
         foreach($orderRaw as $k=>$v) {
-            // dump($k);
-            // dump($o);
-            // dd(array_key_exists($k, $o));
             if(array_key_exists($k, $o)) {
                 $order[] = [
                     'column' => (int)($o[$k] ?? 0),

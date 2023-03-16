@@ -74,6 +74,18 @@ function jed($var, bool $withTrace = false)
 }
 
 /**
+ * Throw new exception variable in a string form
+ *
+ * @param mixed $var
+ * @throws Exception
+ * @return Exception
+ */
+function tnev($var = null)
+{
+    throw new exception((string)$var);
+}
+
+/**
  * Same as `view_variable()`
  *
  * @param string $key
