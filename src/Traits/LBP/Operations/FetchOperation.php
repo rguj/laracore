@@ -1,6 +1,6 @@
 <?php
 
-namespace Rguj\Laracore\Traits\Operations;
+namespace Rguj\Laracore\Traits\LBP\Operations;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -65,62 +65,62 @@ trait FetchOperation
      */
     public function fetch(array $attr)
     {
-        /* CONTENTS OF $attr        
-        [
-            'model' => SampleModel::class, // (required) (string|closure) you can customize the model
-            'searchable_attributes' => [], // (optional) but required for searchable attributes
-            'paginate' => 10,              // (optional) aka "request.length", items to show per page, -1 to get all
-            'searchOperator' => '',        // (disabled) rendered useless
-            'query' =>                     // (disabled) use "model"
-                function($model) {
-                    /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $m *\/
-                    $m = $model;
-                    $search = request()->input('q') ?? false;
-                    if ($search) {
-                        return $m->whereRaw('CONCAT(`first_name`," ",`last_name`) LIKE "%' . $search . '%"');
-                    } else {
-                        return $m;
+        /*  CONTENTS OF $attr     
+            -------------------------------------------------------------------------------------   
+            [
+                'model' => SampleModel::class, // (required) (string|closure) you can customize the model
+                'searchable_attributes' => [], // (optional) but required for searchable attributes
+                'paginate' => 10,              // (optional) aka "request.length", items to show per page, -1 to get all
+                'searchOperator' => '',        // (disabled) rendered useless
+                'query' =>                     // (disabled) use "model"
+                    function($model) {
+                        /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $m *\/
+                        $m = $model;
+                        $search = request()->input('q') ?? false;
+                        if ($search) {
+                            return $m->whereRaw('CONCAT(`first_name`," ",`last_name`) LIKE "%' . $search . '%"');
+                        } else {
+                            return $m;
+                        }
                     }
-                }
-            ,
+                ,
 
-            # ---------------
-            # custom
-            # ---------------
+                # ---------------
+                # custom
+                # ---------------
 
-            'start' => 1,             // (optional) (default: 0) starts on zero
-            'search' => []|"",        // (optional) (default: "") the keyword to search
-            'order' => [],            // (optional) (default: []) set the order ["key"=>"asc|desc"]
+                'start' => 1,             // (optional) (default: 0) starts on zero
+                'search' => []|"",        // (optional) (default: "") the keyword to search
+                'order' => [],            // (optional) (default: []) set the order ["key"=>"asc|desc"]
 
-            'columns' => [            // (required)
-                [  // do this for each attribute
-                    attr          (required) - column unique name
-                    db            (required) - db table column
-                    label         (required) - the display title in datatable
-                    db_fake       (disabled) - ???
-                    dt            (optional) - datatable sequence #
-                    class         (optional) - css classes
-                    sortable      (optional) - if column is sortable       (default: false)
-                    searchable    (optional) - if column is searchable     (default: false)
-                    type          (optional) - server-side column type     (default: "string")
-                    frontend_type (optional) - frontend column type        (default: "string") 
-                                                (date, num, num-fmt, html-num, html-num-fmt, html, string)
-                                                https://datatables.net/reference/option/columns.type
-                    formatter     (optional) - formats value: function($value) { // your code }      (default: null)
-                    same_as       (optional) - copy the precedent column's characteristics           (default: "")
+                'columns' => [            // (required)
+                    [  // do this for each attribute
+                        attr          (required) - column unique name
+                        db            (required) - db table column
+                        label         (required) - the display title in datatable
+                        db_fake       (disabled) - ???
+                        dt            (optional) - datatable sequence #
+                        class         (optional) - css classes
+                        sortable      (optional) - if column is sortable       (default: false)
+                        searchable    (optional) - if column is searchable     (default: false)
+                        type          (optional) - server-side column type     (default: "string")
+                        frontend_type (optional) - frontend column type        (default: "string") 
+                                                    (date, num, num-fmt, html-num, html-num-fmt, html, string)
+                                                    https://datatables.net/reference/option/columns.type
+                        formatter     (optional) - formats value: function($value) { // your code }      (default: null)
+                        same_as       (optional) - copy the precedent column's characteristics           (default: "")
+                    ],s
                 ],
-            ],
 
-            'draw' => 1,              // (disabled) (default: 1) draw requests
-            '_' => 1,                 // (disabled) (default: "")
+                'draw' => 1,              // (disabled) (default: 1) draw requests
+                '_' => 1,                 // (disabled) (default: "")
 
-        ]*/
+            ]
+        */
 
 
         // $this->crud->hasAccessOrFail('fetch');
         // $ses_key = 'route.'.request()->route()->getName();
-
-        // dd($attr);
         
         $attr['searchable_attributes'] = (array)($attr['searchable_attributes'] ?? []);
         $attr['request']['draw'] = 1;  // always 1, implement session autoincrement later
@@ -143,20 +143,20 @@ trait FetchOperation
                     (is_object($attr['model']) && in_array($attr['model']::class, ['Illuminate\Database\Eloquent\Builder', 'Illuminate\Database\Query\Builder'], true))
                     || array_key_exists('Illuminate\Database\Eloquent\Model', class_parents($attr['model']))
                 )
-            )
-                throw new exception('Invalid class');  // throw new exception('Class doesn\'t exists');
+            ) {
+                throw new exception('Invalid class');
+                // throw new exception('Class doesn\'t exists');
+            }
 
             /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $m */
             $m = is_string($attr['model']) ? (new $attr['model']()) : $attr['model'];
-            // dd($m);
-            // dd($m->get());
-            // dd($m->toSql());
 
             // invoke query closure
             // if(is_callable($attr['query'])) {
             //     $m = $attr['query']($m);
             // }
             
+            // set the request->query
             /** @var \Rguj\Laracore\Request\Request $r */
             $r = resolve(\Rguj\Laracore\Request\Request::class);
             $r->query->set('draw', $attr['request']['draw']);
@@ -166,10 +166,8 @@ trait FetchOperation
             $r->query->set('_', $attr['request']['_']);
             $r->query->set('columns', $attr['request']['columns']);
             $r->query->set('order', $attr['request']['order']);
-
-            // mutate order
-
            
+            // paginate
             $d = datatable_paginate($r, $attr['request']['columns'], $m, false, false);
 
         } catch(\Exception $ex) {

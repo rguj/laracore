@@ -1,8 +1,10 @@
 
 /*	
 
-CREDITS to: Locutus https://locutus.io/php/
--- All your standard libraries will be assimilated into our JavaScript collective. Resistance is futile.
+CREDITS to:
+Locutus
+https://locutus.io/php/
+--All your standard libraries will be assimilated into our JavaScript collective. Resistance is futile.
 
 -----------------------------------------------------------------------------------
 
@@ -23,32 +25,21 @@ Table of Contents
 	is_array(mixedVar)
 	is_object(mixedVar)
 
+
 -- Arrays/Objects
 	count(mixedVar, mode)
 	array_key_exists(key, search)
 	in_array(needle, haystack, argStrict)
 	explode(delimiter, string, limit)
 	implode(glue, pieces)
-	array_merge(...arr)
+
 
 -- String
 	trim(str, charlist)
-	rtrim(str, charlist)
-	ltrim(str, charlist)
 	strtoupper: function(str)
-	lcfirst(str)
 	ucfirst(str)
 	ucwords: function(str)
 	str_replace(search, replace, subject, countObj)
-
--- JSON
-	json_encode(mixedVal)
-	json_decode(strJson)
-
--- URL string
-	base64_decode(encodedData)
-	base64_encode(stringToEncode)
-
 	
 
 */
@@ -739,15 +730,6 @@ const php = {
 
 		return (str + '').toUpperCase();
 	},
-	
-	lcfirst: function(str) {
-		//   example 1: lcfirst('Kevin Van Zonneveld')
-		//   returns 1: 'kevin Van Zonneveld'
-
-		str += '';
-		const f = str.charAt(0).toLowerCase();
-		return f + str.substr(1);
-	},
 
 	ucfirst: function(str) {
 		//   example 1: ucfirst('kevin van zonneveld')
@@ -1281,3 +1263,4 @@ const php = {
 
 
 }, PHP = php;
+

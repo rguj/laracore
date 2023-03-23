@@ -1,6 +1,6 @@
 <?php
 
-namespace Rguj\Laracore\Traits\Operations;
+namespace Rguj\Laracore\Traits\LBP\Operations;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;

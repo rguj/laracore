@@ -471,6 +471,39 @@ function auth_user_status(int $user_id)
 
 
 
+
+/** -----------------------------------------------
+ * BACKPACK
+ */
+
+/**
+ * Check if the backpack/pro package is installed.
+ *
+ * @return bool
+ */
+function backpack_pro()
+{
+    // if (app()->runningUnitTests()) {
+    //     return true;
+    // }
+    // if (! \Composer\InstalledVersions::isInstalled('backpack/pro')) {
+    //     return false;
+    // }
+
+    // return \PackageVersions\Versions::getVersion('backpack/pro');
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
 /** -----------------------------------------------
  * BLADE
  */
@@ -1541,7 +1574,8 @@ function datatable_request_parse(Request $request, array $columns) {
  */
 function datatable_paginate(Request $request, array $columns, $query, bool $withDataKey = true, bool $toJSON = false) {
     
-    /*      $columns OPTIONS:         
+    /*  $columns OPTIONS:       
+        ----------------------------------------------------------------------------------------  
         attr          (required) - column unique name
         db            (required) - db table column
         label         (required) - the display title in datatable
@@ -1573,13 +1607,14 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 
     $request2 = $request;
 
+    // function to get the query time in seconds
     $func_time = function(array $log) {
-        // in seconds
         // make sure you put `DB::enableQueryLog();` before the query line
         $time = (float)($log['time'] ?? 0);
-        return round(($time > 0) ? ($time / 1000) : 0, 5);
+        return round(($time > 0) ? ($time / 1000) : 0, 5);  // in seconds
     };
 
+    // gets the sequenced array values from the collection
     $func_array_values_recursive = function(array $arr) {
         $o = [];
         foreach($arr as $k=>$v) {
@@ -1588,17 +1623,66 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         return $o;
     };
 
+    // function to check if `table.col` exists
+    $func_is_column_exist = function(string $tbl, string $col, array $tables_columns) {
+        // dd($tbl.(!empty($tbl) ? '.' : '').$col);
+
+        // return array_key_exists($tbl.(!empty($tbl) ? '.' : '').$col, $tables_columns);
+        // dd($tables_columns);
+        // dd(Arr::has($tables_columns, $tbl.(!empty($tbl) ? '.' : '').$col));
+        return arr_has($tables_columns, $tbl.(!empty($tbl) ? '.' : '').$col);
+    };
+
     if(is_string($query) && class_exists($query)) {
         $query = new $query();
     }
+
     DB::enableQueryLog();
 
-    
     // intelligent getter of countable column. if failed, it assumes `id`
     $countable_id = (string)($columns[0]['db'] ?? 'id');
+    $countable__ = (array)explode('.', $countable_id, 2);
+    $countable_tbl = count($countable__) === 2 ? (string)($countable__[0] ?? '') : '';
+    $countable_col = count($countable__) === 2 ? (string)($countable__[1] ?? '') : (string)($countable__[0] ?? '');
 
+    // dump($countable_tbl);
+    // dd(in_array($countable_col, $query->getConnection()->getSchemaBuilder()->getColumnListing($query->from), true));
+    
+    // get join tables, doesn't check its existence
+    $join_tables = [];
+    foreach((array)$query->joins as $k=>$v) {
+        if(!empty($v->table) && !in_array($v->table, $join_tables, true)) {
+            $join_tables[] = $v->table;
+        }
+    }
+    $all_tables = $join_tables;
+    array_unshift($all_tables, $query->from);
+
+    // get columns list of the tables from the db    
+    $tables_columns = [];
+    foreach($all_tables as $k=>$v) {
+        try {
+            foreach((array)($query?->getConnection()?->getSchemaBuilder()?->getColumnListing($v)) as $k2=>$v2) {
+                $tables_columns[$v][$v2] = $k2;
+            }
+        } catch(\Exception $ex) { continue; }
+    }
+
+    // check if countable column is present
+    // dump($countable_tbl);
+    // dump($countable_col);
+    // dump($tables_columns);
+    // dd($func_is_column_exist($countable_tbl, $countable_col, $tables_columns));
+    if(!(is_string($query->from) && !empty($query->from) && $func_is_column_exist($countable_tbl, $countable_col, $tables_columns))) {
+        // dd(4242);
+        throw new exception('Invalid countable column `'.$countable_id.'`');
+        // goto point01;
+    }    
+
+    // copy the main query builder object
     /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query */
     $query3 = $query2 = $query;
+
     $countUnfiltered = $query2->count($countable_id);
 
     if(!(is_object($query2) && (array_key_exists('Illuminate\Database\Eloquent\Model', class_parents($query2)) || method_exists($query2, 'get')))) {
@@ -1680,7 +1764,11 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     }
 
     // paginate
-    $d = $query3->simplePaginate($itemsLimit, $colAlias, 'page', $page);
+    try {
+        $d = $query3->simplePaginate($itemsLimit, $colAlias, 'page', $page);
+    } catch(\Exception $ex) {
+        dd($ex);
+    }
 
     // GET COUNT_UNFILTERED, COUNT_FILTERED, COUNT_PAGINATE
     $query_logs = DB::getQueryLog();
