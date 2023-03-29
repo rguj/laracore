@@ -12,8 +12,9 @@ use Exception;
 
 /**
  * Web Client / User Agent
+ * 
+ * @deprecated 1.0.0
  */
-
 class WebClient {
 
     const DEFAULT_VALUES = [

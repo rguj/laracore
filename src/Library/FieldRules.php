@@ -10,6 +10,11 @@ use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\StorageAccess;
 use Rguj\Laracore\Library\WebClient;
 
+/**
+ * Field Rules
+ * 
+ * @deprecated 1.0.0
+ */
 class FieldRules {
 
     /*public static $func_call = [

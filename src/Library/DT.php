@@ -13,6 +13,11 @@ use Rguj\Laracore\Library\StorageAccess;
 use Rguj\Laracore\Library\WebClient;
 // ----------------------------------------------------------
 
+/**
+ * DateTime Functions
+ * 
+ * @deprecated 1.0.0
+ */
 class DT {
 
     // this class heavily depends on PHP Carbon library (laravel built-in)

@@ -59,14 +59,18 @@ trait ListOperation
         $this->data['title'] = $this->crud->getTitle() ?? mb_ucfirst($this->crud->entity_name_plural);
 
         // # custom: add some variables
-        $this->data['export'] = [
-            'enable' => $this->enableExport,
-            'copy' => $this->enableExportCopy,
-            'pdf' => $this->enableExportPDF,
-            'csv' => $this->enableExportCSV,
-            'print' => $this->enableExportPrint,
-            'excel' => $this->enableExportExcel,
-        ];
+        // $this->data['export'] = [
+        //     'enable' => $this->enableExport,
+        //     'copy' => $this->enableExportCopy,
+        //     'pdf' => $this->enableExportPDF,
+        //     'csv' => $this->enableExportCSV,
+        //     'print' => $this->enableExportPrint,
+        //     'excel' => $this->enableExportExcel,
+        // ];
+
+        // dd('index');
+
+        // dd($this->crud);
 
         // load the view from /resources/views/vendor/backpack/crud/ if it exists, otherwise load the one in the package
         return view($this->crud->getListView(), $this->data);

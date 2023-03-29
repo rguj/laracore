@@ -17,6 +17,11 @@ use Rguj\Laracore\Library\WebClient;
 
 use App\Http\Controllers\Student\LinkController as StudentLink;
 
+/**
+ * Field Values Functions
+ * 
+ * @deprecated 1.0.0
+ */
 class FieldValues {
 
 

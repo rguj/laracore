@@ -6,15 +6,15 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Throwable;
 use Exception;
-use Prologue\Alerts\Facades\Alert;
+// use Prologue\Alerts\Facades\Alert;
 use Illuminate\Support\Carbon;
 // use Illuminate\Support\Facades\Request;
-use Illuminate\Foundation\Http\FormRequest;
-use App\Models\User;
+// use Illuminate\Foundation\Http\FormRequest;
+// use App\Models\User;
 use Illuminate\Support\Str;
 
-use Backpack\CRUD\app\Library\CrudPanel\CrudPanel as CRUD;
-use Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel as CRUD2;
+// use Backpack\CRUD\app\Library\CrudPanel\CrudPanel as CRUD;
+// use Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel as CRUD2;
 
 use \Illuminate\Foundation\Bus\DispatchesJobs;
 use \Illuminate\Foundation\Validation\ValidatesRequests;
@@ -31,10 +31,11 @@ use Rguj\Laracore\Traits\LBP\Operations\ListOperation;
 use Rguj\Laracore\Traits\LBP\Operations\FetchOperation;
 
 // use Backpack\CRUD\app\Library\CrudPanel\CrudPanel;
+// use App\Traits\CrudPanel2;
+use Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel2;
 
-use Rguj\Laracore\Provider\BackpackServiceProvider;
-
-use Illuminate\Container\Container;
+// use Rguj\Laracore\Provider\BackpackServiceProvider;
+// use Illuminate\Container\Container;
 
 class CrudController extends Controller
 {
@@ -52,41 +53,37 @@ class CrudController extends Controller
     ;
 
 
-    /*
-     * @var \Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel
-     * @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel
-     */
+    // /*
+    //  * @var \Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel
+    //  * @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel
+    //  */
 
-    /**
-     * @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel
-     */    
+    /** @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud */    
     public $crud;
+
+    /** @var array $data */ 
     public $data = [];
-
     
-    // public $crud2;
-    public $orderBy = [];
-
-    public $enableExport = true;
-    public $enableExportCopy = true;
-    public $enableExportJSON = true;
-    public $enableExportExcel = true;
-    public $enableExportCSV = true;
-    public $enableExportPDF = true;
-    public $enableExportPrint = true;
-
+    /** @var \Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel2 $crud2 */  
+    public $crud2;
 
     # custom
 
     public string $role_model;
     public string $permission_model;
 
-    public $now_at = null;
+    /** @var \Illuminate\Support\Carbon $now_at     */ public $now_at = null;
+    /** @var string $now_at_dtu     `Y-m-d H:i:s.u` */ public string $now_at_dtu = '';
+    /** @var string $now_at_dt      `Y-m-d H:i:s`   */ public string $now_at_dt = '';
+    /** @var string $now_at_date    `Y-m-d`         */ public string $now_at_date = '';
+    /** @var string $now_at_timeu    `H:i:s`        */ public string $now_at_timeu = '';
+    /** @var string $now_at_time    `H:i:s`         */ public string $now_at_time = '';
 
-    public array $defaultRadioOptions = [
-        0 => "X",
-        1 => "✓",
-    ];
+    // public array $defaultRadioOptions = [
+    //     0 => "X",
+    //     1 => "✓",
+    // ];
+
 
 
 
@@ -94,12 +91,23 @@ class CrudController extends Controller
 
     final public function __construct()
     {
+        if(!$this->crud2) {
+            $this->crud2 = new CrudPanel2($this->crud);
+        }
 
         if ($this->crud) {
             return;
         }
 
-        // docu_string(CRUD2::class, true);
+        # custom
+        // PARENT::__construct();
+        $this->now_at = Carbon::now();
+        $this->now_at_dtu = $this->now_at->format('Y-m-d H:i:s.u');
+        $this->now_at_dt = $this->now_at->format('Y-m-d H:i:s');
+        $this->now_at_date = $this->now_at->format('Y-m-d');
+        $this->now_at_timeu = $this->now_at->format('H:i:s.u');
+        $this->now_at_time = $this->now_at->format('H:i:s');
+
 
         // ---------------------------
         // Create the CrudPanel object
@@ -109,32 +117,41 @@ class CrudController extends Controller
         //
         // It's done inside a middleware closure in order to have
         // the complete request inside the CrudPanel object.
+
         $this->middleware(function ($request, $next) {
+            /** @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud */    
             $this->crud = app('crud');
-            
-            // // $this->crud = app(CRUD::class);
-            // $c = new BackpackServiceProvider(app());
-            // $c->register();
-            // $c->boot(app('router'));
-            // $this->crud = Container::getInstance()->make(CRUD2::class);
-
-
-
             $this->crud->setRequest($request);
             $this->setupDefaults();
             $this->setup();
             $this->setupConfigurationForCurrentOperation();
-            $this->crud->enableExportButtons();
 
-            
+
+            # ----------------
+            # CUSTOM
+
+            // $this->crud2 = new CrudPanel2($this->crud);
+            $this->crud->addButton('top', 'refresh2', 'view', 'Refresh');
+            // $this->crud->addButton('top', 'reset2', 'view', 'Reset');
+            if(!$this->crud->hasOperationSetting('exportButtonShow')) {
+                $this->crud2->enableColumnVisibilityButton();
+                $this->crud2->enableExportButtons(true);
+
+                $this->crud2->__setOperationSetting('now_at', $this->now_at);
+                $this->crud2->__setOperationSetting('now_at_dtu', $this->now_at_dtu);
+                $this->crud2->__setOperationSetting('now_at_dt', $this->now_at_dt);
+                $this->crud2->__setOperationSetting('now_at_date', $this->now_at_date);
+                $this->crud2->__setOperationSetting('now_at_timeu', $this->now_at_timeu);
+                $this->crud2->__setOperationSetting('now_at_time', $this->now_at_time);
+            }
 
             return $next($request);
         });
 
         
-        # custom
-        // PARENT::__construct();
-        $this->now_at = Carbon::now();
+        
+
+
     }
 
     /**
@@ -275,6 +292,5 @@ class CrudController extends Controller
 
     # ------------------------------------
     # CUSTOM
-
 
 }

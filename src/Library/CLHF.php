@@ -36,6 +36,11 @@ use Rguj\Laracore\Library\WebClient;
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 // ----------------------------------------------------------
 
+/**
+ * Custom Laravel Helper Functions
+ * 
+ * @deprecated 1.0.0
+ */
 class CLHF {
 
     // Custom Laravel Helper Functions (CLHF)

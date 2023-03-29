@@ -13,8 +13,10 @@ use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\HttpResponse;
 use Rguj\Laracore\Library\WebClient;
 
-//use App\Http\Controllers\Student\Link as StudentLink;
-
+/**
+ * Storage Access Functions
+ * 
+ */
 class StorageAccess {
 
     //public $class1;

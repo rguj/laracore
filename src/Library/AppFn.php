@@ -29,6 +29,11 @@ use Rguj\Laracore\Library\StorageAccess;
 use Rguj\Laracore\Library\WebClient;
 // ----------------------------------------------------------
 
+/**
+ * Application functions
+ * 
+ * @deprecated 1.0.0
+ */
 class AppFn {
 
     /*

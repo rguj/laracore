@@ -20,6 +20,8 @@ use Rguj\Laracore\Request\Request;
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use Rguj\Laracore\Library\StorageAccess;
 use App\Models\User;
+use phpDocumentor\Reflection\PseudoTypes\True_;
+use Rguj\Laracore\Exception\CustomJSONException;
 
 
 
@@ -57,20 +59,52 @@ if(file_exists(__DIR__.'/ThemeUtilHelper.php'))
  */
 
 /**
+ * Just a dummy function
+ *
+ * @return void
+ */
+function _____()
+{
+
+}
+
+/**
+ * Evaluates the condition and returns the respective `true|false` value
+ *
+ * @param string $key
+ * @param boolean $strict
+ * @return mixed
+ * @source `cond_return()` Evaluates the condition and returns the respective `true|false` value
+ */
+function cr(bool $cond, $true, $false)
+{
+    return cond_return($cond, $true, $false);
+}
+
+/**
+ * Throws a readable JSON Exception from a variable
+ *
+ * @param mixed $var
+ * @param boolean $assoc
+ * @return mixed
+ * @source `exception_json` Throws a readable JSON Exception from a variable
+ */
+function ej($var, bool $assoc = true)
+{
+    exception_json($var, $assoc);
+}
+
+/**
  * JSON echo & die
  *
  * @param mixed $var
  * @param bool $withTrace
  * @return void
+ * @source `json_echo_and_die()` JSON Echo & Die
  */
 function jed($var, bool $withTrace = false)
 {
-    if($withTrace) {
-        $t = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1] ?? [];
-        echo json_encode(['var' => $var, 'trace' => $t]);
-    }
-    else echo json_encode($var);
-    die();
+    json_echo_and_die($var, $withTrace);
 }
 
 /**
@@ -86,27 +120,18 @@ function tnev($var = null)
 }
 
 /**
- * Same as `view_variable()`
+ * Gets the view variable
  *
  * @param string $key
  * @param boolean $strict
  * @return mixed
- * @see `view_variable()`
+ * @source `view_variable()` Gets the view variable
  */
-function vv(string $key, bool $strict=false)
+function vv(string $key, bool $strict = false)
 {
     return view_variable($key, $strict);
 }
 
-function cond_return(bool $cond, $true, $false)
-{
-    return $cond ? $true : $false;
-}
-
-function _____()
-{
-
-}
 
 
 
@@ -470,29 +495,6 @@ function auth_user_status(int $user_id)
 
 
 
-
-
-/** -----------------------------------------------
- * BACKPACK
- */
-
-/**
- * Check if the backpack/pro package is installed.
- *
- * @return bool
- */
-function backpack_pro()
-{
-    // if (app()->runningUnitTests()) {
-    //     return true;
-    // }
-    // if (! \Composer\InstalledVersions::isInstalled('backpack/pro')) {
-    //     return false;
-    // }
-
-    // return \PackageVersions\Versions::getVersion('backpack/pro');
-    return true;
-}
 
 
 
@@ -972,6 +974,29 @@ function component_analysis($data, $args)
 
 
 
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * COND - CONDITION
+ */
+
+/**
+ * Evaluates the condition and returns the respective `true|false` value
+ *
+ * @param boolean $cond
+ * @param mixed $true
+ * @param mixed $false
+ * @return mixed
+ */
+function cond_return(bool $cond, $true, $false)
+{
+    return $cond ? $true : $false;
+}
 
 
 
@@ -2873,6 +2898,63 @@ function dt_range_location(string $start_at, string $end_at, Carbon $date_at)
 
 
 
+/** -----------------------------------------------
+ * EXCEPTION
+ */
+
+/**
+ * Throws a readable JSON Exception from a variable
+ *
+ * @param mixed $var
+ * @param boolean $assoc
+ * @return mixed
+ */
+function exception_json($var, bool $assoc = true)
+{
+    throw new CustomJSONException($var, 0, null, $assoc);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * JSON
+ */
+
+/**
+ * JSON Echo & Die
+ *
+ * @param mixed $var
+ * @param bool $withTrace
+ * @return void
+ */
+function json_echo_and_die($var, bool $withTrace = false)
+{
+    if($withTrace) {
+        $t = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1] ?? [];
+        echo json_encode(['var' => $var, 'trace' => $t]);
+    }
+    else echo json_encode($var);
+    die();
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4380,7 +4462,7 @@ function view_title(string $title, bool $include_app_name=true, string $separato
  * @param boolean $strict
  * @return mixed
  */
-function view_variable(string $key, bool $strict=false)
+function view_variable(string $key, bool $strict = false)
 {
     $v = [];
     if(isset($__data)) {

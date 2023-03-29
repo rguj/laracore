@@ -77,6 +77,7 @@ class HttpResponse {
     private bool $isUserAdmin = false;
     private bool $hasInit = false;
     private int $logicTriggered = 0;
+    private int $hasPurposeLogic = 0;
     private array $logicData = [false, '', null];  // [ hasLogic, err_msg, data ]
 
     private array $notifications = [];
@@ -88,6 +89,7 @@ class HttpResponse {
     private array $formValues = [];
     private array $formErrors = [];
     private array $data = [];
+    private array $with = [];
     private array $rootData = [];
 
     private array $alertTypes = ['swal2', 'toastr'];
@@ -885,7 +887,10 @@ class HttpResponse {
             if(!$val[0]) throw new exception($val[1]);
 
             View::share($with);
-            AppServiceProvider::initializeMetronic();
+            if(method_exists(AppServiceProvider::class, 'initializeMetronic')) {
+                // AppServiceProvider::initializeMetronic();
+                call_user_func(AppServiceProvider::class.'::initializeMetronic');
+            }
 
             return $val[2];
         }

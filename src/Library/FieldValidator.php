@@ -21,7 +21,11 @@ use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\StorageAccess;
 use Rguj\Laracore\Library\WebClient;
 
-
+/**
+ * Field Validator Functions
+ * 
+ * @deprecated 1.0.0
+ */
 class FieldValidator {
 
     public function __construct() {
