@@ -28,10 +28,12 @@ use Rguj\Laracore\Exception\CustomJSONException;
 
 /* -----------------------------------------------
  * DEFINERS
+ * - prefixed by `BH_`
  */
 
-define('CONFIG_ENV_KEY', 'env');
-define('CONFIG_UNV_KEY', 'unv');
+define('BH_ENV_KEY', 'env');
+define('BH_UNV_KEY', 'unv');
+define('BH_CRUD_KEY', 'crud');
 
 
 /* -----------------------------------------------
@@ -483,6 +485,9 @@ function auth_user_status(int $user_id)
     point1:
     return [$user_exists, $is_active, $is_verified, $passed_all];
 }
+
+
+
 
 
 
@@ -1056,7 +1061,7 @@ function config_set($key, $value = null)
  */
 function config_unv_set(string $key, $val)
 {
-    config()->set(CONFIG_UNV_KEY.'.'.$key, $val);
+    config()->set(BH_UNV_KEY.'.'.$key, $val);
 }
 
 /**
@@ -1067,7 +1072,7 @@ function config_unv_set(string $key, $val)
  * @return mixed
  */
 function config_env($key = null, $default = null) {
-	return config(CONFIG_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
+	return config(BH_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
 }
 
 /**
@@ -1078,7 +1083,7 @@ function config_env($key = null, $default = null) {
  * @return mixed
  */
 function config_unv($key = null, $default = null) {
-	return config(CONFIG_UNV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
+	return config(BH_UNV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
 }
 
 
@@ -2858,9 +2863,10 @@ function dt_translate_unique(string $dt_str) {
  * @param string $start_at
  * @param string $end_at
  * @param Carbon $date_at
- * @return string `['lesser', 'greater', 'within']`
+ * @param array $txt `['lesser', 'greater', 'within']` the output text representation
+ * @return string output text
  */
-function dt_range_location(string $start_at, string $end_at, Carbon $date_at)
+function dt_range_location(string $start_at, string $end_at, Carbon $date_at, array $txt = ['lesser', 'greater', 'within'])
 {
     $opt = '';
     try {
@@ -2875,13 +2881,13 @@ function dt_range_location(string $start_at, string $end_at, Carbon $date_at)
         if($start_at_ > $end_at) throw new exception('Invalid range');
 
         if($date_at < $start_at_) {
-            $opt = 'lesser';
+            $opt = $txt[0];
         }
         else if($date_at > $end_at_) {
-            $opt = 'greater';
+            $opt = $txt[1];
         }
         else if($date_at >= $start_at_ && $date_at <= $end_at_) {
-            $opt = 'within';
+            $opt = $txt[2];
         }
     } catch(\Exception $ex) { }
     return $opt;
@@ -2947,6 +2953,46 @@ function json_echo_and_die($var, bool $withTrace = false)
     else echo json_encode($var);
     die();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** -----------------------------------------------
+ * LARAVEL BACKPACK
+ */
+
+/**
+ * Get the int value of `backpack_auth()->id()`
+ *
+ * @return int
+ */
+function lbp_auth_id()
+{
+    return (int)backpack_auth()->id();
+}
+
+/**
+ * Get the int value of `backpack_auth()->id()`
+ *
+ * @return mixed
+ */
+function lbp_request_get(string $key)
+{    
+    return app(BH_CRUD_KEY)->getRequest()->get($key);
+}
+
+
+
+
 
 
 

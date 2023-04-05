@@ -34,6 +34,9 @@ use Rguj\Laracore\Traits\LBP\Operations\FetchOperation;
 // use App\Traits\CrudPanel2;
 use Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel2;
 
+// use Illuminate\Database\Query\Builder;
+// use Illuminate\Database\Eloquent\Builder;
+
 // use Rguj\Laracore\Provider\BackpackServiceProvider;
 // use Illuminate\Container\Container;
 
@@ -130,19 +133,21 @@ class CrudController extends Controller
             # ----------------
             # CUSTOM
 
-            // $this->crud2 = new CrudPanel2($this->crud);
-            $this->crud->addButton('top', 'refresh2', 'view', 'Refresh');
-            // $this->crud->addButton('top', 'reset2', 'view', 'Reset');
-            if(!$this->crud->hasOperationSetting('exportButtonShow')) {
-                $this->crud2->enableColumnVisibilityButton();
-                $this->crud2->enableExportButtons(true);
-
+            if(!$this->crud->hasOperationSetting('now_at')) {
                 $this->crud2->__setOperationSetting('now_at', $this->now_at);
                 $this->crud2->__setOperationSetting('now_at_dtu', $this->now_at_dtu);
                 $this->crud2->__setOperationSetting('now_at_dt', $this->now_at_dt);
                 $this->crud2->__setOperationSetting('now_at_date', $this->now_at_date);
                 $this->crud2->__setOperationSetting('now_at_timeu', $this->now_at_timeu);
                 $this->crud2->__setOperationSetting('now_at_time', $this->now_at_time);
+            }
+
+            $this->crud->addButton('top', 'refresh2', 'view', 'Refresh');
+            // $this->crud->addButton('top', 'reset2', 'view', 'Reset');
+
+            if(!$this->crud->hasOperationSetting('exportButtonShow')) {
+                $this->crud2->enableColumnVisibilityButton();
+                $this->crud2->enableExportButtons(true);
             }
 
             return $next($request);
