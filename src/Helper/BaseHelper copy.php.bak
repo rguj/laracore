@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-// PHP built-in
-// use ReflectionClass;
-// use Exception;
-// use Throwable;
-// use ArrayAccess;
-// use ReflectionMethod;
-// use ReflectionNamedType;
-// use ReflectionFunction;
-// use Closure;
+// php
+use ReflectionClass;
+use Exception;
+use Throwable;
+use ArrayAccess;
+use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionFunction;
+use Closure;
 
 // Illuminate\Http
 use Illuminate\Http\Request as HttpRequest;
@@ -32,17 +32,15 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
 
-// Rguj\Laracore
+// Rguj\Laracor
 use Rguj\Laracore\Exception\CustomJSONException;
 use Rguj\Laracore\Library\StorageAccess;
 // use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 use Rguj\Laracore\Request\Request;
 
-// Other Vendor
-// use Carbon\Carbon;
+// other vendor
 use Carbon\CarbonImmutable;
 use Spatie\Url\Url as SpatieUrl;
-use Vinkla\Hashids\Facades\Hashids;
 
 
 
@@ -84,7 +82,7 @@ if(file_exists(__DIR__.'/ThemeUtilHelper.php'))
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * SHORTCUTS
  */
 
@@ -174,7 +172,7 @@ function vv(string $key, bool $strict = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * ARRAYS
  */
 
@@ -431,7 +429,7 @@ function arr_search_column(array $a, $column, $val) {
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * AUTH
  */
 
@@ -539,7 +537,7 @@ function auth_user_status(int $user_id)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * BLADE
  */
 
@@ -1014,7 +1012,7 @@ function component_analysis($data, $args)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * COND - CONDITION
  */
 
@@ -1047,7 +1045,7 @@ function cond_return(bool $cond, $true, $false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * CONFIG
  */
 
@@ -1127,7 +1125,7 @@ function config_unv($key = null, $default = null) {
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * CRYPT - SECURITY
  */
 
@@ -1212,50 +1210,6 @@ function crypt_de_merge_get(Request &$request, string $key, bool $is_post, bool 
 
 
 
-/* -----------------------------------------------
- * CRYPT HashIds
- */
-
-/**
- * Encode using HashIds library
- * 
- * - Maximum of 18 characters for numbers. Otherwise, cast it to string.
- *
- * @param string|int $value
- * @return string
- * 
- * @depends `Vinkla\Hashids\Facades\Hashids`
- */
-function crypthi_encode($value)
-{
-    // block invalid type
-    if(!in_array(gettype($value), ['integer', 'float', 'double', 'string']))
-        throw new Exception('$value must be type string or number');
-
-    // block lengthy integer|double|float
-    if(var_is_sen($value) && strlen(sprintf('%d', (string)$value)) > 18)
-        throw new Exception('Maximum number length is 18. Cast it to string otherwise.');
-
-    // block negative number
-    if((is_integer($value) || is_double($value) || is_float($value)) && $value < 0)
-        throw new Exception('Number should not be negative');
-
-    return Hashids::encode($value);
-}
-
-/**
- * Decode using HashIds library
- *
- * @param string $value
- * @param bool $getFirstElement
- * @return string|int
- * 
- * @depends `Vinkla\Hashids\Facades\Hashids`
- */
-function crypthi_decode(string $value, bool $getFirstElement = true)
-{
-    return $getFirstElement ? (Hashids::decode($value)[0] ?? null) : Hashids::decode($value);
-}
 
 
 
@@ -1267,7 +1221,8 @@ function crypthi_decode(string $value, bool $getFirstElement = true)
 
 
 
-/* -----------------------------------------------
+
+/** -----------------------------------------------
  * DATATABLE
  */
 
@@ -2029,7 +1984,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * DATABASE
  */
 
@@ -2365,7 +2320,7 @@ function db_upsert($conn_tbl, array $attr, array $values)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * DOCUMENTATION
  */
 
@@ -2547,7 +2502,7 @@ function docu_string($class, bool $echoAndDie = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * DATE TIME
  */
 
@@ -2573,8 +2528,7 @@ function dt_standard_format()
  */
 function dt_is_carbon($obj)
 {
-    // return (!is_null($obj) && is_object($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
-    return (!is_null($obj) && is_object($obj) && (in_array(get_class($obj), ['Carbon\Carbon', 'Illuminate\Support\Carbon'], true) || array_key_exists('Carbon\Carbon', class_parents($obj))));
+    return (!is_null($obj) && is_object($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
 }
 
 /**
@@ -2585,7 +2539,7 @@ function dt_is_carbon($obj)
  * @param array|string $dt_format [ from, to ] | from
  * @param array|string $tz [ from, to ] | from
  * @return \App\Traits\DT
- * @uses Carbon
+ * @uses Carbon\Carbon
  */
 function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
 {
@@ -2937,7 +2891,7 @@ function dt_translate_unique(string $dt_str) {
  * @param array $txt `['lesser', 'greater', 'within']` the output text representation
  * @return string output text
  */
-function dt_range_location(string $start_at, string $end_at, $date_at, array $txt = ['lesser', 'greater', 'within'])
+function dt_range_location(string $start_at, string $end_at, Carbon $date_at, array $txt = ['lesser', 'greater', 'within'])
 {
     $opt = '';
     try {
@@ -2976,7 +2930,7 @@ function dt_range_location(string $start_at, string $end_at, $date_at, array $tx
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * EXCEPTION
  */
 
@@ -3004,7 +2958,7 @@ function exception_json($var, bool $assoc = true)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * JSON
  */
 
@@ -3037,7 +2991,7 @@ function json_echo_and_die($var, bool $withTrace = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * LARAVEL BACKPACK - MORE SIMPLIER FUNCTIONS
  */
 
@@ -3076,7 +3030,7 @@ function lbp_request_get(string $key, mixed $default = null): mixed
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * OBJECT
  */
 
@@ -3142,7 +3096,7 @@ function obj_reflect($obj, bool $to_array = false, $default = null)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * REDIRECT
  */
 
@@ -3186,7 +3140,7 @@ function redirect_now($url, $code = 302)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * REQUEST
  */
 
@@ -3248,7 +3202,7 @@ function request_rules(string $requestClass)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * ROUTE
  */
 
@@ -3483,7 +3437,7 @@ function arr_implode_html_attr(string $glue, array $attributes)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * SESSION
  */
 
@@ -3602,7 +3556,7 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * SOCKET
  */
 
@@ -3664,23 +3618,17 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * STORAGE
  */
 
-/**
- * Get the file information in storage
- * 
- * @param string $path specify the file path
- * @param null|bool|string $basename_new set to `true` to retain the same name; set to `string` to set a new file name; otherwise, random 15 characters
- */
 function storage_file_info(string $path, $basename_new = null)
 {
     /*
-    $basename_new:
-        === true ? same as $basename
-        !empty() ? $basename_new
-        else ? random 15 alphanum
+        $basename_new:
+            === true ? same as $basename
+            !empty() ? $basename_new
+            else ? random 15 alphanum
     */
 
     $file = [
@@ -3731,7 +3679,7 @@ function storage_file_info(string $path, $basename_new = null)
     $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
     if($basename_new === true)
         $file['path_new'] = $file['name'];
-    else if(is_string($basename_new) && str_filled($basename_new))
+    else if(is_string($basename_new) && str_empty($basename_new) !== true)
         $file['path_new'] = $basename_new.$ext_;
     else
         $file['path_new'] = str_random_alphanum(15).$ext_;
@@ -3824,7 +3772,7 @@ function storage_file_url(string $path, string $mode) {
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * STRING
  */
 
@@ -4062,7 +4010,7 @@ function str_replace_last($search, $replace, $subject)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * URL
  */
 
@@ -4170,7 +4118,10 @@ function url_parse(string $url, string $defaultScheme = 'https')
 
     try {
         $is_path_root = empty(trim(trim($parsed['path'], '/')));
-    } catch(Throwable $ex) {}
+    } catch(Throwable $ex) {
+        
+    }
+
 
     $schemeHostPath = $parsed['scheme'].'://'.$parsed['host'].$parsed['path'];
     $pathQueryFragment = $parsed['path'].($has_query ? '?'.$parsed['queryRaw'] : '').($has_fragment ? '#'.$parsed['fragment'] : '');
@@ -4590,7 +4541,7 @@ function validate_datetime(string $dts)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * VAR
  */
  
@@ -4633,17 +4584,6 @@ function var_is_closure($obj) {
         $bool = (bool)$reflection->isClosure();
     } catch(Throwable $th) {}
     return $bool;
-}
-
-/**
- * Check if variable is a `Scientific E Notation`
- *
- * @param string|integer|float|double $value
- * @return void
- */
-function var_is_sen($value)
-{
-    return !is_string($value) && !is_integer($value) && (is_float($value) || is_double($value));
 }
 
 /**
@@ -4733,7 +4673,7 @@ function var_type_official(string $type)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * VIEW
  */
 
@@ -4791,7 +4731,7 @@ function view_variable(string $key, bool $strict = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * WEBCLIENT
  */
 
@@ -4806,10 +4746,7 @@ function webclient_intended()
     $prev_url = url()->previous();
     
     $parsed_prev_url = url_parse($prev_url);
-    // $prev_url_path = $parsed_prev_url->url ?? '';
-
-    $prev_url_path = $parsed_prev_url->urlParsed ?? '';
-    $prev_url_path = $parsed_prev_url->urlRaw ?? '';
+    $prev_url_path = $parsed_prev_url->url ?? '';
 
     $except = [  // guest pages
         // route('index.index'),               // /
@@ -4859,7 +4796,7 @@ function webclient_timezone()
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * WEBSITE
  */
 
