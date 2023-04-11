@@ -27,8 +27,8 @@ use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
 
 # custom operations
-use Rguj\Laracore\Traits\LBP\Operations\ListOperation;
-use Rguj\Laracore\Traits\LBP\Operations\FetchOperation;
+use Rguj\Laracore\Trait\LBP\Operation\ListOperation;
+use Rguj\Laracore\Trait\LBP\Operation\FetchOperation;
 
 // use Backpack\CRUD\app\Library\CrudPanel\CrudPanel;
 // use App\Traits\CrudPanel2;

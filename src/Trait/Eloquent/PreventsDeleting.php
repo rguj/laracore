@@ -1,6 +1,6 @@
 <?php
 
-namespace Rguj\Laracore\Traits\Eloquent;
+namespace Rguj\Laracore\Trait\Eloquent;
 
 trait PreventsDeleting
 {
