@@ -62,6 +62,9 @@ define('BH_ENV_KEY', 'env');
 define('BH_UNV_KEY', 'unv');
 define('BH_CRUD_KEY', 'crud');
 
+define('BH_URL_MAX_LENGTH', 2000);
+define('BH_ROUTE_FILE_INDEX', 'file.index');
+
 
 /* -----------------------------------------------
  * REQUIRE
@@ -3671,10 +3674,12 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
 /**
  * Get the file information in storage
  * 
- * @param string $path specify the file path
+ * @param string $path specify the file path (wrapped in `/storage/app`)
  * @param null|bool|string $basename_new set to `true` to retain the same name; set to `string` to set a new file name; otherwise, random 15 characters
+ * @param string $url_stream_mode `''` or `'dispose'` or `'download'`
+ * @return array
  */
-function storage_file_info(string $path, $basename_new = null)
+function storage_file_info(string $path, $basename_new = null, string $url_stream_mode = '')
 {
     /*
     $basename_new:
@@ -3694,6 +3699,7 @@ function storage_file_info(string $path, $basename_new = null)
         'path_app' => '',  // relative path inside storage/app
         'dir_app' => '',
         'md5' => '',
+        'url' => '',
     ];
 
     // $p = storage_path('app/'.$file['path']);
@@ -3726,6 +3732,15 @@ function storage_file_info(string $path, $basename_new = null)
     $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
     $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
     $file['md5'] = $file['exists'] ? md5_file($p) : '';
+
+    // GENERATE URL
+    $stream_modes = ['dispose', 'download'];
+    if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
+        $m = array_search($url_stream_mode, $stream_modes, true) + 1;
+        $file['url'] = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+        if(strlen($file['url']) > BH_URL_MAX_LENGTH)
+            throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
+    }
     
     // NEW PATH
     $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
@@ -3740,7 +3755,14 @@ function storage_file_info(string $path, $basename_new = null)
     return $file;
 }
 
-function storage_file_stream(Request $request) {
+/**
+ * Get the file
+ *
+ * @param \Illuminate\Http\Request $request
+ * @param bool $is_allowed Implement your file access permission
+ * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+ */
+function storage_file_stream($request, bool $is_allowed = true) {
     /*
         URL PARAMS:
             p => path (encrypted)
@@ -3775,9 +3797,14 @@ function storage_file_stream(Request $request) {
         throw new Exception('Invalid mime type');
             
     // ROLE VALIDATION
-    $hasAccess = StorageAccess::check($request, $file);
-    if($hasAccess !== true)
-        abort(403, 'Access denied');
+    // $hasAccess = StorageAccess::check($request, $file);
+    // if($hasAccess !== true)
+    //     abort(403, 'Access denied');
+
+    // check if allowed
+    if(!$is_allowed) {
+        abort(403, 'Not allowed to access');
+    }
 
     // FILE STREAM
     $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
@@ -3788,11 +3815,13 @@ function storage_file_stream(Request $request) {
     return $filestream;
 }
 
+
+
 function storage_file_url(string $path, string $mode) {
     // explode segments
 
     // SETTINGS
-    $url_len_max = 2000;
+    // BH_URL_MAX_LENGTH = 2000;
     $modes = ['dispose', 'download'];
 
     // check mode
@@ -3808,10 +3837,10 @@ function storage_file_url(string $path, string $mode) {
         // throw new Exception('File doesn\'t exists');
     }
 
-    $url = route('file.index', ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+    $url = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
     $url_len = strlen($url);
-    if($url_len > $url_len_max)
-        throw new Exception('File link has exceeded '.$url_len_max.' '.Str::plural('character', $url_len_max));
+    if($url_len > BH_URL_MAX_LENGTH)
+        throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
     
     return $url;
 }
@@ -4827,12 +4856,18 @@ function webclient_intended()
 
 /**
  * Checks if webclient is in developer mode
+ * 
+ * @changed `DEV_KEY` to `APP_DEV_KEY`
+ * @uses `$_COOKIE[env('APP_DEV_KEY')]` instead of `request()->cookie(env('APP_DEV_KEY'))`
+ * @uses `.env`.`APP_DEV_KEY`
+ * @uses `.env`.`APP_DEV_VAL`
  *
  * @return bool
  */
 function webclient_is_dev()
 {
-    return !empty(env('DEV_KEY')) && ((string)(request()->cookie('dev') ?? '')) === env('DEV_KEY');
+    // return !empty(env('APP_DEV_KEY')) && !empty(env('APP_DEV_VAL')) && request()->hasCookie(env('APP_DEV_KEY')) && ((string)(request()->cookie(env('APP_DEV_KEY')) ?? '')) === env('APP_DEV_VAL');
+    return !empty(env('APP_DEV_KEY')) && !empty(env('APP_DEV_VAL')) && isset($_COOKIE[env('APP_DEV_KEY')]) && ((string)($_COOKIE[env('APP_DEV_KEY')] ?? '')) === env('APP_DEV_VAL');
 }
 
 /**

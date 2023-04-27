@@ -1,0 +1,46 @@
+/*
+div.fv-row span.input-group-text {
+	padding-right: 18px !important;
+	padding-left: 0px !important;
+	background-color: #f5f8fa;
+    border-color: #f5f8fa;
+    color: #5e6278;
+    transition: color .2s ease,background-color .2s ease;
+}
+
+
+div.fv-row i.bi {
+	padding: 0px 0px 0px 0px;
+}*/
+
+
+.phpdebugbar-widgets-list-item .phpdebugbar-widgets-bg-measure {
+	margin-left: -10px !important;
+}
+
+.fs-tiny {
+	font-size: 1rem !important;
+    font-weight: 300 !important;
+}
+
+.fw-400 {
+	font-weight: 400 !important;
+}
+
+.fs-tiny-2 {
+	font-size: 0.9rem !important;
+}
+
+
+#kt_aside_footer #aside_footer_loaded {
+	cursor: default;
+	background-color: transparent;
+	font-size: 1rem;
+	font-weight: 300;
+}
+
+#kt_aside_footer #aside_footer_loaded:hover, #kt_aside_footer #aside_footer_loaded:focus {
+	background-color: transparent !important;
+}
+
+
