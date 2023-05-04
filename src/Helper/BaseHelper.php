@@ -3674,6 +3674,8 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
 /**
  * Get the file information in storage
  * 
+ * - `route(encrypt())` was reworked
+ * 
  * @param string $path specify the file path (wrapped in `/storage/app`)
  * @param null|bool|string $basename_new set to `true` to retain the same name; set to `string` to set a new file name; otherwise, random 15 characters
  * @param string $url_stream_mode `''` or `'dispose'` or `'download'`
@@ -3737,7 +3739,8 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
     $stream_modes = ['dispose', 'download'];
     if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
         $m = array_search($url_stream_mode, $stream_modes, true) + 1;
-        $file['url'] = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+        // $file['url'] = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+        $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.encrypt($file['path_app']).'&m='.$m;
         if(strlen($file['url']) > BH_URL_MAX_LENGTH)
             throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
     }
@@ -4922,6 +4925,7 @@ function website_check(string $url, bool $ignore_ssl = false, array $options = [
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		
 		foreach($finalOptions as $k=>$v) {
 			curl_setopt($ch, $k, $v);
