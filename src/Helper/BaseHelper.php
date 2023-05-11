@@ -402,7 +402,8 @@ function arr_has($array, $keys)
  * @param mixed $value
  * @return array
  */
-function arr_search_by_key(array $array, $key, $value) {
+function arr_search_by_key(array $array, $key, $value)
+{
     if(!is_array($array)) {
         return [];
     }
@@ -415,13 +416,28 @@ function arr_search_by_key(array $array, $key, $value) {
     return $results;
 }
 
-function arr_search_column(array $a, $column, $val) {
+function arr_search_column(array $a, $column, $val)
+{
     $c = array_search($val, array_column($a, $column), true);
     if($c === false) {
         return [];
     }
     return $a[$c];
-};
+}
+
+function arr_prefix(array $array, string $prefix)
+{
+    return array_map(function ($arrayValues) use ($prefix) {
+        return $prefix . $arrayValues;
+    }, $array);
+}
+
+function arr_suffix(array $array, string $suffix)
+{
+    return array_map(function ($arrayValues) use ($suffix) {
+        return $arrayValues . $suffix;
+    }, $array);
+}
 
 
 
@@ -3681,7 +3697,7 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
  * @param string $url_stream_mode `''` or `'dispose'` or `'download'`
  * @return array
  */
-function storage_file_info(string $path, $basename_new = null, string $url_stream_mode = '')
+function storage_file_info(string $path, $basename_new = null, string $url_stream_mode = '', $id = null)
 {
     /*
     $basename_new:
@@ -3702,12 +3718,36 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
         'dir_app' => '',
         'md5' => '',
         'url' => '',
+
+        'hashid' => '',  // HashIds value
+        'size' => 0,  // kb
+
     ];
+
 
     // $p = storage_path('app/'.$file['path']);
     $p = str_sanitize($file['path']);
     $p = trim($p, '/');
-    $p = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+    // $realpath = '';
+
+
+    //////
+    
+    // $base_storage_path = storage_path();
+    $p2 = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+
+    if(File::exists($realpath = realpath($p))) { }    
+    else if(File::exists($realpath = realpath($p2))) { }
+    else { $realpath = ''; }
+
+    dd($realpath);
+
+    
+
+    /////
+
+    $p = $isStoragePath ? storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p) : $p;
+
     $file['path'] = $p;
 
     // CHECK IF PATH EXISTS
@@ -3734,6 +3774,9 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
     $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
     $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
     $file['md5'] = $file['exists'] ? md5_file($p) : '';
+
+    $file['hashid'] = $file['exists'] && !empty($id) ? crypthi_encode($id) : 0;
+    $file['size'] = $file['exists'] ? File::size($p) : 0;
 
     // GENERATE URL
     $stream_modes = ['dispose', 'download'];
