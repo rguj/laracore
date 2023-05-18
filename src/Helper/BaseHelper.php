@@ -43,6 +43,7 @@ use Rguj\Laracore\Request\Request;
 use Carbon\CarbonImmutable;
 use Spatie\Url\Url as SpatieUrl;
 use Vinkla\Hashids\Facades\Hashids;
+// use ByteUnits;
 
 
 
@@ -3688,16 +3689,18 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
  */
 
 /**
- * Get the file information in storage
+ * Get the file information
  * 
  * - `route(encrypt())` was reworked
  * 
  * @param string $path specify the file path (wrapped in `/storage/app`)
  * @param null|bool|string $basename_new set to `true` to retain the same name; set to `string` to set a new file name; otherwise, random 15 characters
  * @param string $url_stream_mode `''` or `'dispose'` or `'download'`
+ * @param null|int|string $id the value to convert into hashid, preferably int
+ * @param \Illuminate\Http\UploadedFile|null $reqFileInfo
  * @return array
  */
-function storage_file_info(string $path, $basename_new = null, string $url_stream_mode = '', $id = null)
+function storage_file_info(string $path, $basename_new = null, string $url_stream_mode = '', $id = null, $reqFileInfo = null)
 {
     /*
     $basename_new:
@@ -3706,6 +3709,7 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
         else ? random 15 alphanum
     */
 
+    // all about file info
     $file = [
         'exists' => false,
         'path' => trim($path),
@@ -3715,39 +3719,32 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
         'ext' => '',
         'mime_type' => null,
         'path_app' => '',  // relative path inside storage/app
-        'dir_app' => '',
+        'dir_app' => '',  // 
         'md5' => '',
+        'crypt' => '',
         'url' => '',
 
-        'hashid' => '',  // HashIds value
-        'size' => 0,  // kb
+        'client_ext' => '',
+        'client_mime_type' => '',
+        'client_name' => '',
 
+        'hashid' => '',  // HashIds value
+        'size' => 0,  // KB
+        'size_mb' => 0,  // MB
     ];
 
-
-    // $p = storage_path('app/'.$file['path']);
     $p = str_sanitize($file['path']);
     $p = trim($p, '/');
-    // $realpath = '';
 
-
-    //////
-    
-    // $base_storage_path = storage_path();
+    // try assuming its on storage/app
     $p2 = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+    $is_storage_app = false;
 
-    if(File::exists($realpath = realpath($p))) { }    
-    else if(File::exists($realpath = realpath($p2))) { }
+    if(File::exists($realpath = realpath($p))) { }
+    else if(File::exists($realpath = realpath($p2))) { $is_storage_app = true; }
     else { $realpath = ''; }
 
-    dd($realpath);
-
-    
-
-    /////
-
-    $p = $isStoragePath ? storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p) : $p;
-
+    $p = $realpath;
     $file['path'] = $p;
 
     // CHECK IF PATH EXISTS
@@ -3766,27 +3763,50 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
 
     // FILE INFO PARTS
     //$file['dir'] = File::dirname($p);
+    
+    // $file['client_mime'] = empty($reqFileInfo) ? [ 'mime' => '', 'name' => '', 'ext' => '', ] : [
+    //     'ext' => $reqFileInfo->getClientOriginalExtension(),
+    //     'mime' => $reqFileInfo->getClientMimeType(),
+    //     'name' => $reqFileInfo->getClientOriginalName(),
+    // ];
+
+    $file['client_ext'] = !empty($reqFileInfo) ? $reqFileInfo->getClientOriginalExtension() : '';
+    $file['client_mime_type'] = !empty($reqFileInfo) ? $reqFileInfo->getClientMimeType() : '';
+    $file['client_name'] = !empty($reqFileInfo) ? $reqFileInfo->getClientOriginalName() : '';
+
     $file['name'] = basename($p);
     $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();  
     $file['ext'] = Str::afterLast($file['name'], '.');
     $file['ext'] = ($file['name'] === $file['ext']) ? '' : $file['ext'];
+
     $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);  
-    $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
-    $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
+    $file['path_app'] = $is_storage_app ? Str::replaceLast(storage_path('app/'), '', $p) : '';
+    $file['dir_app'] = $is_storage_app ? Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString() : '';
     $file['md5'] = $file['exists'] ? md5_file($p) : '';
 
-    $file['hashid'] = $file['exists'] && !empty($id) ? crypthi_encode($id) : 0;
+    $file['hashid'] = $file['exists'] && !empty($id) ? crypthi_encode($id) : '';
     $file['size'] = $file['exists'] ? File::size($p) : 0;
+    $file['size_mb'] = (double)Str::of(ByteUnits\parse($file['size'].'KB')->format('MB/00000'))->rtrim('MB')->__toString();
 
     // GENERATE URL
+    // $stream_modes = ['dispose', 'download'];
+    // if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
+    //     $m = array_search($url_stream_mode, $stream_modes, true) + 1;
+    //     // $file['url'] = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+    //     $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.encrypt($file['path_app']).'&m='.$m;  // reworked
+    //     if(strlen($file['url']) > BH_URL_MAX_LENGTH)
+    //         throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
+    // }
     $stream_modes = ['dispose', 'download'];
-    if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
-        $m = array_search($url_stream_mode, $stream_modes, true) + 1;
-        // $file['url'] = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
-        $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.encrypt($file['path_app']).'&m='.$m;
-        if(strlen($file['url']) > BH_URL_MAX_LENGTH)
-            throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
-    }
+    $url_stream_mode = !in_array($url_stream_mode, $stream_modes, true) ? $stream_modes[0] : $url_stream_mode;
+    // if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
+    $m = array_search($url_stream_mode, $stream_modes, true) + 1;
+    // $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.encrypt($file['path_app']).'&m='.$m;
+    $file['crypt'] = encrypt($file['path']);
+    $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.$file['crypt'].'&m='.$m;
+    if(strlen($file['url']) > BH_URL_MAX_LENGTH)
+        throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
+    // }
     
     // NEW PATH
     $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
@@ -3821,7 +3841,7 @@ function storage_file_stream($request, bool $is_allowed = true) {
     $modes = ['dispose', 'download'];
     $base_dir = storage_path('app/');
     $m = ((int)($request->get('m') ?? 0)) - 1;
-    $p = (string)($request->get('p') ?? '');
+    $p_ = (string)($request->get('p') ?? '');
 
     // CHECK STREAM MODE
     $mode = $modes[$m] ?? '';  // m -> stream mode
@@ -3829,16 +3849,27 @@ function storage_file_stream($request, bool $is_allowed = true) {
         throw new Exception('Invalid stream mode');
 
     // CHECK FILE PATH INFO
-    $crypt = crypt_sc($p, 1, true);
+    $crypt = crypt_sc($p_, 1, true);
     if($crypt[0] !== true)
         throw new Exception($crypt[1]);
-    $path = $base_dir.$crypt[2];
-    $path = Str::replaceFirst(storage_path('app/'), '', $path);
+    $p = $crypt[2];
+    $p2 = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
+    $is_storage_app = false;
+
+    if(File::exists($realpath = realpath($p))) { }
+    else if(File::exists($realpath = realpath($p2))) { $is_storage_app = true; }
+    else { $realpath = ''; }
 
     // CHECK FILE PATH AND MIME TYPE
-    $file = storage_file_info($path, null);
-    if($file['exists'] !== true)
-        throw new Exception('File doesn\'t exists');
+    $file = ['exists' => File::exists($realpath)];
+    if(!$file['exists']) {
+        abort(404, 'File doesn\'t exists');
+    }
+    $file['path'] = $realpath;
+
+    $file['mime_type'] = false;
+    try { $file['mime_type'] = File::mimeType($p); } catch(Exception $ex) {}
+    $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
     if(str_empty($file['mime_type']) === true)
         throw new Exception('Invalid mime type');
             
@@ -3856,40 +3887,43 @@ function storage_file_stream($request, bool $is_allowed = true) {
     $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
     $dispositions = ['inline', 'attachment'];
     $disposition = $dispositions[$m];
-    $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
+    // $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
+    $filestream = Response::download($file['path'], null, $headers, $disposition);
 
     return $filestream;
 }
 
-
-
 function storage_file_url(string $path, string $mode) {
-    // explode segments
-
-    // SETTINGS
-    // BH_URL_MAX_LENGTH = 2000;
-    $modes = ['dispose', 'download'];
-
-    // check mode
-    if(!in_array($mode, $modes))
-        throw new Exception('Invalid mode');
-    $m = array_search($mode, $modes) + 1;
-
-    // check if path exists
-    $file = storage_file_info($path, true);
-
-    if($file['exists'] !== true) {
-        return '';
-        // throw new Exception('File doesn\'t exists');
-    }
-
-    $url = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
-    $url_len = strlen($url);
-    if($url_len > BH_URL_MAX_LENGTH)
-        throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
-    
-    return $url;
+    return (string)storage_file_info($path, null, $mode)['url'];
 }
+
+// function storage_file_url(string $path, string $mode) {
+//     // explode segments
+
+//     // SETTINGS
+//     // BH_URL_MAX_LENGTH = 2000;
+//     $modes = ['dispose', 'download'];
+
+//     // check mode
+//     if(!in_array($mode, $modes))
+//         throw new Exception('Invalid mode');
+//     $m = array_search($mode, $modes) + 1;
+
+//     // check if path exists
+//     $file = storage_file_info($path, true);
+
+//     if($file['exists'] !== true) {
+//         return '';
+//         // throw new Exception('File doesn\'t exists');
+//     }
+
+//     $url = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+//     $url_len = strlen($url);
+//     if($url_len > BH_URL_MAX_LENGTH)
+//         throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
+    
+//     return $url;
+// }
 
 
 
