@@ -37,7 +37,7 @@ use Illuminate\Support\ViewErrorBag;
 
 /**
  * A wrapper for web middleware
- * 
+ *
  * @subpackage \Rguj\Laracore\Helper\Helper
  */
 class ClientInstanceMiddleware
@@ -68,7 +68,7 @@ class ClientInstanceMiddleware
     public const ROLE_OSDSSTAFF   = 9;
 
     public const GLOBAL_THROTTLE = [5, 1];  // [ attempts, decay_mins ]
-    
+
     // private int $users_count;
     private bool $is_auth;
     private bool $is_admin;
@@ -87,7 +87,7 @@ class ClientInstanceMiddleware
     private $url_api;
     private $url_home;
     private $url_intended;
-    
+
 
     public function __construct()
     {
@@ -122,7 +122,7 @@ class ClientInstanceMiddleware
 
 
 
-    
+
 
 
     /**
@@ -136,7 +136,7 @@ class ClientInstanceMiddleware
     {
         $request = resolve(BaseRequest::class);
         $this->request = $request;
-        
+
         // set user info
         $id = cuser_id();
         point1:
@@ -159,14 +159,14 @@ class ClientInstanceMiddleware
             }
         }
         Config::set('roles', SELF::ROLES);
-        
+
         // set client info
         $this->client_info = SELF::client_info_($request);
         if(!$this->client_info[0])
             throw new Exception('Unable to issue client info');
         $this->client_info = $this->client_info[2];
         Config::set('client', $this->client_info);
-        
+
         // some logic for debugging
         $has_dev_key = webclient_is_dev();
         // if($this->is_admin || $has_dev_key) {
@@ -177,16 +177,16 @@ class ClientInstanceMiddleware
             app('debugbar')->disable();
             Config::set('app.debug', false);
         }
-        
+
         // MAINTENANCE MODE
         if(env('MAINTENANCE_MODE', false) && !app()->runningInConsole() && !webclient_is_dev()) {
             abort(503, 'Under maintenance');
         }
-        
+
         // some validation
         $validate = $this->validate($request);  // added new
         if(webclient_is_dev()) {
-            
+
         }
         if(!$validate[0]) {
 
@@ -207,10 +207,10 @@ class ClientInstanceMiddleware
                     throw new Exception('Invalid mode');
             }
         }
-       
+
         // set config
         // Config::set('user', $this->user_info);
-        
+
 
         // set user theme mode
         $theme_mode = config('user.settings.theme_mode') ?? '';
@@ -221,12 +221,12 @@ class ClientInstanceMiddleware
 
         // trigger theme bootstrap
         AppServiceProvider::initializeMetronic();
-        
+
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
 
-        
+
         return $next($req);
     }
 
@@ -243,7 +243,7 @@ class ClientInstanceMiddleware
         $request->session()->regenerateToken();
         $redirect_to = !empty($redirect) ? redirect()->to($redirect) : '/';
         session_push_alert('success', 'Logged out successfully');
-        
+
         // unset($fb['swal2']); unset($fb['toastr']);
         // foreach($fb as $k=>$v) {
         //     session_push_alert($v['status'], $v['msg'], $v['title'], $v['type']);
@@ -264,7 +264,7 @@ class ClientInstanceMiddleware
         // $fb = session_get_alerts(true);
         $url = url_parse(request()->fullUrl());
         $schemeHostPath = $url->schemeHostPath;
-        
+
         if(in_array($schemeHostPath, $this->bypassAuthRoutes))
             goto point1;
 
@@ -274,8 +274,8 @@ class ClientInstanceMiddleware
 
         if(in_array($url->path, ['', '/'])) {
             goto point1;
-        }     
-        
+        }
+
         if($this->is_auth) {
 
             // auto fix missing user child tables
@@ -302,7 +302,7 @@ class ClientInstanceMiddleware
 
 
 
-            
+
             // check email verify
             if(!$this->user_info['verify']['email']['is_verified']) {
                 if($schemeHostPath !== $this->url_verify_email) {
@@ -322,10 +322,10 @@ class ClientInstanceMiddleware
             if($this->force_register && config_unv('users_count') < 1 && !$is_url_registration) {
                 session_push_alert('info', 'Please register first');
                 return [false, 2, $this->url_register];
-            } 
+            }
             elseif($is_url_registration) {
                 goto point1;
-            }            
+            }
             else {
                 if($schemeHostPath === $this->url_login || $schemeHostPath === route('password.request')) {
                     goto point1;
@@ -373,7 +373,7 @@ class ClientInstanceMiddleware
     }
 
 
-    
+
 
 
     public static function user_info_($id) {
@@ -432,14 +432,14 @@ class ClientInstanceMiddleware
             ->get()->toArr(0)
             // ->toSql()
             ;
-            
+
             // dd($user);
-            
+
             // harmonize user settings array
             $user_settings = [];
             array_walk($user['settings'], function($v, $k) use(&$user_settings) {
                 $user_settings[$v['key']] = $v['value'];
-            });            
+            });
             $user['settings'] = $user_settings;
 
             $user['is_active'] = arr_get($user, 'state.is_active', 0) === 1;
@@ -459,7 +459,7 @@ class ClientInstanceMiddleware
         }
 
         if($id === 14880) {
-            
+
         }
         return $user;
     }
@@ -472,7 +472,7 @@ class ClientInstanceMiddleware
 
     //     $request->merge(['_timezone'=>config('env.APP_TIMEZONE')]);  // override timezone
     //     $client_info = WebClient::getClientUAInfo($request);  // get client info
-        
+
     //     // delete or put back
     //     if($has_tz) {
     //         $request->merge(['_timezone'=>$tz_before]);
@@ -494,9 +494,9 @@ class ClientInstanceMiddleware
 
     public function redirect(bool $goto_intended_url, bool $return_object=true) {
         // does not check is_valid
-        // @param $return_object ? redirect_object : route_string        
+        // @param $return_object ? redirect_object : route_string
         $user_role_ids = array_column(config('user.types'), 'id');
-        
+
         # config
         $redirect_to_str = null;
         $default = $this->url_home;
@@ -513,7 +513,7 @@ class ClientInstanceMiddleware
             if(!empty($next_url)) {
                 $redirect_to_str = $next_url;
                 goto point1;
-            }            
+            }
         }
 
         // convert all to lower case
@@ -556,7 +556,7 @@ class ClientInstanceMiddleware
         }
 
         // CHECK BROWSER
-        $vb = function() use($ua) {                
+        $vb = function() use($ua) {
             $flagged = false;
             // $invalid_type = false;
             // $invalid_name = false;
@@ -570,24 +570,24 @@ class ClientInstanceMiddleware
                     throw new exception('Failed to get user-agent info');
                 }
                 $ba = config('browser.requirement');
-        
+
                 if(!array_key_exists($ua['device']['type'], $ba)) {
                     config()->set('browser.is_valid_type', false);
                     throw new exception('Invalid device type');
                 }
                 config()->set('browser.type', $ua['device']['type']);
-        
+
                 if(!array_key_exists($ua['browser']['name'], $ba[$ua['device']['type']])) {
                     config()->set('browser.is_valid_name', false);
                     throw new exception('Invalid device name');
                 }
                 config()->set('browser.name', $ua['browser']['name']);
-        
+
                 $version_required = $ba[$ua['device']['type']][$ua['browser']['name']];
                 $version_current = $ua['browser']['version'];
                 config()->set('browser.version.required', $version_required);
                 config()->set('browser.version.current', $version_current);
-        
+
                 // $flagged = false;
                 if(str_version_compare($version_current, $version_required, '<')) {
                     config()->set('browser.is_outdated', true);
@@ -598,7 +598,7 @@ class ClientInstanceMiddleware
                 $allowed_host = (array)config('browser.allowed_host');
                 $blocked_host = (array)config('browser.blocked_host');
                 $up = url_parse($http_referrer);
-                
+
                 if(
                     // in_array($http_referrer, $block_referrer, true)
                     ($up->is_valid && in_array($up->host, $blocked_host, true))
@@ -681,7 +681,7 @@ class ClientInstanceMiddleware
 
 
 
-    
+
     public function user_menu(BaseRequest $request, bool $strict = true)
     {
         $category = function(string $cat) {
@@ -690,7 +690,7 @@ class ClientInstanceMiddleware
                 'content' => '<span class="menu-section text-muted text-uppercase fs-8 ls-1">'.$cat.'</span>',
             ];
         };
-        
+
         $show_roles = [
             // use the short value from the database and it must coincide with the name of the config file
             // set the ordering here
@@ -742,12 +742,12 @@ class ClientInstanceMiddleware
             if(!empty(config('unv.menu.user'))) {
                 array_push($main, $category('User'), config_unv('menu.user'));
             }
-        } else {            
+        } else {
             if(!empty(config('unv.menu.guest'))) {
                 array_push($main, $category('Guest'), ...config_unv('menu.guest'));
             }
         }
-        
+
         // remove empty elements
         $main2 = [];
         foreach($main as $k1=>$v2) {
@@ -776,12 +776,12 @@ class ClientInstanceMiddleware
         ];
 
 
-        array_push($data, 
+        array_push($data,
             //// Modules
             [
                 'classes' => ['content' => 'pt-8 pb-2'],
                 'content' => '<span class="menu-section text-muted text-uppercase fs-8 ls-1">Modules</span>',
-            ],        
+            ],
             // Account
             [
                 'title'      => 'Account',
@@ -822,7 +822,7 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],        
+            ],
             // System
             [
                 'title'      => 'System',
@@ -863,11 +863,11 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],        
+            ],
             // Separator
             // [
             //     'content' => '<div class="separator mx-1 my-4"></div>',
-            // ],        
+            // ],
             // Changelog
             // [
             //     'title' => 'Changelog v'.theme()->getVersion(],
@@ -875,7 +875,7 @@ class ClientInstanceMiddleware
             //     'path'  => 'documentation/getting-started/changelog',
             // ],
         );
-        
+
         return $data;
     }
 
@@ -887,17 +887,17 @@ class ClientInstanceMiddleware
             // Getting Started
             [
                 'heading' => 'Getting Started',
-            ],        
+            ],
             // Overview
             [
                 'title' => 'Overview',
                 'path'  => 'documentation/getting-started/overview',
-            ],        
+            ],
             // Build
             [
                 'title' => 'Build',
                 'path'  => 'documentation/getting-started/build',
-            ],        
+            ],
             [
                 'title'      => 'Multi-demo',
                 'attributes' => ["data-kt-menu-trigger" => "click"],
@@ -917,12 +917,12 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],        
+            ],
             // File Structure
             [
                 'title' => 'File Structure',
                 'path'  => 'documentation/getting-started/file-structure',
-            ],        
+            ],
             // Customization
             [
                 'title'      => 'Customization',
@@ -943,69 +943,69 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],        
+            ],
             // Dark skin
             [
                 'title' => 'Dark Mode Version',
                 'path'  => 'documentation/getting-started/dark-mode',
-            ],        
+            ],
             // RTL
             [
                 'title' => 'RTL Version',
                 'path'  => 'documentation/getting-started/rtl',
-            ],        
+            ],
             // Troubleshoot
             [
                 'title' => 'Troubleshoot',
                 'path'  => 'documentation/getting-started/troubleshoot',
-            ],        
+            ],
             // Changelog
             [
                 'title'            => 'Changelog <span class="badge badge-changelog badge-light-danger bg-hover-danger text-hover-white fw-bold fs-9 px-2 ms-2">v'.theme()->getVersion().'</span>',
                 'breadcrumb-title' => 'Changelog',
                 'path'             => 'documentation/getting-started/changelog',
-            ],        
+            ],
             // References
             [
                 'title' => 'References',
                 'path'  => 'documentation/getting-started/references',
-            ],        
+            ],
             // Separator
             [
                 'custom' => '<div class="h-30px"></div>',
-            ],        
+            ],
             // Configuration
             [
                 'heading' => 'Configuration',
-            ],        
+            ],
             // General
             [
                 'title' => 'General',
                 'path'  => 'documentation/configuration/general',
-            ],        
+            ],
             // Menu
             [
                 'title' => 'Menu',
                 'path'  => 'documentation/configuration/menu',
-            ],        
+            ],
             // Page
             [
                 'title' => 'Page',
                 'path'  => 'documentation/configuration/page',
-            ],        
+            ],
             // Page
             [
                 'title' => 'Add NPM Plugin',
                 'path'  => 'documentation/configuration/npm-plugins',
-            ],        
+            ],
             // Separator
             [
                 'custom' => '<div class="h-30px"></div>',
-            ],        
+            ],
             // General
             [
                 'heading' => 'General',
-            ],        
+            ],
             // DataTables
             [
                 'title'      => 'DataTables',
@@ -1021,24 +1021,24 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],        
+            ],
             // Remove demos
             [
                 'title' => 'Remove Demos',
                 'path'  => 'documentation/general/remove-demos',
-            ],        
+            ],
             // Separator
             [
                 'custom' => '<div class="h-30px"></div>',
-            ],        
+            ],
             // HTML Theme
             [
                 'heading' => 'HTML Theme',
-            ],        
+            ],
             [
                 'title' => 'Components',
                 'path'  => '//preview.keenthemes.com/metronic8/demo1/documentation/base/utilities.html',
-            ],        
+            ],
             [
                 'title' => 'Documentation',
                 'path'  => '//preview.keenthemes.com/metronic8/demo1/documentation/getting-started.html',
@@ -1055,7 +1055,7 @@ class ClientInstanceMiddleware
             //     'title'   => 'Dashboard',
             //     'path'    => '',
             //     'classes' => ['item' => 'me-lg-1'],
-            // ],    
+            // ],
             // Resources
             [
                 'title'      => 'Resources',
@@ -1073,7 +1073,7 @@ class ClientInstanceMiddleware
                             'icon'  => theme()->getSvgIcon("demo1/media/icons/duotune/abstract/abs027.svg", "svg-icon-2"),
                             'path'  => 'documentation/getting-started/overview',
                         ],
-    
+
                         // Changelog
                         [
                             'title' => 'Changelog v'.theme()->getVersion(),
@@ -1082,7 +1082,7 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],    
+            ],
             // Account
             [
                 'title'      => 'Account',
@@ -1120,7 +1120,7 @@ class ClientInstanceMiddleware
                         ],
                     ],
                 ],
-            ],    
+            ],
             // System
             [
                 'title'      => 'System',

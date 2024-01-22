@@ -2,55 +2,27 @@
 
 declare(strict_types=1);
 
-// PHP built-in
-// use ReflectionClass;
-// use Exception;
-// use Throwable;
-// use ArrayAccess;
-// use ReflectionMethod;
-// use ReflectionNamedType;
-// use ReflectionFunction;
-// use Closure;
-
-// Illuminate\Http
-use Illuminate\Http\Request as HttpRequest;
-use Illuminate\Http\JsonResponse;
-
-// Illuminate\Support
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Support\Carbon;
-
-// Illuminate\Support\Facades
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\App;
 
-// Rguj\Laracore
-use Rguj\Laracore\Exception\CustomJSONException;
-use Rguj\Laracore\Library\StorageAccess;
-// use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
-use Rguj\Laracore\Request\Request;
-
-// Other Vendor
-// use Carbon\Carbon;
+use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Spatie\Url\Url as SpatieUrl;
-use Vinkla\Hashids\Facades\Hashids;
-// use ByteUnits;
-
-
-
-
-
-
-
+use Rguj\Laracore\Request\Request;
+use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
+use Rguj\Laracore\Library\StorageAccess;
+use App\Models\User;
+use phpDocumentor\Reflection\PseudoTypes\True_;
+use Rguj\Laracore\Exception\CustomJSONException;
 
 
 
@@ -62,9 +34,6 @@ use Vinkla\Hashids\Facades\Hashids;
 define('BH_ENV_KEY', 'env');
 define('BH_UNV_KEY', 'unv');
 define('BH_CRUD_KEY', 'crud');
-
-define('BH_URL_MAX_LENGTH', 2000);
-define('BH_ROUTE_FILE_INDEX', 'file.index');
 
 
 /* -----------------------------------------------
@@ -88,7 +57,7 @@ if(file_exists(__DIR__.'/ThemeUtilHelper.php'))
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * SHORTCUTS
  */
 
@@ -150,7 +119,7 @@ function jed($var, bool $withTrace = false)
  */
 function tnev($var = null)
 {
-    throw new Exception((string)$var);
+    throw new exception((string)$var);
 }
 
 /**
@@ -178,7 +147,7 @@ function vv(string $key, bool $strict = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * ARRAYS
  */
 
@@ -208,6 +177,16 @@ function arr_get($array, $key, $default = null)
 function arr_set(&$array, $key, $value)
 {
     return Arr::set($array, $key, $value);
+}
+
+function arr_prefix(array $arr, string $prefix='') {
+    $o = [];
+    if(empty($prefix))
+        return $o;
+    foreach($arr as $k=>$v) {
+        $o[$k] = $prefix.$v;
+    }
+    return $o;
 }
 
 /**
@@ -243,7 +222,7 @@ function arr_type(array $arr)
 }
 
 /**
- * Check if the array structure is sequential 
+ * Check if the array structure is sequential
  * - e.g. `[0=>'hello', 1=>'world', 2=>'sample']`
  * - checks only the first dimension
  *
@@ -255,7 +234,7 @@ function arr_type_seq(array $arr) {
 }
 
 /**
- * Check if the array structure is associative 
+ * Check if the array structure is associative
  * - e.g. `[a=>'hello', b=>'world', 0=>'sample']`
  * - checks only the first dimension
  *
@@ -267,7 +246,7 @@ function arr_type_assoc(array $arr) {
 }
 
 /**
- * Parses array and returns the structure 
+ * Parses array and returns the structure
  * - structure types: `empty`, `sequential`, `associative`, `mixed`, `irregular`
  * - supports up to 2 dimension only
  * - auto converts `null` => `''`, `false` => `0`, `true` => `1`, `decimals` => `integer`
@@ -386,7 +365,7 @@ function arr_colval_exists($needle, array $haystack, string $col_key, bool $stri
 /**
  * Check if an item or items exist in an array using "dot" notation.
  *
- * @param  ArrayAccess|array  $array
+ * @param  \ArrayAccess|array  $array
  * @param  string|array  $keys
  * @return bool
  */
@@ -403,8 +382,7 @@ function arr_has($array, $keys)
  * @param mixed $value
  * @return array
  */
-function arr_search_by_key(array $array, $key, $value)
-{
+function arr_search_by_key(array $array, $key, $value) {
     if(!is_array($array)) {
         return [];
     }
@@ -417,28 +395,13 @@ function arr_search_by_key(array $array, $key, $value)
     return $results;
 }
 
-function arr_search_column(array $a, $column, $val)
-{
+function arr_search_column(array $a, $column, $val) {
     $c = array_search($val, array_column($a, $column), true);
     if($c === false) {
         return [];
     }
     return $a[$c];
-}
-
-function arr_prefix(array $array, string $prefix)
-{
-    return array_map(function ($arrayValues) use ($prefix) {
-        return $prefix . $arrayValues;
-    }, $array);
-}
-
-function arr_suffix(array $array, string $suffix)
-{
-    return array_map(function ($arrayValues) use ($suffix) {
-        return $arrayValues . $suffix;
-    }, $array);
-}
+};
 
 
 
@@ -451,7 +414,7 @@ function arr_suffix(array $array, string $suffix)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * AUTH
  */
 
@@ -489,7 +452,7 @@ function auth_is_authorized(int $user_id, $roles, bool $flag = false) {
             $search2 = arr_search_by_key($cacheRoles, 2, $v);
             if(!empty($search1)) $roleIDs[] = $search1[0];
             if(!empty($search2)) $roleIDs[] = $search2[0];
-        }        
+        }
         elseif(is_int($v)) {
             $search3 = arr_search_by_key($cacheRoles, 0, $v);
             if(!empty($search3)) $roleIDs[] = $search3[0];
@@ -559,7 +522,7 @@ function auth_user_status(int $user_id)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * BLADE
  */
 
@@ -609,7 +572,7 @@ function blade_error(string $key)  // render attr errors
 
 /**
  * Returns form purpose from `$with`.
- * 
+ *
  * - useful in blade template
  *
  * @param string $purpose
@@ -651,13 +614,13 @@ function blade_purpose(string $purpose, int $index = 0)
 function class_method_unstatic(string $class, string $method, array $parameters)
 {
     if(!class_exists($class))
-        throw new Exception('Class doesn\'t exists: '. $class);
+        throw new exception('Class doesn\'t exists: '. $class);
     return (new ($class))->$method(...$parameters);
 }
 
 /**
  * Invokes a class method
- * 
+ *
  * - this will not work for non-controller class
  *
  * @param string $class
@@ -670,14 +633,14 @@ function class_controller_method(string $class, string $method, array $args = []
 {
     $ret = null;
     if(empty($class))
-        throw new Exception('$class is empty');
+        throw new exception('$class is empty');
     if(!class_exists($class))
-        throw new Exception('Class doesn\'t exists: '. $class);
+        throw new exception('Class doesn\'t exists: '. $class);
     if(!method_exists($class, $method))
         throw new Exception('Method `'.$method.'` doesn\'t exists in `'.$class.'`');
-    
+
     // reflect method information
-    $ref = new ReflectionMethod($class, $method);
+    $ref = new \ReflectionMethod($class, $method);
     $params = $ref->getParameters();
     if(empty($params)) goto point1;
 
@@ -689,7 +652,7 @@ function class_controller_method(string $class, string $method, array $args = []
     // $requiredParent = 'Rguj\Laracore\Request\Request';
     $requiredParent = 'Symfony\Component\HttpFoundation\Request';
     if(!array_key_exists($requiredParent, $parents)) {
-        if($strict) throw new Exception('Required class parent (first argument): '.$requiredParent);
+        if($strict) throw new exception('Required class parent (first argument): '.$requiredParent);
         goto point1;
     }
 
@@ -704,10 +667,10 @@ function class_controller_method(string $class, string $method, array $args = []
             array_shift($args);
         }
     }
-    
+
     // insert request object
     if(!empty($resolveRequest) && !class_exists($resolveRequest))
-        throw new Exception('Inexistent class: '.$resolveRequest);
+        throw new exception('Inexistent class: '.$resolveRequest);
     elseif(empty($resolveRequest) && $isFirstArgReq) {
         $resolveRequest = $firstArg;
     }
@@ -721,7 +684,7 @@ function class_controller_method(string $class, string $method, array $args = []
         $line = $bt['line'] ?? '';
         $trace = str_sanitize($file.(!empty($function) ? '::'.$function.'()' : '').(!empty($line) ? ' (line '.$line.')' : ''));
         $trace = (!empty($trace) ? ' Trace: '.$trace : '');
-        throw new Exception('Type mismatch. Expected '.$type.', given '.$toResolve.'.'.$trace);
+        throw new exception('Type mismatch. Expected '.$type.', given '.$toResolve.'.'.$trace);
     }
 
     $req = resolve($toResolve);
@@ -774,8 +737,8 @@ function component_data_validate(array $config, array $UID, int $check_mode = 0)
 	$output = [false, ''];
 	try {
 		if(!in_array($check_mode, [0, 1, 2]))  // [all, config only, uid only]
-			throw new Exception('$check_mode must be 0, 1, or 2');
-		
+			throw new exception('$check_mode must be 0, 1, or 2');
+
 		// config & UID
 		$bool1 = (
 			arr_depth($config) >= 1
@@ -799,13 +762,13 @@ function component_data_validate(array $config, array $UID, int $check_mode = 0)
 			&& array_key_exists('values', $UID)
 			&& array_key_exists('errors', $UID)
 		);
-		
+
 		if(!$bool1 && in_array($check_mode, [0, 1])) throw new Exception('Invalid array structure `$config`');
 		if(!$bool2 && in_array($check_mode, [0, 2])) throw new Exception('Invalid array structure `$uid`');
 		$output[0] = true;
-	} catch(Exception $ex) {
+	} catch(\Exception $ex) {
 		$output[1] = $ex->getMessage();
-	}        
+	}
 	return $output;
 }
 
@@ -821,21 +784,21 @@ function component_analysis($data, $args)
 
 	// $data component data
 	// $args [config[...], form[preloads, fieldrules, defaults, errors, ]]
-	
+
 	// can accept one or multiple configs
 
 	if(!is_array($args) || count($args) !== 2)
 		throw new Exception('$args must be an array of 2 (config & with)');
-	
+
 	$configs = $args[0];
 	$form = $args[1]['form'];//$args[1];
-			
+
 	$APP_VSK_NAME = config_env('APP_VSK_NAME', '');
 	if(str_empty($APP_VSK_NAME))
 		throw new Exception('VSK value is empty');
 
 	if(empty($configs))
-		throw new Exception('Must have at least 1 config array');
+		throw new exception('Must have at least 1 config array');
 
 	$componentName = $data['componentName'];
 	$attributes = obj_reflect($data['attributes'], true)['attributes'];
@@ -859,8 +822,8 @@ function component_analysis($data, $args)
 		// validate config and form (User Interaction Data)
 		$validation = component_data_validate($config, $form);
 		if(!$validation[0])
-			throw new Exception($validation[1].' ['.$num.']');
-								
+			throw new exception($validation[1].' ['.$num.']');
+
 		//$config2['componentName_'] = $componentName;
 		//$config2['attributes_'] = AppFn::OBJECT_toArray($attributes)['attributes'];
 		//$config2['slot_'] = AppFn::OBJECT_toArray($slot)['html'];
@@ -878,14 +841,14 @@ function component_analysis($data, $args)
 		$config2['class_fgs'] = '';  // form group state | override below
 		$config2['feedback_allowed'] = $config['feedback_allowed'];
 
-		$config2['bool'] = [    
-			'is_valid'             => !array_key_exists($config['name'], $ERRORS),        
+		$config2['bool'] = [
+			'is_valid'             => !array_key_exists($config['name'], $ERRORS),
 			'is_required'          => $config['is_required'],
 			'is_autocomplete'      => $config['is_autocomplete'],
 			'is_autofocus'         => $config['is_autofocus'],  // override below
 			'is_autofocuserr'      => $config['is_autofocuserr'],
 			'is_showable_error'    => in_array('error', $config['feedback_allowed']),
-			'is_showable_success'  => in_array('success', $config['feedback_allowed']),            
+			'is_showable_success'  => in_array('success', $config['feedback_allowed']),
 		];
 
 
@@ -932,7 +895,7 @@ function component_analysis($data, $args)
 
 		// ---------------------------------------------------
 		// LOGIC
-		
+
 		$config2['bool']['is_autofocus'] = $is_af($config2['value']);
 		$config2['class_fgs'] = $fgs_picker($config['name']);
 
@@ -952,7 +915,7 @@ function component_analysis($data, $args)
 			'current'  => $config2['bool']['is_valid'] ? $config['description'] : $msg_error,  // INTELLIGENT MSG PICKER
 			'default'  => $config['description'],
 			'error'    => $msg_error,
-		];        
+		];
 
 		// $attr_hinter_ipt = 'data-theme="dark" data-trigger="focus" data-html="true" title="'.$config2['hinter']['input'].'"';
 		// $attr_hinter_lbl = 'data-theme="dark" data-trigger="focus hover" data-html="true" title="'.$config2['hinter']['label'].'"';
@@ -961,7 +924,7 @@ function component_analysis($data, $args)
 		$html_hinter_lbl = '<span data-bs-toggle="tooltip" '.$attr_hinter_lbl.'><i class="mr-1 ml-1 fas fa-question-circle" style="font-size: 14px;"></i></span>';
 		$html_required = $config2['bool']['is_required'] ? '<span class="text-danger" title="Required">*</span>' : '';
 
-		
+
 		$config2['attr'] = [
 			'maxlength'      => $config2['max']>0 ? 'maxlength='.$config2['max'].'' : '',
 			'placeholder'    => !empty($config2['placeholder']) ? 'placeholder="'.$config2['placeholder'].'"' : '',
@@ -970,7 +933,7 @@ function component_analysis($data, $args)
 			'autofocus'      => $config2['bool']['is_autofocus'] ? 'autofocus' : '',
 			'hinter_input'   => str_filled($config2['hinter']['input']) ? $attr_hinter_ipt : '',
 			'others'         => '',
-			
+
 		];
 		$config2['html'] = [
 			'label' => '',
@@ -980,8 +943,8 @@ function component_analysis($data, $args)
 
 		// LABEL CONTENT
 		$arr2 = [
-			':label'    => $config2['label'], 
-			':hinter'   => $html_hinter_lbl, 
+			':label'    => $config2['label'],
+			':hinter'   => $html_hinter_lbl,
 			':required' => $html_required,
 		];
 		$txt1 = $config['label_content'];
@@ -990,11 +953,11 @@ function component_analysis($data, $args)
 		}
 		$config2['html']['label'] = $txt1;
 
-		// ATTR OTHERS 
+		// ATTR OTHERS
 		$arr1 = [
-			':maxlength'    => $config2['attr']['maxlength'], 
-			':required'     => $config2['attr']['required'], 
-			':autocomplete' => $config2['attr']['autocomplete'], 
+			':maxlength'    => $config2['attr']['maxlength'],
+			':required'     => $config2['attr']['required'],
+			':autocomplete' => $config2['attr']['autocomplete'],
 			':autofocus'    => $config2['attr']['autofocus'],
 		];
 		$txt1 = $config['attr_others'];
@@ -1034,7 +997,7 @@ function component_analysis($data, $args)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * COND - CONDITION
  */
 
@@ -1067,7 +1030,7 @@ function cond_return(bool $cond, $true, $false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * CONFIG
  */
 
@@ -1119,7 +1082,7 @@ function config_unv_set(string $key, $val)
  * @return mixed
  */
 function config_env($key = null, $default = null) {
-	return config(BH_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
+	return config(BH_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);
 }
 
 /**
@@ -1130,7 +1093,7 @@ function config_env($key = null, $default = null) {
  * @return mixed
  */
 function config_unv($key = null, $default = null) {
-	return config(BH_UNV_KEY.(!is_null($key) ? '.'.$key : ''), $default);	
+	return config(BH_UNV_KEY.(!is_null($key) ? '.'.$key : ''), $default);
 }
 
 
@@ -1147,7 +1110,7 @@ function config_unv($key = null, $default = null) {
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * CRYPT - SECURITY
  */
 
@@ -1170,7 +1133,7 @@ function crypt_sc($val, int $mode, bool $serialize=true) {
             $opt[2] = decrypt($val, $serialize);
         else
             throw new Exception('Invalid mode');
-    } catch(Exception $ex) {
+    } catch(\Exception $ex) {
         $opt[1] = $ex->getMessage();
         goto point1;
     }
@@ -1189,7 +1152,7 @@ function crypt_sc($val, int $mode, bool $serialize=true) {
 function crypt_en($val, bool $serialize = true)
 {
     $crypt = crypt_sc($val, 0, $serialize);
-    if(!$crypt[0]) throw new Exception($crypt[1]);
+    if(!$crypt[0]) throw new exception($crypt[1]);
     return $crypt[2];
 }
 
@@ -1203,7 +1166,7 @@ function crypt_en($val, bool $serialize = true)
 function crypt_de($val, bool $unserialize = true)
 {
     $crypt = crypt_sc($val, 1, $unserialize);
-    if(!$crypt[0]) throw new Exception($crypt[1]);
+    if(!$crypt[0]) throw new exception($crypt[1]);
     return $crypt[2];
 }
 
@@ -1216,10 +1179,10 @@ function crypt_de($val, bool $unserialize = true)
  * @return bool if update succeeded
  */
 function crypt_de_merge_get(Request &$request, string $key, bool $is_post, bool $strict = true)
-{            
+{
     if(!$request->has($key)) {
         if($strict) {
-            throw new Exception('Non-existent request key: '.$key);
+            throw new exception('Non-existent request key: '.$key);
         }
         return false;
     } else {
@@ -1232,50 +1195,6 @@ function crypt_de_merge_get(Request &$request, string $key, bool $is_post, bool 
 
 
 
-/* -----------------------------------------------
- * CRYPT HashIds
- */
-
-/**
- * Encode using HashIds library
- * 
- * - Maximum of 18 characters for numbers. Otherwise, cast it to string.
- *
- * @param string|int $value
- * @return string
- * 
- * @depends `Vinkla\Hashids\Facades\Hashids`
- */
-function crypthi_encode($value)
-{
-    // block invalid type
-    if(!in_array(gettype($value), ['integer', 'float', 'double', 'string']))
-        throw new Exception('$value must be type string or number');
-
-    // block lengthy integer|double|float
-    if(var_is_sen($value) && strlen(sprintf('%d', (string)$value)) > 18)
-        throw new Exception('Maximum number length is 18. Cast it to string otherwise.');
-
-    // block negative number
-    if((is_integer($value) || is_double($value) || is_float($value)) && $value < 0)
-        throw new Exception('Number should not be negative');
-
-    return Hashids::encode($value);
-}
-
-/**
- * Decode using HashIds library
- *
- * @param string $value
- * @param bool $getFirstElement
- * @return string|int
- * 
- * @depends `Vinkla\Hashids\Facades\Hashids`
- */
-function crypthi_decode(string $value, bool $getFirstElement = true)
-{
-    return $getFirstElement ? (Hashids::decode($value)[0] ?? null) : Hashids::decode($value);
-}
 
 
 
@@ -1287,7 +1206,8 @@ function crypthi_decode(string $value, bool $getFirstElement = true)
 
 
 
-/* -----------------------------------------------
+
+/** -----------------------------------------------
  * DATATABLE
  */
 
@@ -1313,16 +1233,16 @@ function datatable_columns(Request $request, array $columns)
  */
 function datatable_request_parse(Request $request, array $columns) {
     if(!$request->isMethod('GET'))
-        throw new Exception('Invalid request method');
-    
+        throw new exception('Invalid request method');
+
     $req2 = $request;  // deep copy request
     $req2->merge(compact('columns'));  // merge columns
-    
+
     $draw = (int)$req2->query('draw');      // draw requests
     $length = (int)$req2->query('length');  // items limit
     $start = (int)$req2->query('start');    // item start
     $search_ = (array)($req2->query('search') ?? []);  // global search keywords
-    $_ = (string)$req2->query('_');        
+    $_ = (string)$req2->query('_');
     $columnsRaw = (array)($req2->query('columns') ?? []);
     $order = (array)($req2->query('order') ?? []);
 
@@ -1333,7 +1253,7 @@ function datatable_request_parse(Request $request, array $columns) {
     $itemStartClient = $start * $length;
     // $columnsRaw = (array)($req2->query('columns') ?? []);
     $columnsClient = $columnsServer = [];
-    
+
     // reform order
     // order [ [ column => '', dir => 'asc|desc' ] ]
     $order = [];
@@ -1371,11 +1291,11 @@ function datatable_request_parse(Request $request, array $columns) {
             unset($opt['formatter']);
         }
         // $opt['formatter'] = is_callable($opt['formatter']) && !is_null($opt['formatter']('sample')) ? $opt['formatter'] : null;
-        
+
         $opt['same_as'] = str_sanitize((string)arr_get($arr, 'same_as'));
         $opt['same_as'] = !empty($opt['same_as']) ? $opt['same_as'] : null;
         $opt['visible'] = array_key_exists('visible', $arr) ? (bool)arr_get($arr, 'visible') : true;
-        
+
         if(array_key_exists('width', $arr)) {
             $opt['width'] = (string)arr_get($arr, 'width');
         }
@@ -1407,7 +1327,7 @@ function datatable_request_parse(Request $request, array $columns) {
     $columnsFormatter = [];
     $columnsDBBlank = [];
     $dbOrder = [];
-    
+
     foreach($columnsRaw as $key1=>$val1) {
         $x++;
         $val1['attr'] = str_sanitize($val1['attr']);
@@ -1416,16 +1336,16 @@ function datatable_request_parse(Request $request, array $columns) {
 
         // validate attr characters
         if(!str_preg_match('/^([a-zA-Z_])+([0-9])*$/u', $val1['attr']))
-            throw new Exception('Invalid attribute characters: '.$val1['attr']);
+            throw new exception('Invalid attribute characters: '.$val1['attr']);
 
         // parse columns same_as
         if(array_key_exists('same_as', $val1)) {
             // analyze ascendancy
             $ord_cur = array_search($val1['attr'], $ascendancy);  // get order # of target
             $ord_tar = array_search($val1['same_as'], $ascendancy);  // get order # of current
-            if($ord_cur === false) throw new Exception('Attribute `'.$val1['attr'].'` doesn\'t exists');
-            if($ord_tar === false) throw new Exception('Parent attribute `'.$val1['same_as'].'` doesn\'t exists');
-            if($ord_cur <= $ord_tar) throw new Exception('Target key `'.$val1['same_as'].'` must be in the upper order.');
+            if($ord_cur === false) throw new exception('Attribute `'.$val1['attr'].'` doesn\'t exists');
+            if($ord_tar === false) throw new exception('Parent attribute `'.$val1['same_as'].'` doesn\'t exists');
+            if($ord_cur <= $ord_tar) throw new exception('Target key `'.$val1['same_as'].'` must be in the upper order.');
             $columnsClone[$val1['attr']] = $columns[$ord_tar]['attr'];
             $columns[$x] = array_merge($columns[$ord_tar], ['attr' => $val1['attr'], 'dt' => $x, 'same_as' => $columns[$ord_tar]['attr']]);
 
@@ -1438,7 +1358,7 @@ function datatable_request_parse(Request $request, array $columns) {
             $columns[$x]['db'] = $val1['db'];
             $columns[$x]['label'] = $val1['label'];
             $columns[$x] = array_merge($columns[$x], $func_opt($val1));
-                            
+
             if(!empty($val1['formatter']) && is_callable($val1['formatter']) && !is_null($val1['formatter']('sample'))) {
                 $columnsFormatter[$val1['attr']] = $val1['formatter'];
 
@@ -1480,7 +1400,7 @@ function datatable_request_parse(Request $request, array $columns) {
 
         if(array_key_exists('label', $columns[$x]))
             $frontend['title'] = trim((string)$columns[$x]['label']);
-            
+
         $frontend['type'] = trim((string)$columns[$x]['frontend_type']);
 
         if(array_key_exists('searchable', $columns[$x]))
@@ -1503,7 +1423,7 @@ function datatable_request_parse(Request $request, array $columns) {
         }
 
         // if()
-    
+
         $columnsClient[$x] = $frontend;
     }
     $columnsAll = array_merge($columnsOriginal, array_keys($columnsClone));
@@ -1583,7 +1503,7 @@ function datatable_request_parse(Request $request, array $columns) {
     ];
     $searchDB = [];
     $fullLines = [];
-    
+
     $prev_k2 = '';
     foreach($searchAttr as $k1=>$v1) {
         foreach($v1 as $k2=>$v2) {
@@ -1597,7 +1517,7 @@ function datatable_request_parse(Request $request, array $columns) {
                 $str0 = implode(' ', $arr0);
                 $searchDB[$k1][$k2][] = $arr0;
                 $fullLine = $columnsAttrDB[$k2].' '.$o.' '.$v3_1;
-                $line = $columnsAttrDB[$k2].' '.$o.' ?';                    
+                $line = $columnsAttrDB[$k2].' '.$o.' ?';
                 if(!$is_empty_value && !in_array($fullLine, $fullLines, true)) {
                     $searchSQL['lines'][] = $line;
                     $searchSQL['query'] .= (!empty($searchSQL['query']) ? ' OR ' : '');
@@ -1682,7 +1602,7 @@ function datatable_request_parse(Request $request, array $columns) {
 
 /**
  * Renders data for frontend datatablejs
- * 
+ *
  * - set `request.length` to `-1` to get all rows respective on the query
  * - doesn't support illegal `itemStart` that is not modulus zero to `pageLength`
  *
@@ -1694,9 +1614,9 @@ function datatable_request_parse(Request $request, array $columns) {
  * @return array|\Illuminate\Http\JsonResponse
  */
 function datatable_paginate(Request $request, array $columns, $query, bool $withDataKey = true, bool $toJSON = false) {
-    
-    /*  $columns OPTIONS:       
-        ----------------------------------------------------------------------------------------  
+
+    /*  $columns OPTIONS:
+        ----------------------------------------------------------------------------------------
         attr          (required) - column unique name
         db            (required) - db table column
         label         (required) - the display title in datatable
@@ -1706,13 +1626,13 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         sortable      (optional) - if column is sortable       (default: false)
         searchable    (optional) - if column is searchable     (default: false)
         type          (optional) - server-side column type     (default: "string")
-        frontend_type (optional) - frontend column type        (default: "string") 
+        frontend_type (optional) - frontend column type        (default: "string")
                                    (date, num, num-fmt, html-num, html-num-fmt, html, string)
                                    https://datatables.net/reference/option/columns.type
         formatter     (optional) - formats value: function($value) { // your code }      (default: null)
         same_as       (optional) - copy the precedent column's characteristics           (default: "")
     */
-    
+
     $is_success = false;
     $err_msg = '';
     $data = [];
@@ -1768,7 +1688,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 
     // dump($countable_tbl);
     // dd(in_array($countable_col, $query->getConnection()->getSchemaBuilder()->getColumnListing($query->from), true));
-    
+
     // get join tables, doesn't check its existence
     $join_tables = [];
     foreach((array)$query->joins as $k=>$v) {
@@ -1779,14 +1699,14 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     $all_tables = $join_tables;
     array_unshift($all_tables, $query->from);
 
-    // get columns list of the tables from the db    
+    // get columns list of the tables from the db
     $tables_columns = [];
     foreach($all_tables as $k=>$v) {
         try {
             foreach((array)($query?->getConnection()?->getSchemaBuilder()?->getColumnListing($v)) as $k2=>$v2) {
                 $tables_columns[$v][$v2] = $k2;
             }
-        } catch(Exception $ex) { continue; }
+        } catch(\Exception $ex) { continue; }
     }
 
     // check if countable column is present
@@ -1796,9 +1716,9 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     // dd($func_is_column_exist($countable_tbl, $countable_col, $tables_columns));
     if(!(is_string($query->from) && !empty($query->from) && $func_is_column_exist($countable_tbl, $countable_col, $tables_columns))) {
         // dd(4242);
-        throw new Exception('Invalid countable column `'.$countable_id.'`');
+        throw new exception('Invalid countable column `'.$countable_id.'`');
         // goto point01;
-    }    
+    }
 
     // copy the main query builder object
     /** @var \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder $query */
@@ -1808,21 +1728,21 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 
     if(!(is_object($query2) && (array_key_exists('Illuminate\Database\Eloquent\Model', class_parents($query2)) || method_exists($query2, 'get')))) {
         $err_msg = '$query has no method get()';
-        // throw new Exception($err_msg);
+        // throw new exception($err_msg);
         goto point01;
     }
-    
+
     // parse request data
     try {
         $pr = datatable_request_parse($request2, $columns);  // parsed request
-    } catch(Exception $ex) {
+    } catch(\Exception $ex) {
         $err_msg = $ex->getMessage();
         goto point01;
     }
 
     // $pr getter function
     $prget = function($key, string $type = '') use($pr) {
-        if(!arr_has($pr, $key)) throw new Exception('Key `'.$key.'` not found in $pr');
+        if(!arr_has($pr, $key)) throw new exception('Key `'.$key.'` not found in $pr');
         $var = arr_get($pr, $key);
         if(!empty($type)) settype($var, $type);
         return $var;
@@ -1845,13 +1765,13 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     if(!empty($SQLStr)) {
         $query3 = $query->whereRaw($SQLStr, $SQLBindings);
     }
-    
+
     $countFiltered = $query3->count($countable_id);
 
     // change values according to client data
     $perPage = 0;
     $page = 0;
-    if($itemsLimit === -1) {    
+    if($itemsLimit === -1) {
         $itemStart = 0;  // set to 0 because its literally show all
         $itemsLimit = $countFiltered;
         $page = 1;
@@ -1862,7 +1782,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         $itemStart = 0;
         $itemsLimit = 1; // set to 1 to override the default 15
         $page = 0;
-        $perPage = 0; 
+        $perPage = 0;
 
         $query3 = $query3->whereRaw('FALSE = TRUE');
     }
@@ -1870,7 +1790,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         if($itemStart > $countFiltered) {  // ok
             goto point01;  // invalid itemStart index, return empty
         }
-        $itemStart = $itemStart;  // page number based from client data     
+        $itemStart = $itemStart;  // page number based from client data
         $itemsLimit = $itemsLimit;
         $page = (int)ceil(($itemStart + 1) / $itemsLimit);
         $perPage = $itemsLimit;
@@ -1887,8 +1807,8 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     // paginate
     try {
         $d = $query3->simplePaginate($itemsLimit, $colAlias, 'page', $page);
-    } catch(Exception $ex) {
-        // dd($ex);
+    } catch(\Exception $ex) {
+        dd($ex);
     }
 
     // GET COUNT_UNFILTERED, COUNT_FILTERED, COUNT_PAGINATE
@@ -1940,7 +1860,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     $pagingProgress_ = $pageTotal > 0 ? ($pageCurrent / $pageTotal) : 0;
     $pagingProgress = round($pagingProgress_, 5);
     $pagingRemaining = (1.0 - $pagingProgress);
-    
+
     $hasItemsBehind = $pageCurrent > 1;
     $hasItemsOnward = $pageCurrent < $pageTotal;
     $pagesBehind = $pageCurrent <= 1 ? 0 : ($pageCurrent - 1);
@@ -1964,10 +1884,10 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
     $itemsOnwardAll = ($pagesOnward > 0) ? (($perPage * ($pagesOnward - 1)) + $itemsLast) : 0;
     $itemsCurrentStart = $itemsBehindAll + ($isPageFilled ? 1 : 0);
     $itemsCurrentEnd = $itemsCurrentStart + ($isPageFilled ? $itemsCurrent - 1 : 0);
-    
+
     $isClientItemStartExists = $itemStartClient <= $countFiltered;
     $isClientItemStartDisplayed = $isClientItemStartExists && ($itemStartClient >= $itemsCurrentStart && $itemStartClient <= $itemsCurrentEnd);
-    
+
     // $pr['pageNum'] = $pageCurrent;
 
     // paging analytics
@@ -1992,7 +1912,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         'itemsOnward',
         'itemsBehindAll',
         'itemsOnwardAll',
-        
+
         'isPageFilled',
         'isPageFirst',
         'isPageLast',
@@ -2000,7 +1920,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         'isPageLastDeficit',
         'isClientItemStartExists',
         'isClientItemStartDisplayed',
-        
+
         'isEmpty',
         'isFilled',
 
@@ -2014,13 +1934,13 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         'timeCountUnfiltered',
         'timeCountFiltered',
         'timeDataFiltered',
-        
+
         'sqlCountUnfiltered',
         'sqlCountFiltered',
         'sqlDataFiltered',
         // '',
     );
-    
+
 
     $is_success = true;
 
@@ -2049,7 +1969,7 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * DATABASE
  */
 
@@ -2062,21 +1982,21 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
 function db_model_table_name(string $class)
 {
     if(!class_exists($class))
-        throw new Exception('Invalid class: '.$class);
+        throw new exception('Invalid class: '.$class);
     $parent = 'Illuminate\Database\Eloquent\Model';
     if(!array_key_exists($parent, class_parents($class)))
-        throw new Exception('Missing class\' parent `'.$parent.'` of the given `'.$class.'`');
+        throw new exception('Missing class\' parent `'.$parent.'` of the given `'.$class.'`');
     return $class::__callStatic('getTable', []);
 }
 
 /**
  * Gets the relation info
- * 
+ *
  * - do not forget to typehint the `$q` in the closure as stated in `@usage` below.
  * - when accessing the parent, use the template below, although you will cause an additional db query.
- * 
+ *
  * @usage closure variable typehint: `/** @var \Illuminate\Database\Query\Builder $q *\/ list($t, $p) = db_relation_info($q);`
- * 
+ *
  * @usage access parent template: `$q->join($p, $p.'.id', '=', $t.'.foreign_id'); $q->select([$p.'.id as parent_foreign_id', $t.'.*']);`
  *
  * @param \Illuminate\Database\Eloquent\Relations\Relation $query
@@ -2089,9 +2009,9 @@ function db_relation_info($query)
     try {
         $table = trim((string)$query->getQuery()->getModel()->getTable());
         $tableParent = trim((string)$query->getParent()->getTable());
-    } catch(Exception $ex) {}
-    if(empty($table)) throw new Exception('$table is empty');
-    if(empty($tableParent)) throw new Exception('$tableParent is empty');
+    } catch(\Exception $ex) {}
+    if(empty($table)) throw new exception('$table is empty');
+    if(empty($tableParent)) throw new exception('$tableParent is empty');
     return [$table, $tableParent];
 }
 
@@ -2128,7 +2048,7 @@ function db_eloquent_relations(bool $withNamespace = true)
  */
 function db_param($conn_tbl, bool $strict = false) {
     if(!in_array(gettype($conn_tbl), ['string', 'array']) || empty($conn_tbl))
-        throw new Exception('Must be a filled string or array: $conn_tbl');
+        throw new exception('Must be a filled string or array: $conn_tbl');
 
     $bool1 = is_array($conn_tbl) && count($conn_tbl)===2;
     $conn = (string)($bool1 ? $conn_tbl[0] : config_get('env.APP_CONNECTION', '', 'string'));
@@ -2136,16 +2056,16 @@ function db_param($conn_tbl, bool $strict = false) {
     $db_name = '';
     try {
         $db_name = DB::connection($conn)->getDatabaseName();
-    } catch(Exception $ex) {}
+    } catch(\Exception $ex) {}
     // $ct = [$conn, $table, $db_name];
 
     if($strict) {
-        if(str_empty($conn)) throw new Exception('Connection name is empty');
-        if(str_empty($table)) throw new Exception('Table name is empty');
-        if(str_empty($db_name)) throw new Exception('Database name is empty');
+        if(str_empty($conn)) throw new exception('Connection name is empty');
+        if(str_empty($table)) throw new exception('Table name is empty');
+        if(str_empty($db_name)) throw new exception('Database name is empty');
 
         if(Schema::connection($conn)->hasTable($table) !== true)  // check table if exists
-            throw new Exception('Table not found: '.$table);
+            throw new exception('Table not found: '.$table);
     }
 
     return [$conn, $table, $db_name];
@@ -2161,10 +2081,10 @@ function db_param($conn_tbl, bool $strict = false) {
 function db_check(string $connection, string $table = '') {
     $output = [false, ''];
     $table = trim(preg_replace('/\s+/u', ' ', $table));
-    try {        
+    try {
         // check empty string
         if(str_empty($connection) === true)
-            throw new Exception('Empty $connection');
+            throw new exception('Empty $connection');
 
         // check connection
         try {
@@ -2172,21 +2092,21 @@ function db_check(string $connection, string $table = '') {
             $c = DB::connection($connection);
             $c->getPdo();
             if(!$c->getDatabaseName()){
-                throw new Exception('Invalid DB name');
+                throw new exception('Invalid DB name');
             }
 
-        } catch(Exception $ex2) {
-            throw new Exception('Invalid connection: '.$connection.'');
+        } catch(\Exception $ex2) {
+            throw new exception('Invalid connection: '.$connection.'');
         }
 
         // check table
         if(!empty($table)) {
             if(!Schema::connection($connection)->hasTable($table))
-                throw new Exception('Invalid table: '.$table.'');
+                throw new exception('Invalid table: '.$table.'');
         }
 
         $output[0] = true;
-    } catch(Exception $ex) {
+    } catch(\Exception $ex) {
         $output[1] = $ex->getMessage();
     }
     point1:
@@ -2212,7 +2132,7 @@ function db_obj($conn_tbl) {
 
 /**
  * Get or insert cache
- * 
+ *
  * - only works for table prefixes: `ad_, pl_` - atomic data, preload
  * - `pl_` structure: `id, {some_columns}, created_at, is_official, is_valid`
  * - `ad_` structure: `id, {some_columns}, created_at, is_valid`
@@ -2241,13 +2161,13 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
     $where = [];
     $prefixes = ['ad_', 'pl_'];
     $word = '';
-    
+
     // remove id key
     if(array_key_exists('id', $needles))
         unset($needles['id']);
 
     // strip `is_` and `_at`
-    foreach($needles as $k=>$v) {  
+    foreach($needles as $k=>$v) {
         if(Str::startsWith($k, 'is_') || Str::endsWith($k, '_at'))
             continue;
         $where[$k] = $v;
@@ -2256,7 +2176,7 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
 
     // check if $where is empty
     if(empty($where))
-        throw new Exception('$needles is empty');  // it needs some element without prefixes (ad_, pl_)
+        throw new exception('$needles is empty');  // it needs some element without prefixes (ad_, pl_)
 
     // logic
     if(Str::startsWith($table, $prefixes[0])) {  // atomic data
@@ -2270,7 +2190,7 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
             $values['is_official'] = (int)$needles['is_official'];
     }
     else {
-        throw new Exception('Table `'.$table.'` doesn\'t starts with required prefixes');
+        throw new exception('Table `'.$table.'` doesn\'t starts with required prefixes');
     }
 
     // upsert
@@ -2302,27 +2222,27 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
             $merged = array_merge($attr, $values, ['created_at'=>$dt_now_str]);
             $obj->insert($merged);
             if($obj->where($where)->count() < 1)
-                throw new Exception('Failed to insert: '.strtolower($word));
+                throw new exception('Failed to insert: '.strtolower($word));
             $data = obj_recode($obj->where($where)->first(), true);
         }
 
         if(empty($data))
-            throw new Exception('Empty data');
+            throw new exception('Empty data');
         if(!array_key_exists('id', $data))
-            throw new Exception('Inexistent key: id');
+            throw new exception('Inexistent key: id');
         if(!is_int($data['id']))
-            throw new Exception('Value of `id` is not integer');
+            throw new exception('Value of `id` is not integer');
         $id = (int)$data['id'];
 
         point1:
         DB::commit();
-    } catch(Exception $ex) {
+    } catch(\Exception $ex) {
         DB::rollBack();
     }
 
     // if($id <= 0)
-    //     throw new Exception('Value of `id` must be UNSIGNED');
-    
+    //     throw new exception('Value of `id` must be UNSIGNED');
+
     // point1:
     return $id;
 }
@@ -2330,8 +2250,11 @@ function db_cache_fetsert_id($conn_tbl, array $needles, bool $case_sensitive = t
 
 function db_stored_procedure(string $conn, string $func_name, array $binding=[], bool $to_array=false)
 {
+	// $FR_app = FieldRules::getGeneral();
 	$kw = 'CALL ';  // keyword starts with, with 1 space
 	$func_name = str_sanitize($func_name);
+	// if(str_preg_match($FR_app['function']['regex'], $func_name))
+	//     throw new exception('`$func_name` must be a valid function name');
 	$param = '';
 	$x = -1;
 	foreach($binding as $key=>$val) {
@@ -2385,14 +2308,14 @@ function db_upsert($conn_tbl, array $attr, array $values)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * DOCUMENTATION
  */
 
 /**
  * Parses PHPDocs string lines
  *
- * @param ReflectionMethod $obj
+ * @param \ReflectionMethod $obj
  * @return <string,array{title:string,desc:<int,string>,at:<string,string>,param:array{position:int,name:string,type:\ReflectionType|null,default:mixed}}>
  */
 function docu_parse($obj): array {
@@ -2410,7 +2333,7 @@ function docu_parse($obj): array {
         if(Str::contains($v, ['/**', '*/']))  // skip start and end symbols
             continue;
 
-        if(Str::startsWith($v, '*'))  // trim again and strip " * "   
+        if(Str::startsWith($v, '*'))  // trim again and strip " * "
             $v = Str::of(Str::replaceFirst('*', '', $v))->trim()->__toString();
 
         if(empty($v))  // skip empty
@@ -2423,13 +2346,13 @@ function docu_parse($obj): array {
         }
         elseif($flags[0]) {
             if(Str::startsWith($v, '@')) {
-                $pcs2 = explode(' ', Str::replaceFirst('@', '', $v), 2);                        
+                $pcs2 = explode(' ', Str::replaceFirst('@', '', $v), 2);
                 if(count($pcs2) !== 2) continue;
                 $pcs2 = [trim($pcs2[0]), trim($pcs2[1])];
                 if(empty($pcs2[0]) || empty($pcs2[1])) continue;
                 $ats[$pcs2[0]] = $pcs2[1];
                 $flags[2] = true;
-            } else {                        
+            } else {
                 $desc[] = $v;
                 $flags[1] = true;
             }
@@ -2444,7 +2367,7 @@ function docu_parse($obj): array {
             $pm['name'] = $v->getName();
             $pm['type'] = $v->getType();
             $pm['default'] = $v->getDefaultValue();
-        } catch(Exception $ex) {}
+        } catch(\Exception $ex) {}
         $param[] = $pm;
     }
     return [
@@ -2468,9 +2391,9 @@ function docu_type_sanitize($var)
         goto point1;
     // $type = $var['type'];
 
-    // throw new Exception('$type must be an instance of ReflectionNamedType');
+    // throw new exception('$type must be an instance of \ReflectionNamedType');
     if(is_array($var) && array_key_exists('type', $var)) {
-        if(($var['type'] instanceof ReflectionNamedType) && method_exists($var['type'], 'getName')) {
+        if(($var['type'] instanceof \ReflectionNamedType) && method_exists($var['type'], 'getName')) {
             $var = $var['type']->getName();
         } else {
             $var = '';
@@ -2489,7 +2412,7 @@ function docu_type_sanitize($var)
 
 /**
  * Get the PHPDoc string of a class (public only)
- * 
+ *
  * - merges duplicate methods
  *
  * @param array|string $class
@@ -2500,7 +2423,7 @@ function docu_string($class, bool $echoAndDie = false)
     $space = $echoAndDie ? '&nbsp;' : ' ';
 
     if(!(is_array($class) || is_string($class)))
-        throw new Exception('$class must be array or string');
+        throw new exception('$class must be array or string');
     $class = is_string($class) ? [$class] : $class;
     $public = [];
     $private = [];
@@ -2508,8 +2431,8 @@ function docu_string($class, bool $echoAndDie = false)
     foreach($class as $k1=>$v1) {
         $v1 = trim($v1);
         if(!class_exists($v1))
-            throw new Exception('Class doesn\'t exists: '.$v1);            
-        $ref = new ReflectionClass($v1);
+            throw new exception('Class doesn\'t exists: '.$v1);
+        $ref = new \ReflectionClass($v1);
         foreach($ref->getMethods() as $k=>$v) {
             if($v->getModifiers() === ReflectionMethod::IS_PUBLIC) {
                 $public[$v->getName()] = docu_parse($v);
@@ -2567,22 +2490,18 @@ function docu_string($class, bool $echoAndDie = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * DATE TIME
  */
 
 /**
  * Get the standard datetime format
- * 
- * - define `APP_TIMEZONE` in `.env` file, otherwise it will use `date_default_timezone_get()`
- * - edit `timezone` in `config/app.php` to `'timezone' => env('APP_TIMEZONE', date_default_timezone_get()),`
  *
  * @return string
  */
 function dt_standard_format()
 {
-    // return 'Y-m-d H:i:s.u';
-    return config('app.timezone');
+    return 'Y-m-d H:i:s.u';
 }
 
 /**
@@ -2593,19 +2512,19 @@ function dt_standard_format()
  */
 function dt_is_carbon($obj)
 {
-    // return (!is_null($obj) && is_object($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
-    return (!is_null($obj) && is_object($obj) && (in_array(get_class($obj), ['Carbon\Carbon', 'Illuminate\Support\Carbon'], true) || array_key_exists('Carbon\Carbon', class_parents($obj))));
+    // return (!is_null($obj) && ($obj instanceof Carbon) && (get_class($obj) === 'Carbon\Carbon'));
+    return (!is_null($obj) && is_object($obj) && (get_class($obj) === 'Carbon\Carbon' || array_key_exists('Carbon\Carbon', class_parents($obj))));
 }
 
 /**
  * Advanced datetime parse function
- * 
+ *
  * @property bool is_valid
  * @param string $dt_str
  * @param array|string $dt_format [ from, to ] | from
  * @param array|string $tz [ from, to ] | from
  * @return \App\Traits\DT
- * @uses Carbon
+ * @uses Carbon\Carbon
  */
 function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
 {
@@ -2621,8 +2540,8 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
             && !str_empty($arr[1])
         );
     };
-    $arr_func1 = function(array $arr, $key) { 
-        return (object)['from'=>$arr[$key][0] ?? null, 'onto'=>$arr[$key][1] ?? null]; 
+    $arr_func1 = function(array $arr, $key) {
+        return (object)['from'=>$arr[$key][0] ?? null, 'onto'=>$arr[$key][1] ?? null];
     };
     $dtf = dt_format_eval($dt_format);
     if(!$validate_array($tz)) throw new Exception('Invalid array structure `$tz`');
@@ -2632,12 +2551,12 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
     $tz_to = $tz[1];
     $dt = $output = [false, [], [], [], []];
     $dt_ = false;
-    try { $dt_ = Carbon::createFromFormat($format_fm, $dt_str, $tz_fm); } catch (Exception $ex) {}
+    try { $dt_ = Carbon::createFromFormat($format_fm, $dt_str, $tz_fm); } catch (\Exception $ex) {}
     if(!dt_is_carbon($dt_)) goto point1;
     $dt2 = $dt_->clone()->setTimeZone($tz_to);
     if(!dt_is_carbon($dt2)) goto point1;
     $str_fm = $dt_->format($format_fm);
-    $str_to = $dt2->format($format_to);        
+    $str_to = $dt2->format($format_to);
     $output[0] = true;
     $output[1] = [$format_fm, $format_to];
     $output[2] = [$tz_fm, $tz_to];
@@ -2645,7 +2564,7 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
     $output[4] = [$str_fm, $str_to];
 
     $dt = $output;
-    point1:        
+    point1:
     return (object)[
         'is_valid'  => $dt[0],
         'timezone'  => $arr_func1($dt, 2),
@@ -2669,7 +2588,7 @@ function dt_parse_str(string $dt_str, $dt_format, $tz)
 }
 
 /**
- * Validates date format and mutates the output to `[from, to]`. String values.
+ * Validates date format and mutates the output to array(from, to). String values.
  *
  * @param array|string $dt_format
  * @param boolean $strict_mode
@@ -2825,14 +2744,14 @@ function dt_is_timezone(string $tz_str) {
         $dt_now = Carbon::now(dt_standard_tz())->startOfDay()->format($dt_format);
         $dt_test = Carbon::createFromFormat($dt_format, $dt_now, $tz_str);
         return true;
-    } catch (Exception $ex) {
+    } catch (\Exception $ex) {
         return false;
     }
 }
 
 function dt_server_tz() {
     $stz = config_env('APP_TIMEZONE', dt_standard_tz());
-    if(!dt_is_timezone($stz)) throw new Exception('Invalid server timezone');
+    if(!dt_is_timezone($stz)) throw new exception('Invalid server timezone');
     return $stz;
 }
 
@@ -2843,12 +2762,12 @@ function dt_translate_unique(string $dt_str) {
     // -- returns empty array if there's an error on `dt_str` format
     // -- accepted range: (0000-01-01 00:00:00.000000 - 9999-12-31 23:59:59.999999) + parse validation
     // max characters
-    
+
     $output = [];
     $dt_format = dt_standard_format();
     $tz_format = dt_standard_tz();
     $err_msg = '';
-    $dt_test = dt_parse($dt_str, [$dt_format, $dt_format], [$tz_format, $tz_format]);    
+    $dt_test = dt_parse($dt_str, [$dt_format, $dt_format], [$tz_format, $tz_format]);
     $dts = (string)($dt_test->string->onto ?? '');
     // $long = Str::replace([' ', '-', ':', '.'], '', $dt_str);
 
@@ -2875,7 +2794,7 @@ function dt_translate_unique(string $dt_str) {
 
         'u' => 0,
         'u14' => '',
-        
+
         // 'long' => '',
         // 'short' => '',  // aka u13
     ];
@@ -2884,20 +2803,20 @@ function dt_translate_unique(string $dt_str) {
     $fn_splice = function(int $index, int $offset) use($dts) {
         return str_pad(substr($dts, $index, $offset), $offset, '0', STR_PAD_LEFT);
     };
-    
+
     try {
-        // validate datetime range        
+        // validate datetime range
         if(!validate_datetime($dt_str))
-            throw new Exception('Datetime string does not match the format.');
+            throw new exception('Datetime string does not match the format.');
 
         // try parse datetime string
-        if(!$dt_test->is_valid) 
-            throw new Exception('Failed to parse datetime string.');
+        if(!$dt_test->is_valid)
+            throw new exception('Failed to parse datetime string.');
 
 
-            
+
         $dt_new = $dt_test->carbon->onto->clone();
-        $opt['timestamp'] = $dt_new->timestamp;        
+        $opt['timestamp'] = $dt_new->timestamp;
         $opt['timestamp_pad'] = str_pad((string)$opt['timestamp'], 10, '0', STR_PAD_RIGHT);
 
         $opt['year'] = $fn_splice(0, 4);
@@ -2940,7 +2859,7 @@ function dt_translate_unique(string $dt_str) {
 
 
 
-    } catch(Exception $ex) {
+    } catch(\Exception $ex) {
         $err_msg = $ex->getMessage();
     }
 
@@ -2957,19 +2876,19 @@ function dt_translate_unique(string $dt_str) {
  * @param array $txt `['lesser', 'greater', 'within']` the output text representation
  * @return string output text
  */
-function dt_range_location(string $start_at, string $end_at, $date_at, array $txt = ['lesser', 'greater', 'within'])
+function dt_range_location(string $start_at, string $end_at, Carbon $date_at, array $txt = ['lesser', 'greater', 'within'])
 {
     $opt = '';
     try {
         // strip time if there is
-        $len = strlen($date_at->format('Y-m-d'));            
+        $len = strlen($date_at->format('Y-m-d'));
         $start_at = strlen($start_at) > $len ? substr($start_at, 0, $len) : $start_at;
         $end_at = strlen($end_at) > $len ? substr($end_at, 0, $len) : $end_at;
 
         $start_at_ = Carbon::createFromFormat('Y-m-d', $start_at, config('app.app_timezone'))->startOfDay();
         $end_at_ = Carbon::createFromFormat('Y-m-d', $end_at, config('app.app_timezone'))->endOfDay();
 
-        if($start_at_ > $end_at) throw new Exception('Invalid range');
+        if($start_at_ > $end_at) throw new exception('Invalid range');
 
         if($date_at < $start_at_) {
             $opt = $txt[0];
@@ -2980,7 +2899,7 @@ function dt_range_location(string $start_at, string $end_at, $date_at, array $tx
         else if($date_at >= $start_at_ && $date_at <= $end_at_) {
             $opt = $txt[2];
         }
-    } catch(Exception $ex) { }
+    } catch(\Exception $ex) { }
     return $opt;
 }
 
@@ -2996,7 +2915,7 @@ function dt_range_location(string $start_at, string $end_at, $date_at, array $tx
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * EXCEPTION
  */
 
@@ -3024,7 +2943,7 @@ function exception_json($var, bool $assoc = true)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * JSON
  */
 
@@ -3057,8 +2976,8 @@ function json_echo_and_die($var, bool $withTrace = false)
 
 
 
-/* -----------------------------------------------
- * LARAVEL BACKPACK - MORE SIMPLIER FUNCTIONS
+/** -----------------------------------------------
+ * LARAVEL BACKPACK
  */
 
 /**
@@ -3072,11 +2991,11 @@ function lbp_auth_id()
 }
 
 /**
- * Retrieve an input item from the CRUD request.
+ * Get the int value of `backpack_auth()->id()`
  *
  * @return mixed
  */
-function lbp_request_get(string $key, mixed $default = null): mixed
+function lbp_request_get(string $key)
 {
     return app(BH_CRUD_KEY)->getRequest()->get($key);
 }
@@ -3096,7 +3015,7 @@ function lbp_request_get(string $key, mixed $default = null): mixed
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * OBJECT
  */
 
@@ -3129,8 +3048,8 @@ function obj_reflect($obj, bool $to_array = false, $default = null)
         if(is_array($obj1)) {
             $retval = obj_recode($obj1, true);
             goto point1;
-        } 
-        $reflection = new ReflectionClass($obj1);
+        }
+        $reflection = new \ReflectionClass($obj1);
         $props = $reflection->getProperties();
         $obt = (object)[];
         foreach($props as $key2=>$val2) {
@@ -3162,8 +3081,8 @@ function obj_reflect($obj, bool $to_array = false, $default = null)
 
 
 
-/* -----------------------------------------------
- * REDIRECT
+/** -----------------------------------------------
+ * REQUEST
  */
 
 /**
@@ -3177,7 +3096,7 @@ function redirect_now($url, $code = 302)
 {
     try {
         App::abort($code, '', ['Location' => $url]);
-    } catch (Exception $exception) {
+    } catch (\Exception $exception) {
         // the blade compiler catches exceptions and rethrows them
         // as ErrorExceptions :(
         //
@@ -3206,21 +3125,21 @@ function redirect_now($url, $code = 302)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * REQUEST
  */
 
 /**
  * Gets the rules of FormRequest class
- * 
+ *
  * - callbacks not included
  */
 function request_rules(string $requestClass)
 {
     if(!class_exists($requestClass))
-        throw new Exception('Non-existent class: '.$requestClass);
+        throw new exception('Non-existent class: '.$requestClass);
     if(!array_key_exists(Request::class, class_parents($requestClass)))
-        throw new Exception('$requestClass must be a parent class of `'.Request::class.'`');
+        throw new Exception('$requestClass must a parent class '.Request::class);
     $onlyRules = [
         'min' => 'int',
         'max' => 'int',
@@ -3233,7 +3152,7 @@ function request_rules(string $requestClass)
     $r = $c->rules();
     $g = $c->genericRule ?? [];
     $o = [];
-    
+
     // format rules
     foreach($r as $k1=>$v1) {
         foreach($v1 as $k2=>$v2) {
@@ -3268,13 +3187,14 @@ function request_rules(string $requestClass)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * ROUTE
  */
 
 function route_parse_url(string $url, bool $adjustScheme = true)
 {
-	return url_parse($url, $adjustScheme ? 'https' : 'https');
+	// return url_parse($url, $adjustScheme);
+	return url_parse($url);
 }
 
 
@@ -3292,9 +3212,9 @@ function route_generate_view(string $uri, string $view)
     Route::get($uri, function() use($view) { return view($view); })->name($name.'.view');
 }
 
-/** 
+/**
  * Generates routes with a single line
- * 
+ *
  * @param string $uri
  * @param string $class
  * @param array $options (optional)
@@ -3422,7 +3342,7 @@ function route_generate_root_uris()
         Route::get($val, function() use($val, $func1) {
             return $func1($val);
         })->name('root'.($key+1).'.redirect');
-    }    
+    }
 }
 
 /**
@@ -3443,7 +3363,7 @@ function route_generate_auth_platform(string $platform)
         $route_name = strtolower($platform.'.'.$val);
         //$config = config('env.'.$config_key);
         //if(empty($config))
-        //    throw new Exception('Config not found: '.$config_key);
+        //    throw new exception('Config not found: '.$config_key);
         // Route::get($config, [$class, $val])->name($route_name);
         Route::get("/guest/$platform/$val", [$class, $val])->name($route_name);
     }
@@ -3451,7 +3371,7 @@ function route_generate_auth_platform(string $platform)
 
 /**
  * Generates action url from resource index route
- * 
+ *
  * @param string $route
  * @param string $action
  * @param int $id
@@ -3463,7 +3383,7 @@ function route_generate_auth_platform(string $platform)
 function route_url_action(string $route, string $action, int $id, bool $wrapAnchor = false, array $attr = [], $value = 'link')
 {
     if(!Route::has($route))
-        throw new Exception('Non-existent route: '.$route);
+        throw new exception('Non-existent route: '.$route);
     $v = '';
     switch($action) {
         case 'show':
@@ -3471,7 +3391,7 @@ function route_url_action(string $route, string $action, int $id, bool $wrapAnch
             $attr = array_merge($attr, ['href' => $v]);
             break;
         default:
-            throw new Exception('Invalid action: `'.$action.'`');
+            throw new exception('Invalid action: `'.$action.'`');
             break;
     }
     $pre = $wrapAnchor ? '<a '.(arr_implode_html_attr(' ', $attr)).'>' : '';
@@ -3485,7 +3405,7 @@ function arr_implode_html_attr(string $glue, array $attributes)
 {
     $dataAttributes = array_map(function($value, $key) {
         return $key.'="'.$value.'"';
-    }, array_values($attributes), array_keys($attributes));    
+    }, array_values($attributes), array_keys($attributes));
     $dataAttributes = implode($glue, $dataAttributes);
     return $dataAttributes;
 }
@@ -3503,7 +3423,7 @@ function arr_implode_html_attr(string $glue, array $attributes)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * SESSION
  */
 
@@ -3532,7 +3452,7 @@ function session_get_errors()
     $arr1 = [];
     try {
         $arr1 = (array)Session::all()['errors']->getBags()['default']->getMessages();
-    } catch(Exception $ex) {}
+    } catch(\Exception $ex) {}
     return $arr1;
 }
 
@@ -3577,7 +3497,7 @@ function session_set(string $key, $val)
 
 /**
  * Pushes an alert to the session
- * 
+ *
  * `bs_class` => `[ primary, secondary, success, danger, warning, info, light, dark ]`
  *
  * @param string $status
@@ -3591,19 +3511,19 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
 {
     $alert_types = ['swal2', 'toastr'];
 
-    try {  
-        if(!is_string($status)) throw new Exception('$status must be string');
-        if(!is_string($msg)) throw new Exception('$msg must be string');
-        if(!is_string($title)) throw new Exception('$title must be string');
-        if(!is_string($alert_type)) throw new Exception('$alert_type must be string');
+    try {
+        if(!is_string($status)) throw new exception('$status must be string');
+        if(!is_string($msg)) throw new exception('$msg must be string');
+        if(!is_string($title)) throw new exception('$title must be string');
+        if(!is_string($alert_type)) throw new exception('$alert_type must be string');
         // $alert_type = !empty($alert_type) ? $alert_type : $alert_type[1];
-        if(!in_array($alert_type, $alert_types, true)) throw new Exception('Invalid alert type');
-    } catch(Exception $ex) {
+        if(!in_array($alert_type, $alert_types, true)) throw new exception('Invalid alert type');
+    } catch(\Exception $ex) {
         if(webclient_is_dev()) {
-            
+
         }
         if($safe_mode) goto point1;
-        else throw new Exception($ex->getMessage());
+        else throw new exception($ex->getMessage());
     }
 
     $val = ['status' => $status, 'msg' => $msg, 'type' => $alert_type, 'title' => $title];
@@ -3622,7 +3542,7 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * SOCKET
  */
 
@@ -3634,10 +3554,10 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
  * @return bool
  */
 function socket_check(string $ip, $port = 80, float $timeout = 0.5)
-{        
+{
     $is_success = false;
     if(!(is_int($port) || is_array($port)))
-        throw new Exception('$port must be int or int[]');
+        throw new exception('$port must be int or int[]');
     $port = is_int($port) ? [$port] : $port;
     $port_range = [0, 65536];
     $ports = [];
@@ -3650,7 +3570,7 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
     $em = '';
     try {
         if(empty($ports))
-            throw new Exception('Port is empty');
+            throw new exception('Port is empty');
         $error_report = [];
         $is_success = true;
         $firstError = '';
@@ -3658,7 +3578,7 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
             $error_code = null;
             $error_message = null;
             $fp = @fsockopen($ip, $v, $error_code, $error_message, $timeout);
-            if(!$fp) {                    
+            if(!$fp) {
                 $error_report[$v] = [$error_code, $error_message];
                 $firstError = !empty($firstError) ? $firstError : 'Connection failed';
             } else {
@@ -3666,9 +3586,9 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
             }
         }
         if(!empty($firstError)) {
-            throw new Exception($firstError);
-        }            
-    } catch(Exception $ex) {
+            throw new exception($firstError);
+        }
+    } catch(\Exception $ex) {
         $em = $ex->getMessage();
         $is_success = false;
     }
@@ -3684,32 +3604,19 @@ function socket_check(string $ip, $port = 80, float $timeout = 0.5)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * STORAGE
  */
 
-/**
- * Get the file information
- * 
- * - `route(encrypt())` was reworked
- * 
- * @param string $path specify the file path (wrapped in `/storage/app`)
- * @param null|bool|string $basename_new set to `true` to retain the same name; set to `string` to set a new file name; otherwise, random 15 characters
- * @param string $url_stream_mode `''` or `'dispose'` or `'download'`
- * @param null|int|string $id the value to convert into hashid, preferably int
- * @param \Illuminate\Http\UploadedFile|null $reqFileInfo
- * @return array
- */
-function storage_file_info(string $path, $basename_new = null, string $url_stream_mode = '', $id = null, $reqFileInfo = null)
+function storage_file_info(string $path, $basename_new = null)
 {
     /*
-    $basename_new:
-        === true ? same as $basename
-        !empty() ? $basename_new
-        else ? random 15 alphanum
+        $basename_new:
+            === true ? same as $basename
+            !empty() ? $basename_new
+            else ? random 15 alphanum
     */
 
-    // all about file info
     $file = [
         'exists' => false,
         'path' => trim($path),
@@ -3719,32 +3626,14 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
         'ext' => '',
         'mime_type' => null,
         'path_app' => '',  // relative path inside storage/app
-        'dir_app' => '',  // 
+        'dir_app' => '',
         'md5' => '',
-        'crypt' => '',
-        'url' => '',
-
-        'client_ext' => '',
-        'client_mime_type' => '',
-        'client_name' => '',
-
-        'hashid' => '',  // HashIds value
-        'size' => 0,  // KB
-        'size_mb' => 0,  // MB
     ];
 
+    // $p = storage_path('app/'.$file['path']);
     $p = str_sanitize($file['path']);
     $p = trim($p, '/');
-
-    // try assuming its on storage/app
-    $p2 = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
-    $is_storage_app = false;
-
-    if(File::exists($realpath = realpath($p))) { }
-    else if(File::exists($realpath = realpath($p2))) { $is_storage_app = true; }
-    else { $realpath = ''; }
-
-    $p = $realpath;
+    $p = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
     $file['path'] = $p;
 
     // CHECK IF PATH EXISTS
@@ -3752,67 +3641,31 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
     if(!$file['exists'])
         goto point1;
     //if($file['exists'] !== true)
-    //    throw new Exception('File doesn\'t exists');
+    //    throw new exception('File doesn\'t exists');
 
     // CHECK MIME TYPE
     $file['mime_type'] = false;
-    try { $file['mime_type'] = File::mimeType($p); } catch(Exception $ex) {}
+    try { $file['mime_type'] = File::mimeType($p); } catch(\Exception $ex) {}
     $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
     //if(is_string($file['mime_type']) !== true || str_empty($file['mime_type']) === true)
-    //    throw new Exception('Invalid mime type');
+    //    throw new exception('Invalid mime type');
 
     // FILE INFO PARTS
     //$file['dir'] = File::dirname($p);
-    
-    // $file['client_mime'] = empty($reqFileInfo) ? [ 'mime' => '', 'name' => '', 'ext' => '', ] : [
-    //     'ext' => $reqFileInfo->getClientOriginalExtension(),
-    //     'mime' => $reqFileInfo->getClientMimeType(),
-    //     'name' => $reqFileInfo->getClientOriginalName(),
-    // ];
-
-    $file['client_ext'] = !empty($reqFileInfo) ? $reqFileInfo->getClientOriginalExtension() : '';
-    $file['client_mime_type'] = !empty($reqFileInfo) ? $reqFileInfo->getClientMimeType() : '';
-    $file['client_name'] = !empty($reqFileInfo) ? $reqFileInfo->getClientOriginalName() : '';
-
     $file['name'] = basename($p);
-    $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();  
+    $file['dir'] = Str::of(Str::replaceLast($file['name'], '', $p))->rtrim('/')->__toString();
     $file['ext'] = Str::afterLast($file['name'], '.');
     $file['ext'] = ($file['name'] === $file['ext']) ? '' : $file['ext'];
-
-    $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);  
-    $file['path_app'] = $is_storage_app ? Str::replaceLast(storage_path('app/'), '', $p) : '';
-    $file['dir_app'] = $is_storage_app ? Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString() : '';
+    $file['basename'] = Str::replaceLast('.'.$file['ext'], '', $file['name']);
+    $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
+    $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
     $file['md5'] = $file['exists'] ? md5_file($p) : '';
 
-    $file['hashid'] = $file['exists'] && !empty($id) ? crypthi_encode($id) : '';
-    $file['size'] = $file['exists'] ? File::size($p) : 0;
-    $file['size_mb'] = (double)Str::of(ByteUnits\parse($file['size'].'KB')->format('MB/00000'))->rtrim('MB')->__toString();
-
-    // GENERATE URL
-    // $stream_modes = ['dispose', 'download'];
-    // if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
-    //     $m = array_search($url_stream_mode, $stream_modes, true) + 1;
-    //     // $file['url'] = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
-    //     $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.encrypt($file['path_app']).'&m='.$m;  // reworked
-    //     if(strlen($file['url']) > BH_URL_MAX_LENGTH)
-    //         throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
-    // }
-    $stream_modes = ['dispose', 'download'];
-    $url_stream_mode = !in_array($url_stream_mode, $stream_modes, true) ? $stream_modes[0] : $url_stream_mode;
-    // if(str_filled($url_stream_mode) && in_array($url_stream_mode, $stream_modes, true)) {
-    $m = array_search($url_stream_mode, $stream_modes, true) + 1;
-    // $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.encrypt($file['path_app']).'&m='.$m;
-    $file['crypt'] = encrypt($file['path']);
-    $file['url'] = route(BH_ROUTE_FILE_INDEX).'?p='.$file['crypt'].'&m='.$m;
-    if(strlen($file['url']) > BH_URL_MAX_LENGTH)
-        throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
-    // }
-    
     // NEW PATH
     $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
     if($basename_new === true)
         $file['path_new'] = $file['name'];
-    else if(is_string($basename_new) && str_filled($basename_new))
+    else if(is_string($basename_new) && str_empty($basename_new) !== true)
         $file['path_new'] = $basename_new.$ext_;
     else
         $file['path_new'] = str_random_alphanum(15).$ext_;
@@ -3821,14 +3674,7 @@ function storage_file_info(string $path, $basename_new = null, string $url_strea
     return $file;
 }
 
-/**
- * Get the file
- *
- * @param \Illuminate\Http\Request $request
- * @param bool $is_allowed Implement your file access permission
- * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
- */
-function storage_file_stream($request, bool $is_allowed = true) {
+function storage_file_stream(Request $request) {
     /*
         URL PARAMS:
             p => path (encrypted)
@@ -3841,7 +3687,7 @@ function storage_file_stream($request, bool $is_allowed = true) {
     $modes = ['dispose', 'download'];
     $base_dir = storage_path('app/');
     $m = ((int)($request->get('m') ?? 0)) - 1;
-    $p_ = (string)($request->get('p') ?? '');
+    $p = (string)($request->get('p') ?? '');
 
     // CHECK STREAM MODE
     $mode = $modes[$m] ?? '';  // m -> stream mode
@@ -3849,81 +3695,61 @@ function storage_file_stream($request, bool $is_allowed = true) {
         throw new Exception('Invalid stream mode');
 
     // CHECK FILE PATH INFO
-    $crypt = crypt_sc($p_, 1, true);
+    $crypt = crypt_sc($p, 1, true);
     if($crypt[0] !== true)
-        throw new Exception($crypt[1]);
-    $p = $crypt[2];
-    $p2 = storage_path(Str::startsWith($p, 'app/') ? $p : 'app/'.$p);
-    $is_storage_app = false;
-
-    if(File::exists($realpath = realpath($p))) { }
-    else if(File::exists($realpath = realpath($p2))) { $is_storage_app = true; }
-    else { $realpath = ''; }
+        throw new exception($crypt[1]);
+    $path = $base_dir.$crypt[2];
+    $path = Str::replaceFirst(storage_path('app/'), '', $path);
 
     // CHECK FILE PATH AND MIME TYPE
-    $file = ['exists' => File::exists($realpath)];
-    if(!$file['exists']) {
-        abort(404, 'File doesn\'t exists');
-    }
-    $file['path'] = $realpath;
-
-    $file['mime_type'] = false;
-    try { $file['mime_type'] = File::mimeType($p); } catch(Exception $ex) {}
-    $file['mime_type'] = !is_string($file['mime_type']) ? '' : $file['mime_type'];
+    $file = storage_file_info($path, null);
+    if($file['exists'] !== true)
+        throw new Exception('File doesn\'t exists');
     if(str_empty($file['mime_type']) === true)
         throw new Exception('Invalid mime type');
-            
-    // ROLE VALIDATION
-    // $hasAccess = StorageAccess::check($request, $file);
-    // if($hasAccess !== true)
-    //     abort(403, 'Access denied');
 
-    // check if allowed
-    if(!$is_allowed) {
-        abort(403, 'Not allowed to access');
-    }
+    // ROLE VALIDATION
+    $hasAccess = StorageAccess::check($request, $file);
+    if($hasAccess !== true)
+        abort(403, 'Access denied');
 
     // FILE STREAM
     $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
     $dispositions = ['inline', 'attachment'];
     $disposition = $dispositions[$m];
-    // $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
-    $filestream = Response::download($file['path'], null, $headers, $disposition);
+    $filestream = Response::download($file['path'], $file['path_new'], $headers, $disposition);
 
     return $filestream;
 }
 
 function storage_file_url(string $path, string $mode) {
-    return (string)storage_file_info($path, null, $mode)['url'];
+    // explode segments
+
+    // SETTINGS
+    $url_len_max = 2000;
+    $modes = ['dispose', 'download'];
+
+    // check mode
+    if(!in_array($mode, $modes))
+        throw new exception('Invalid mode');
+    $m = array_search($mode, $modes) + 1;
+
+    // check if path exists
+    $file = storage_file_info($path, true);
+
+    if($file['exists'] !== true) {
+        return '';
+        // throw new exception('File doesn\'t exists');
+    }
+
+    $url = route('file.index', ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
+    $url_len = strlen($url);
+    if($url_len > $url_len_max)
+        throw new exception('File link has exceeded '.$url_len_max.' '.Str::plural('character', $url_len_max));
+
+    return $url;
 }
 
-// function storage_file_url(string $path, string $mode) {
-//     // explode segments
-
-//     // SETTINGS
-//     // BH_URL_MAX_LENGTH = 2000;
-//     $modes = ['dispose', 'download'];
-
-//     // check mode
-//     if(!in_array($mode, $modes))
-//         throw new Exception('Invalid mode');
-//     $m = array_search($mode, $modes) + 1;
-
-//     // check if path exists
-//     $file = storage_file_info($path, true);
-
-//     if($file['exists'] !== true) {
-//         return '';
-//         // throw new Exception('File doesn\'t exists');
-//     }
-
-//     $url = route(BH_ROUTE_FILE_INDEX, ['p'=> encrypt($file['path_app']), 'm'=> $m,]);
-//     $url_len = strlen($url);
-//     if($url_len > BH_URL_MAX_LENGTH)
-//         throw new Exception('File link has exceeded '.BH_URL_MAX_LENGTH.' '.Str::plural('character', BH_URL_MAX_LENGTH));
-    
-//     return $url;
-// }
 
 
 
@@ -3932,17 +3758,16 @@ function storage_file_url(string $path, string $mode) {
 
 
 
-
-/* -----------------------------------------------
+/** -----------------------------------------------
  * STRING
  */
 
 /**
  * Compares two "PHP-standardized" version number strings
  *
- * @param string $version1 First version number.
- * @param string $version2 Second version number.
- * @param string|null $operator `[optional]` If you specify the third optional operator argument, you can test for a particular relationship. The possible operators are: <, lt, <=, le, >, gt, >=, ge, ==, =, eq, !=, <>, ne respectively.
+ * @param string $version1
+ * @param string $version2
+ * @param string|null $operator
  * @return int|bool
  */
 function str_version_compare(string $version1, string $version2, ?string $operator)
@@ -3961,7 +3786,7 @@ function str_version_ge(string $version1, string $version2)
 {
     return (bool)str_version_compare($version1, $version2, '>=');
 }
-    
+
 /**
  * Matches string with a pattern
  *
@@ -4095,7 +3920,7 @@ function str_random_alphanum(int $min_length = 10, int $max_length = 0)
  *
  * @param string $pattern Regular expression
  * @param string $subject
- * @param Closure $true_func Params (string $pattern, string $subject, mixed $output)
+ * @param \Closure $true_func Params (string $pattern, string $subject, mixed $output)
  * @return null|mixed
  */
 function str_regex_eval(string $pattern, string $subject, $true_func = null)
@@ -4121,7 +3946,7 @@ function str_keyboard_symbols(bool $escape = false)
 {
     $output = '';
     $symbols = "!@#$%^&*()-_=+[{]};:'".'"'."\|,<.>/?`~";  // double quotes intentionally isolated
-    if(!$escape) goto point1;    
+    if(!$escape) goto point1;
     $pcs = str_split($symbols);
     foreach($pcs as $key=>$val) {
         $output .= $pcs[22].$val;
@@ -4136,7 +3961,7 @@ function str_keyboard_symbols(bool $escape = false)
  * @param string $search
  * @param string $replace
  * @param string $subject
- * @return string 
+ * @return string
  */
 function str_replace_last($search, $replace, $subject)
 {
@@ -4171,7 +3996,7 @@ function str_replace_last($search, $replace, $subject)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * URL
  */
 
@@ -4181,7 +4006,6 @@ function str_replace_last($search, $replace, $subject)
  * @param string $url
  * @param integer $component
  * @return void
- * 
  * @before `url_parse()`
  */
 function url_parse_short(string $url, int $component = -1)
@@ -4202,7 +4026,7 @@ function url_parse_short(string $url, int $component = -1)
         if(!empty($val2) && array_key_exists($key, $types)) {
             settype($val2, $types[$key]);
         }
-        return $val2;            
+        return $val2;
     };
     $ret = ['is_valid' => ($a !== false)];
     $ret['urlRaw'] = $ret['is_valid'] ? $url : '';
@@ -4230,18 +4054,18 @@ function url_parse_short(string $url, int $component = -1)
 
 /**
  * Comprehensive parsing of url string
- * 
+ *      *
  * @param string $url
  * @param string $defaultScheme
  * @return object
- * 
+ *
  * @requires `\Illuminate\Support\Str`
  * @depends `url_parse_short()`
  */
-function url_parse(string $url, string $defaultScheme = 'https')
+function url_parse_(string $url, string $defaultScheme = 'https')
 {
     // if(!Str::startsWith($url, ['http://', 'https://']))
-    // 	throw new Exception('$url must starts with `http` or `https`');
+    // 	throw new exception('$url must starts with `http` or `https`');
 
     $url = trim($url);
     $urlOld = $url;
@@ -4259,12 +4083,12 @@ function url_parse(string $url, string $defaultScheme = 'https')
     if(Str::startsWith($url, ['//', '://'])) {
         $url = Str::replaceFirst('://', '', $url);
     }
-    
+
     if(!Str::startsWith($url, $allowed_schemes)) {
         $url = $defaultScheme.'://'.$url;
         $is_scheme_adjusted = true;
     }
-    
+
     $parsed = url_parse_short($url);
     if(!$parsed['is_valid']) {
         goto point1;
@@ -4279,7 +4103,10 @@ function url_parse(string $url, string $defaultScheme = 'https')
 
     try {
         $is_path_root = empty(trim(trim($parsed['path'], '/')));
-    } catch(Throwable $ex) {}
+    } catch(\Throwable $ex) {
+
+    }
+
 
     $schemeHostPath = $parsed['scheme'].'://'.$parsed['host'].$parsed['path'];
     $pathQueryFragment = $parsed['path'].($has_query ? '?'.$parsed['queryRaw'] : '').($has_fragment ? '#'.$parsed['fragment'] : '');
@@ -4326,266 +4153,149 @@ function url_parse(string $url, string $defaultScheme = 'https')
 
         'schemeHostPath' => $schemeHostPath,
         'pathQueryFragment' => $pathQueryFragment,
-        
+
         // 'obj' => null,
     ];
 
     return (object)$ret;
 }
 
-// /**
-//  * Comprehensive parsing of url string
-//  *      *
-//  * @param string $url
-//  * @param string $defaultScheme
-//  * @return object
-//  * 
-//  * @requires `\Illuminate\Support\Str`
-//  * @depends `url_parse_short()`
-//  */
-// function url_parse_(string $url, string $defaultScheme = 'https')
-// {
-//     // if(!Str::startsWith($url, ['http://', 'https://']))
-//     // 	throw new Exception('$url must starts with `http` or `https`');
+// OLD
+function url_parse(string $url, string $defaultScheme = 'https')
+{
+    // if(!Str::startsWith($url, ['http://', 'https://']))
+    // 	throw new exception('$url must starts with `http` or `https`');
 
-//     $url = trim($url);
-//     $urlOld = $url;
-//     $is_scheme_adjusted = false;
-//     $allowed_schemes = ['http://', 'https://', 'ftp://', 'ftps://', 'ftpes://'];
+    $url = trim($url);
+    $urlOld = $url;
+    $is_scheme_adjusted = false;
+    $allowed_schemes = ['http://', 'https://', 'ftp://', 'ftps://', 'ftpes://'];
 
-//     $replaceFirst = ['//', '://'];
-//     foreach($replaceFirst as $k=>$v) {
-//         if(Str::startsWith($url, $v)) {
-//             $url = Str::replaceFirst($v, '', $url);
-//             break;  // check only once
-//         }
-//     }
+    $replaceFirst = ['//', '://'];
+    foreach($replaceFirst as $k=>$v) {
+        if(Str::startsWith($url, $v)) {
+            $url = Str::replaceFirst($v, '', $url);
+            break;  // check only once
+        }
+    }
 
-//     if(Str::startsWith($url, ['//', '://'])) {
-//         $url = Str::replaceFirst('://', '', $url);
-//     }
-    
-//     if(!Str::startsWith($url, $allowed_schemes)) {
-//         $url = $defaultScheme.'://'.$url;
-//         $is_scheme_adjusted = true;
-//     }
-    
-//     $parsed = url_parse_short($url);
-//     if(!$parsed['is_valid']) {
-//         goto point1;
-//     }
+    if(Str::startsWith($url, ['//', '://'])) {
+        $url = Str::replaceFirst('://', '', $url);
+    }
 
-//     $has_username = !empty($parsed['username']);
-//     $has_password = !empty($parsed['password']);
-//     $has_port = !empty($parsed['port']);
-//     $has_credential = $has_username && $has_password;
-//     $has_query = !empty($parsed['query']);
-//     $has_fragment = !empty($parsed['fragment']);
+    if(!Str::startsWith($url, $allowed_schemes)) {
+        $url = $defaultScheme.'://'.$url;
+        $is_scheme_adjusted = true;
+    }
 
-//     try {
-//         $is_path_root = empty(trim(trim($parsed['path'], '/')));
-//     } catch(Throwable $ex) {
-        
-//     }
+    $fn0 = function() use($url) {
+        return [
+            'is_valid' => false,
+            // 'fullUrl' => '',
+            'url' => '',
+            'scheme' => '',
+            'username' => null,
+            'password' => null,
+            'host' => '',
+            'port' => null,
+            'path' => '',
+            'query' => [],
+            'fragment' => '',  // string only, not exploded
 
+            'credentialRaw' => '',
+            'queryRaw' => '',
+            'urlRaw' => $url,
+            'pathArr' => [],
+            'fragmentArr' => [],
+            'schemeHostPath' => '',
+            'pathQueryFragment' => '',
 
-//     $schemeHostPath = $parsed['scheme'].'://'.$parsed['host'].$parsed['path'];
-//     $pathQueryFragment = $parsed['path'].($has_query ? '?'.$parsed['queryRaw'] : '').($has_fragment ? '#'.$parsed['fragment'] : '');
-//     $path2 = ($parsed['path'][0] ?? '') === '/' ? substr($parsed['path'], 1) : $parsed['path'];
-//     $pathArr = $is_path_root ? [] : (array)explode('/', $path2);
-//     $fragment2 = (string)(($parsed['fragment'][0] ?? '') === '/' ? substr($parsed['fragment'], 1) : $parsed['fragment']);
-//     $fragmentArr = (array)explode('/', $fragment2);
+            'is_scheme_adjusted' => false,
+            'is_path_root' => false,
+            'has_port' => false,
+            'has_username' => false,
+            'has_password' => false,
+            'has_credential' => false,
+            'has_query' => false,
+            'has_fragment' => false,
 
-//     point1:
-//     $ret = [
-//         'is_valid' => $parsed['is_valid'],
-//         'scheme' => $parsed['scheme'],
-//         'username' => $parsed['username'],
-//         'password' => $parsed['password'],
-//         'host' => $parsed['host'],
-//         'port' => $parsed['port'],
-//         'path' => $parsed['path'],
-//         'query' => $parsed['query'],
-//         'fragment' => $parsed['fragment'],  // string only, not exploded
+            'obj' => null,
+        ];
+    };
 
-//         'credentialRaw' => $parsed['credentialRaw'],
-//         'queryRaw' => $parsed['queryRaw'],
-//         'queryRawDecode' => $parsed['queryRawDecode'],
-//         'queryDepth' => arr_depth($parsed['query']),
+    $queryStr = function(array $query) {
+        $s = '';
+        $x = -1;
+        foreach($query as $k=>$v) {
+            $x++;
+            $s .= (($x > 0) ? '&' : '').$k.'='.($v ?? null);
+        }
+        return $s;
+    };
 
-//         'urlRaw' => $parsed['urlRaw'],
-//         'urlRawDecode' => $parsed['urlRawDecode'],
-//         'urlParsed' => $parsed['urlParsed'],
+    try {
+        if(in_array($url, $allowed_schemes, true)) {
+            throw new exception('Only scheme was present');
+        }
 
-//         'segmentsPath' => $pathArr,
-//         'segmentsFragment' => $fragmentArr,
+        $r = $fn0();
+        $d = SpatieUrl::fromString($url);
 
-//         'is_scheme_adjusted' => $is_scheme_adjusted,
-//         'is_path_root' => $is_path_root,
-//         'has_port' => $has_port,
-//         'has_username' => $has_username,
-//         'has_password' => $has_password,
-//         'has_credential' => $has_credential,
-//         'has_query' => $has_query,
-//         'has_fragment' => $has_fragment,
+        $u = explode(':', $d->getUserInfo());
 
-//         'countSegmentFragment' => count($fragmentArr),
-//         'countSegmentPath' => count($pathArr),
+        $fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
+        // $isUrlHttps = Str::startsWith($url, 'https://');
+        // $isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https://');
+        // $shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
+        $username = (string)($u[0] ?? '');
 
-//         'schemeHostPath' => $schemeHostPath,
-//         'pathQueryFragment' => $pathQueryFragment,
-        
-//         // 'obj' => null,
-//     ];
+        // $r['scheme'] = (string)($shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps));
+        $r['scheme'] = !empty($d->getScheme()) ? $d->getScheme() : $defaultScheme;
+        $r['host'] = $d->getHost();
+        $r['port'] = $d->getPort();
+        $r['username'] = !empty($username) ? $username : null;
+        $r['password'] = ($u[1] ?? null);
+        $r['path'] = $d->getPath();
+        $r['query'] = $d->getAllQueryParameters();
+        $r['fragment'] = $d->getFragment();
+        $r['queryRaw'] = $queryStr($r['query']);
+        $r['is_scheme_adjusted'] = $is_scheme_adjusted;
+        $r['is_path_root'] = empty(trim(trim($r['path'], '/')));
+        $r['schemeHost'] = $r['scheme'].'://'.$r['host'];
+        $r['schemeHostPath'] = $r['scheme'].'://'.$r['host'].$r['path'];
 
-//     return (object)$ret;
-// }
+        $r['has_port'] = !empty($r['port']);
+        $r['has_query'] = !empty($r['query']);
+        $r['has_fragment'] = !empty($r['fragment']);
+        $r['has_username'] = !empty($r['username']);
+        $r['has_password'] = !empty($r['password']);
+        $r['has_credential'] = $r['has_username'] && $r['has_password'];
 
-// /**
-//  * `OLD`. Use `url_parse_()`. Comprehensive parsing of url string
-//  *      *
-//  * @param string $url
-//  * @param string $defaultScheme
-//  * @return object
-//  * 
-//  * @requires `\Illuminate\Support\Str`
-//  * 
-//  * @depends `url_parse_short()`
-//  */
-// function url_parse(string $url, string $defaultScheme = 'https')
-// {
-//     // if(!Str::startsWith($url, ['http://', 'https://']))
-//     // 	throw new Exception('$url must starts with `http` or `https`');
+        $r['pathQueryFragment'] = $r['path'].($r['has_query'] ? '?'.$r['queryRaw'] : '').($r['has_fragment'] ? '#'.$r['fragment'] : '');
 
-//     $url = trim($url);
-//     $urlOld = $url;
-//     $is_scheme_adjusted = false;
-//     $allowed_schemes = ['http://', 'https://', 'ftp://', 'ftps://', 'ftpes://'];
+        $r['credentialRaw'] = $r['has_credential'] ? $r['username'].':'.$r['password'] : '';
+        $path2 = ($r['path'][0] ?? '') === '/' ? substr($r['path'], 1) : $r['path'];
+        $fragment2 = ($r['fragment'][0] ?? '') === '/' ? substr($r['fragment'], 1) : $r['fragment'];
+        $r['pathArr'] = $r['is_path_root'] ? [] : (array)explode('/', $path2);
+        $r['fragmentArr'] = (array)explode('/', $fragment2);
+        $r['url'] = $r['scheme'].'://'
+            .($r['has_credential'] ? $r['credentialRaw'].'@' : '')
+            .$r['host'].($r['has_port'] ? ':'.$r['port'] : '').$r['path']
+            .($r['has_query'] ? '?'.$r['queryRaw'] : '')
+            .($r['has_fragment'] ? '#'.$r['fragment'] : '')
+        ;
 
-//     $replaceFirst = ['//', '://'];
-//     foreach($replaceFirst as $k=>$v) {
-//         if(Str::startsWith($url, $v)) {
-//             $url = Str::replaceFirst($v, '', $url);
-//             break;  // check only once
-//         }
-//     }
+        $r['obj'] = $d;
+        $r['is_valid'] = true;
 
-//     if(Str::startsWith($url, ['//', '://'])) {
-//         $url = Str::replaceFirst('://', '', $url);
-//     }
-    
-//     if(!Str::startsWith($url, $allowed_schemes)) {
-//         $url = $defaultScheme.'://'.$url;
-//         $is_scheme_adjusted = true;
-//     }
+    // } catch(\Exception $ex) {
+    } catch(\Throwable $ex) {
+        $r = $fn0();
+    }
 
-//     $fn0 = function() use($url) {
-//         return [
-//             'is_valid' => false,
-//             // 'fullUrl' => '',
-//             'url' => '',
-//             'scheme' => '',
-//             'username' => null,
-//             'password' => null,
-//             'host' => '',
-//             'port' => null,
-//             'path' => '',
-//             'query' => [],
-//             'fragment' => '',  // string only, not exploded
-
-//             'credentialRaw' => '',
-//             'queryRaw' => '',
-//             'urlRaw' => $url,
-//             'pathArr' => [],
-//             'fragmentArr' => [],
-//             'schemeHostPath' => '',
-//             'pathQueryFragment' => '',
-
-//             'is_scheme_adjusted' => false,
-//             'is_path_root' => false,
-//             'has_port' => false,
-//             'has_username' => false,
-//             'has_password' => false,
-//             'has_credential' => false,
-//             'has_query' => false,
-//             'has_fragment' => false,
-            
-//             'obj' => null,
-//         ];
-//     };
-
-//     $queryStr = function(array $query) {
-//         $s = '';
-//         $x = -1;
-//         foreach($query as $k=>$v) {
-//             $x++;
-//             $s .= (($x > 0) ? '&' : '').$k.'='.($v ?? null);
-//         }
-//         return $s;
-//     };
-
-//     try {
-//         if(in_array($url, $allowed_schemes, true)) {
-//             throw new Exception('Only scheme was present');
-//         }
-
-//         $r = $fn0();       
-//         $d = SpatieUrl::fromString($url);
-
-//         $u = explode(':', $d->getUserInfo());
-
-//         $fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
-//         // $isUrlHttps = Str::startsWith($url, 'https://');
-//         // $isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https://');
-//         // $shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
-//         $username = (string)($u[0] ?? '');
-        
-//         // $r['scheme'] = (string)($shouldAdjust ? $fn1($isAppUrlHttps) : $fn1($isUrlHttps));
-//         $r['scheme'] = !empty($d->getScheme()) ? $d->getScheme() : $defaultScheme;
-//         $r['host'] = $d->getHost();
-//         $r['port'] = $d->getPort();
-//         $r['username'] = !empty($username) ? $username : null;
-//         $r['password'] = ($u[1] ?? null);
-//         $r['path'] = $d->getPath();
-//         $r['query'] = $d->getAllQueryParameters();
-//         $r['fragment'] = $d->getFragment();
-//         $r['queryRaw'] = $queryStr($r['query']);
-//         $r['is_scheme_adjusted'] = $is_scheme_adjusted;
-//         $r['is_path_root'] = empty(trim(trim($r['path'], '/')));
-//         $r['schemeHost'] = $r['scheme'].'://'.$r['host'];
-//         $r['schemeHostPath'] = $r['scheme'].'://'.$r['host'].$r['path'];
-
-//         $r['has_port'] = !empty($r['port']);
-//         $r['has_query'] = !empty($r['query']);
-//         $r['has_fragment'] = !empty($r['fragment']);
-//         $r['has_username'] = !empty($r['username']);
-//         $r['has_password'] = !empty($r['password']);
-//         $r['has_credential'] = $r['has_username'] && $r['has_password'];
-
-//         $r['pathQueryFragment'] = $r['path'].($r['has_query'] ? '?'.$r['queryRaw'] : '').($r['has_fragment'] ? '#'.$r['fragment'] : '');
-
-//         $r['credentialRaw'] = $r['has_credential'] ? $r['username'].':'.$r['password'] : '';
-//         $path2 = ($r['path'][0] ?? '') === '/' ? substr($r['path'], 1) : $r['path'];
-//         $fragment2 = ($r['fragment'][0] ?? '') === '/' ? substr($r['fragment'], 1) : $r['fragment'];
-//         $r['pathArr'] = $r['is_path_root'] ? [] : (array)explode('/', $path2);
-//         $r['fragmentArr'] = (array)explode('/', $fragment2);
-//         $r['url'] = $r['scheme'].'://'
-//             .($r['has_credential'] ? $r['credentialRaw'].'@' : '')
-//             .$r['host'].($r['has_port'] ? ':'.$r['port'] : '').$r['path']
-//             .($r['has_query'] ? '?'.$r['queryRaw'] : '')
-//             .($r['has_fragment'] ? '#'.$r['fragment'] : '')
-//         ;
-        
-//         $r['obj'] = $d;
-//         $r['is_valid'] = true;
-
-//     } catch(Throwable $ex) {
-//         $r = $fn0();
-//     }
-
-//     point1:
-//     return (object)$r;
-// }
+    point1:
+    return (object)$r;
+}
 
 
 
@@ -4699,10 +4409,10 @@ function validate_datetime(string $dts)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * VAR
  */
- 
+
 /**
  * Casts variable to the specified type
  *
@@ -4738,21 +4448,10 @@ function var_cast($var, string $type)
 function var_is_closure($obj) {
     $bool = false;
     try {
-        $reflection = new ReflectionFunction($obj);
+        $reflection = new \ReflectionFunction($obj);
         $bool = (bool)$reflection->isClosure();
-    } catch(Throwable $th) {}
+    } catch(\Throwable $th) {}
     return $bool;
-}
-
-/**
- * Check if variable is a `Scientific E Notation`
- *
- * @param string|integer|float|double $value
- * @return void
- */
-function var_is_sen($value)
-{
-    return !is_string($value) && !is_integer($value) && (is_float($value) || is_double($value));
 }
 
 /**
@@ -4772,7 +4471,7 @@ function var_stringify($var) {
 
 /**
  * Gets the PHP data types
- * 
+ *
  * - as of `PHP 8.1.2`
  *
  * @return <int,string>
@@ -4794,12 +4493,12 @@ function var_types() {
 
 /**
  * Gets the official PHP data type
- * 
+ *
  * - as of `PHP 8.1.2`
  *
  * @param string $type
  * @return string
- * @throws Exception
+ * @throws \Exception
  */
 function var_type_official(string $type)
 {
@@ -4818,11 +4517,11 @@ function var_type_official(string $type)
     $type = array_key_exists($type, $o) ? $o[$type] : $type;
     $types = var_types();
     if(!in_array($type, $types, true))
-        throw new Exception('Invalid type: '.$type);
+        throw new exception('Invalid type: '.$type);
     $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
     $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
     if(!array_key_exists($type2, $t))
-        throw new Exception('Invalid data type: '.$type2);
+        throw new exception('Invalid data type: '.$type2);
 
     return $t[$type2];
 }
@@ -4842,7 +4541,7 @@ function var_type_official(string $type)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * VIEW
  */
 
@@ -4877,12 +4576,12 @@ function view_variable(string $key, bool $strict = false)
     if(isset($__data)) {
         $v = $__data;
     } else {
-        if($strict) throw new Exception('$__data is not declared');
+        if($strict) throw new exception('$__data is not declared');
     }
     if(Arr::exists($v, $key)) {
         return Arr::get($v, $key);
     } else {
-        if($strict) throw new Exception('Key `'.$key.'` is not declared');
+        if($strict) throw new exception('Key `'.$key.'` is not declared');
         return null;
     }
 }
@@ -4900,7 +4599,7 @@ function view_variable(string $key, bool $strict = false)
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * WEBCLIENT
  */
 
@@ -4913,12 +4612,9 @@ function webclient_intended()
 {
     $curr_url = url()->current();
     $prev_url = url()->previous();
-    
-    $parsed_prev_url = url_parse($prev_url);
-    // $prev_url_path = $parsed_prev_url->url ?? '';
 
-    $prev_url_path = $parsed_prev_url->urlParsed ?? '';
-    $prev_url_path = $parsed_prev_url->urlRaw ?? '';
+    $parsed_prev_url = url_parse($prev_url);
+    $prev_url_path = $parsed_prev_url->url ?? '';
 
     $except = [  // guest pages
         // route('index.index'),               // /
@@ -4936,18 +4632,17 @@ function webclient_intended()
 
 /**
  * Checks if webclient is in developer mode
- * 
- * @changed `DEV_KEY` to `APP_DEV_KEY`
- * @uses `$_COOKIE[env('APP_DEV_KEY')]` instead of `request()->cookie(env('APP_DEV_KEY'))`
- * @uses `.env`.`APP_DEV_KEY`
- * @uses `.env`.`APP_DEV_VAL`
  *
  * @return bool
  */
 function webclient_is_dev()
 {
-    // return !empty(env('APP_DEV_KEY')) && !empty(env('APP_DEV_VAL')) && request()->hasCookie(env('APP_DEV_KEY')) && ((string)(request()->cookie(env('APP_DEV_KEY')) ?? '')) === env('APP_DEV_VAL');
-    return !empty(env('APP_DEV_KEY')) && !empty(env('APP_DEV_VAL')) && isset($_COOKIE[env('APP_DEV_KEY')]) && ((string)($_COOKIE[env('APP_DEV_KEY')] ?? '')) === env('APP_DEV_VAL');
+    // return !empty(config_env('APP_DEV_KEY')) && ((string)(request()->cookie('dev') ?? '')) === config_env('APP_DEV_KEY');
+    return !empty(config_env('APP_DEV_KEY'))
+        && !empty(config_env('APP_DEV_VAL'))
+        && request()->hasCookie(config_env('APP_DEV_KEY'))
+        && ((string)(request()->cookie('dev') ?? '')) === config_env('APP_DEV_VAL')
+    ;
 }
 
 /**
@@ -4974,7 +4669,7 @@ function webclient_timezone()
 
 
 
-/* -----------------------------------------------
+/** -----------------------------------------------
  * WEBSITE
  */
 
@@ -4987,7 +4682,7 @@ function webclient_timezone()
 function website_check(string $url, bool $ignore_ssl = false, array $options = [])
 {
 	// $ignore_ssl not working
-		
+
 	$defaultOptions = [
 		CURLOPT_URL => $url,
 		CURLOPT_RETURNTRANSFER => 1,
@@ -5002,19 +4697,18 @@ function website_check(string $url, bool $ignore_ssl = false, array $options = [
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		
+
 		foreach($finalOptions as $k=>$v) {
 			curl_setopt($ch, $k, $v);
 		}
-		
+
 		$http_respond = trim(strip_tags(curl_exec($ch)));
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
 		if(!in_array($http_code, ["200", "302"])) {
-			throw new Exception('Invalid http code');
+			throw new exception('Invalid http code');
 		}
-	} catch(Throwable $ex) {
+	} catch(\Throwable $ex) {
 		return false;
 	}
 	return true;
