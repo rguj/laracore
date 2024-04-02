@@ -18,7 +18,7 @@
 	"prefer-stable": true,
     "require": {
 		"php": "^7.0||^8.0||^9.0",
-        "psr/http-message": "^1.0||^2.0",
+        "psr/http-message": "^1.*||^2.*",
         "maatwebsite/excel": "^3.1",
         "psr/simple-cache": "^2.0||3.0",
         "anlutro/l4-settings": "^1.0",
@@ -30,11 +30,11 @@
         "laravel/socialite": "^5.5",
         "laravel/tinker": "^2.5||^2.8",
         "spatie/laravel-activitylog": "^4.0",
-        "spatie/laravel-permission": "^5.5||^6.0",
+        "spatie/laravel-permission": "^5.5||^6.*",
         "spatie/url": "^2.0",
         "syamsoul/laravel-datatable-ssp": "^2.3",
         "monolog/monolog": "^2.0||^2.3||^3.3",
-		"vinkla/hashids": "^11.0"
+		"vinkla/hashids": "^11.*"
     },
     "require-dev": {
 		"phpunit/phpunit": "^9.5",
