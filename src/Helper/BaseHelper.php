@@ -660,7 +660,8 @@ function class_controller_method(string $class, string $method, array $args = []
     $isFirstArgReq = false;
     $firstArg = $args[0] ?? null;
     if(!is_null($firstArg)) {
-        if(is_string($firstArg))      $firstArg = $firstArg;
+        // if(is_string($firstArg))      $firstArg = $firstArg;
+        if(is_string($firstArg))      {}
         else if(is_object($firstArg)) $firstArg = $firstArg::class;
         if(array_key_exists('Symfony\Component\HttpFoundation\Request', class_parents($firstArg))) {
             $isFirstArgReq = true;

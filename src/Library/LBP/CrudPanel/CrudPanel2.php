@@ -6,7 +6,7 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanel;
 
 /**
  * CrudPanel extended
- * 
+ *
  * - declare new or modified functions here
  */
 class CrudPanel2
@@ -38,7 +38,7 @@ class CrudPanel2
     public function __getRequest()
     {
         return app('crud')->getRequest();
-    }    
+    }
 
     public function __hasRequest(string $key)
     {
@@ -59,7 +59,7 @@ class CrudPanel2
     {
         return (array)$this->__getOperationSetting('exportButtonShow');
     }
-    
+
     public function __setExportButtonShow(array $buttons)
     {
         app('crud')->setOperationSetting('exportButtonShow', $buttons);
@@ -77,7 +77,7 @@ class CrudPanel2
 
 
 
-    
+
 
 
     /**
@@ -140,7 +140,7 @@ class CrudPanel2
     {
         $this->__setOperationSetting('exportButtons', true);
         $this->__setOperationSetting('showExportButton', true);
-        
+
         foreach($this->exportButtons as $k=>$v) {
             $this->enableExportButton($v, $is_init);
         }
@@ -190,7 +190,7 @@ class CrudPanel2
     {
         $this->__setOperationSetting('showTableColumnPicker', true);
     }
-    
+
     /**
      * Disable all export button
      *
@@ -227,7 +227,7 @@ class CrudPanel2
 
     /**
      * Replaces the column order data
-     * 
+     *
      * - enclose it in a double bracket, e.g. `[[ ]]`
      *
      * @param <int,<string,string>> $data
@@ -238,6 +238,28 @@ class CrudPanel2
         $this->__setOperationSetting('order', $data);
     }
 
+
+
+
+    # ----------------------
+    # CUSTOM
+
+
+    // /**
+    //  * Sets the route name of this current controller
+    //  * - if `$route_name` is empty, it will try to get the current route name
+    //  *
+    //  * @param string $route_name
+    //  * @return void
+    //  */
+    // public function setRoute2(string $route_name = '')
+    // {
+    //     // $route_name = !empty($route_name) ? $route_name : $this->route_name;
+    //     dd(app('crud'));
+    //     $route_name = !empty($route_name) ? $route_name : app('crud2')->route_name;
+    //     dd($route_name);
+    //     app('crud')->setRoute(route($route_name));
+    // }
 
 
 

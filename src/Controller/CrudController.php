@@ -61,19 +61,26 @@ class CrudController extends Controller
     //  * @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel
     //  */
 
-    /** @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud */    
+    /** @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud */
     public $crud;
 
-    /** @var array $data */ 
+    /** @var array $data */
     public $data = [];
-    
-    /** @var \Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel2 $crud2 */  
+
+    /** @var \Rguj\Laracore\Library\LBP\CrudPanel\CrudPanel2 $crud2 */
     public $crud2;
 
     # custom
 
     public string $role_model;
     public string $permission_model;
+
+    /** @var string $route_name     The current route name */
+    public string $route_name;
+
+    /** @var string $controller_model     The current model of controller also aliased as `ControllerModel` */
+    public string $controller_model;
+
 
     /** @var \Illuminate\Support\Carbon $now_at     */ public $now_at = null;
     /** @var string $now_at_dtu     `Y-m-d H:i:s.u` */ public string $now_at_dtu = '';
@@ -90,12 +97,13 @@ class CrudController extends Controller
 
 
 
-    
+
 
     final public function __construct()
     {
         if(!$this->crud2) {
-            $this->crud2 = new CrudPanel2($this->crud);
+            // $this->crud2 = new CrudPanel2($this->crud);
+            $this->crud2 = new CrudPanel2();
         }
 
         if ($this->crud) {
@@ -115,20 +123,21 @@ class CrudController extends Controller
         // ---------------------------
         // Create the CrudPanel object
         // ---------------------------
-        // Used by developers inside their ProductCrudControllers as
+        // Used by developers inside their XXXCrudControllers as
         // $this->crud or using the CRUD facade.
         //
         // It's done inside a middleware closure in order to have
         // the complete request inside the CrudPanel object.
 
         $this->middleware(function ($request, $next) {
-            /** @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud */    
+            $this->route_name = $request->route()->getName();
+
+            /** @var \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud */
             $this->crud = app('crud');
             $this->crud->setRequest($request);
             $this->setupDefaults();
             $this->setup();
             $this->setupConfigurationForCurrentOperation();
-
 
             # ----------------
             # CUSTOM
@@ -153,15 +162,15 @@ class CrudController extends Controller
             return $next($request);
         });
 
-        
-        
+
+
 
 
     }
 
     /**
      * Allow developers to set their configuration options for a CrudPanel.
-     * 
+     *
      * @return void
      */
     public function setup()
@@ -248,22 +257,22 @@ class CrudController extends Controller
 
     // public function setupListOperation()
     // {
-        
+
     // }
 
     // public function setupCreateOperation()
     // {
-        
+
     // }
 
     // public function setupUpdateOperation()
     // {
-        
+
     // }
 
     // public function setupDeleteOperation()
     // {
-        
+
     // }
 
     /*
@@ -297,5 +306,8 @@ class CrudController extends Controller
 
     # ------------------------------------
     # CUSTOM
+
+
+
 
 }
