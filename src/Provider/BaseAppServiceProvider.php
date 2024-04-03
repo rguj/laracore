@@ -29,15 +29,23 @@ class BaseAppServiceProvider extends ServiceProvider
     public function register()
     {
         if ($this->app->environment('local')) {
-            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
-            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+			if(class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+				$this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+			}
+			/*if(class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
+				$this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+			}
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);*/
         }
 
         /** @var \Illuminate\Foundation\Application $app */
         $app = $this->app;
         
         if ($app->isLocal()) {
-            $app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
+			if(class_exists(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class)) {
+				$this->app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
+			}
+            //$app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
         }
 
 
@@ -210,16 +218,16 @@ class BaseAppServiceProvider extends ServiceProvider
         }
 
         $tbl_user = db_model_table_name(\App\Models\User::class);
-        $tbl_user_state = db_model_table_name(\App\Models\UserState::class);
+        //$tbl_user_state = db_model_table_name(\App\Models\UserState::class);
         $defaultDBConn = (string)config('database.default');
 
         $bool1 = (
             !empty($defaultDBConn)
             && Schema::connection($defaultDBConn)->hasTable($tbl_user)
-            && Schema::connection($defaultDBConn)->hasTable($tbl_user_state)
+            //&& Schema::connection($defaultDBConn)->hasTable($tbl_user_state)
         );
         if(!$bool1) {
-            $e = 'Your database may be empty. Please check and use `migrate`.';
+            $e = 'Your database may be empty. Please check and use migrate command. Connection: '.$defaultDBConn;
             if(app()->runningInConsole()) {
                 dump($e);
             } else {
@@ -231,13 +239,15 @@ class BaseAppServiceProvider extends ServiceProvider
         // dd(DB::table('ccms'));
 
         // COUNT ACTIVE USERS
-        config_unv_set('users_count', DB::table($tbl_user)->join($tbl_user_state, $tbl_user_state.'.user_id', '=', $tbl_user.'.id')->where($tbl_user_state.'.is_active', '=', 1)->count($tbl_user.'.id'));
+        //config_unv_set('users_count', DB::table($tbl_user)->join($tbl_user_state, $tbl_user_state.'.user_id', '=', $tbl_user.'.id')->where($tbl_user_state.'.is_active', '=', 1)->count($tbl_user.'.id'));
+		config_unv_set('users_count', DB::table($tbl_user)->where($tbl_user.'.activated_at', 'IS NOT', null)->count($tbl_user.'.id'));
         
         // SET REGISTER NOW
         config_unv_set('register_now', config_unv('users_count') <= 0);
 
         // GET ROLES
-        $db_roles = \App\Models\Role::where(['is_valid'=>1])->get()->toArr();
+        //$db_roles = \App\Models\Role::where(['is_valid'=>1])->get()->toArr();
+        $db_roles = \App\Models\Role::get()->toArr();
         config_unv_set('roles', $db_roles);
 
 

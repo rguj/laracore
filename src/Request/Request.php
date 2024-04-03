@@ -25,7 +25,7 @@ class Request extends FormRequest
     //     'destroy',
     //     'massDestroy',
     // ];
-	
+
 	public $genericRuleClass;
 	public array $genericRule = [];
 	public $fluentRule;
@@ -70,7 +70,7 @@ class Request extends FormRequest
 
     /**
      * Prepare data for validation.
-     * 
+     *
      * - please invoke `parent::prepareForValidation()`
      *
      * @return void
@@ -106,10 +106,10 @@ class Request extends FormRequest
     {
         // session()->remove('_old_input');
     }
-	
+
 	/**
      * Get custom messages for validator errors.
-     * 
+     *
      * - please invoke `parent::messages()`
      *
      * @return void
@@ -120,16 +120,16 @@ class Request extends FormRequest
 
         return [
             // 'required'           => 'This is required',
-            // 'present'            => 'This must be present',        
+            // 'present'            => 'This must be present',
             // 'required_if'        => 'This is required',
             // 'required_without'   => 'This is required',
 
             // 'email'              => 'Invalid format',
             // 'array'              => 'Must be array',
             // 'integer'            => 'Must be integer',
-            // 'string'             => 'Must be string',   
+            // 'string'             => 'Must be string',
 
-            // 'distinct'           => 'Must be distinct',    
+            // 'distinct'           => 'Must be distinct',
             // 'min'                => 'Minimum of :min :character',
             // 'max'                => 'Exceeded :max :character',
             // 'regex'              => 'Invalid format',
@@ -277,7 +277,7 @@ class Request extends FormRequest
 
 
 	// -----------------------------------------
-	// CUSTOM FUNCTIONS	
+	// CUSTOM FUNCTIONS
 
     final public function getCustomErrorMessages()
     {
@@ -341,7 +341,7 @@ class Request extends FormRequest
 
     /**
      * Translates input to database column key `_id`
-     * 
+     *
      * only use this on method `passedValidation()`
      *
      * @param array $arr [ `attr`, `table`, `column`, `override_new_attr`, `mergeNeedle` ]
@@ -389,7 +389,7 @@ class Request extends FormRequest
                 // $mergeNeedle = (array)($v[4] ?? []);
                 $needle = [$column=>$inputs[$attr]];
                 if(!empty($mergeNeedle))
-                    $needle = array_merge($mergeNeedle, $needle);    
+                    $needle = array_merge($mergeNeedle, $needle);
                 $opt[$new_attr] = db_cache_fetsert_id($table, $needle, true);
             }
         }
@@ -406,7 +406,7 @@ class Request extends FormRequest
 
     /**
      * Creates attribute for non-existent input based from rules
-     * 
+     *
      * this follows the order of rule keys
      *
      * @return void

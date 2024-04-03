@@ -8,9 +8,9 @@ use Illuminate\Http\Request as HttpRequest;
 
 use Rguj\Laracore\Request\Request as BaseRequest;
 // use Rguj\Laracore\Request\Request;
-// use Rguj\Laracore\Library\AppFn;
-// use Rguj\Laracore\Library\CLHF;
-// use Rguj\Laracore\Library\DT;
+use Rguj\Laracore\Library\AppFn;
+use Rguj\Laracore\Library\CLHF;
+use Rguj\Laracore\Library\DT;
 use Rguj\Laracore\Library\WebClient;
 
 use Illuminate\Support\Facades\DB;
@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
 // use App\Providers\AppServiceProvider;
 use Rguj\Laracore\Provider\BaseAppServiceProvider as AppServiceProvider;
 use App\Core\Adapters\Theme;
-use App\Models\ModelHasRole;
+use App\Models\ModelRole;
 use App\Models\Role;
 use App\Models\RoleUser;
 use App\Models\User;
@@ -44,8 +44,6 @@ class ClientInstanceMiddleware
 {
     // public string $default_timezone;  // = 'Asia/Taipei';
     // public string $home;
-
-    public $ROLE = [];
 
     public const ROLES = [
         [1, 'admin', 'Administrator'],
@@ -91,24 +89,8 @@ class ClientInstanceMiddleware
     private $url_intended;
 
 
-    public function __renderRoles()
-    {
-        $this->ROLE = (object)[];
-
-        $d1 = Role::get();
-        foreach($d1 as $k=>$v) {
-            $this->ROLE->{$v->name} = $v->id;
-        }
-
-        dd($this->ROLE);
-    }
-
     public function __construct()
     {
-		dump(1);
-
-        $this->__renderRoles();
-
         $this->url_login = route('login');
         $this->url_register = route('register');
         $this->url_verify_email = route('verification.notice');
@@ -152,7 +134,6 @@ class ClientInstanceMiddleware
      */
     public function handle(HttpRequest $req, Closure $next)
     {
-		dump(2);
         $request = resolve(BaseRequest::class);
         $this->request = $request;
 
@@ -171,7 +152,7 @@ class ClientInstanceMiddleware
                     $a = arr_search_by_key($this->user_info['types'], 'role_id', $v[0]);
                     if(empty($a)) {
                         RoleUser::updateOrCreate(['role_id' => $v[0], 'user_id' => $this->user_info['id']], []);
-                        ModelHasRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v[0], 'model_type' => \App\Models\User::class], []);
+                        ModelRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v[0], 'model_type' => 'App\Models\User'], []);
                     }
                 }
                 goto point1;
@@ -399,8 +380,7 @@ class ClientInstanceMiddleware
 
         $tblUser = db_model_table_name(\App\Models\User::class);
         $tblRole = db_model_table_name(\App\Models\Role::class);
-        // $tblUserType = db_model_table_name(\App\Models\UserType::class);
-        $tblUserType = db_model_table_name(\App\Models\RoleUser::class);
+        $tblUserType = db_model_table_name(\App\Models\UserType::class);
 
         // get user data
         $user = [];

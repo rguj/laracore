@@ -13,7 +13,7 @@ use Rguj\Laracore\Library\HttpResponse;
 
 /**
  * The BaseController supplemented by `HttpResponse`
- * 
+ *
  * - Extend this base controller to every child controller (e.g. `class ChildController extends Controller`)
  * - You can define `construct()` on the child class that functions the same as `__construct()`
  */
@@ -24,19 +24,19 @@ class BaseController extends Controller
 
     public bool $parentConstructed = false;
 
-    /** 
+    /**
      * `HttpResponse` - the BaseController wrapper
-     * 
+     *
      * @var \Rguj\Laracore\Library\HttpResponse $hr
      */
     public $hr;
 
     /**
      * `final public function __construct()` of the BaseController
-     * 
+     *
      * - This must be a `final public function` to avoid method inheritance of the children
      * - This must not be inherited by the children
-     * 
+     *
      * @requires `Rguj\Laracore\Library\HttpResponse`
      * @return void
      */
@@ -62,7 +62,7 @@ class BaseController extends Controller
      */
     public function construct()
     {
-
+        dd(4242);
     }
 
 
@@ -71,7 +71,7 @@ class BaseController extends Controller
         // return (new (STATIC::class))->$method(...$parameters);
         return class_method_unstatic(STATIC::class, $method, $parameters);
     }
-    
+
     final public function __invokeClassMethod(string $method, array $args = [], string $resolveClass = '', string $class = '', bool $strict = false)
     {
         $class = empty($class) ? $this::class : $class;
