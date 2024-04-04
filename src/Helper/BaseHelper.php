@@ -28,7 +28,7 @@ use Rguj\Laracore\Exception\CustomJSONException;
 
 /* -----------------------------------------------
  * DEFINERS
- * - prefixed by `BH_`
+ * - prefixed by `BH_` -> Base Helper
  */
 
 define('BH_ENV_KEY', 'env');
@@ -794,7 +794,7 @@ function component_analysis($data, $args)
 	$configs = $args[0];
 	$form = $args[1]['form'];//$args[1];
 
-	$APP_VSK_NAME = config_env('APP_VSK_NAME', '');
+	$APP_VSK_NAME = config('z.base.vsk.name');
 	if(str_empty($APP_VSK_NAME))
 		throw new Exception('VSK value is empty');
 
@@ -860,9 +860,9 @@ function component_analysis($data, $args)
 			// form group state picker
 			// $vsk = old($APP_VSK_NAME.'.'.$attr_name, '');
             $vsk = '';
-            if(session()->has(config_env('APP_ERROR_KEY').'.'.$attr_name))
+            if(session()->has(config('z.base.error.key').'.'.$attr_name))
                 $vsk = 'error';
-            elseif(session()->has(config_env('APP_SUCCESS_KEY').'.'.$attr_name))
+            elseif(session()->has(config('z.base.success.key').'.'.$attr_name))
                 $vsk = 'success';
 
 			$fg_state = 'fg-normal';
@@ -1081,6 +1081,7 @@ function config_unv_set(string $key, $val)
  * @param string $key
  * @param mixed $val
  * @return mixed
+ * @deprecated 1.0.0
  */
 function config_env($key = null, $default = null) {
 	return config(BH_ENV_KEY.(!is_null($key) ? '.'.$key : ''), $default);
@@ -1791,8 +1792,8 @@ function datatable_paginate(Request $request, array $columns, $query, bool $with
         if($itemStart > $countFiltered) {  // ok
             goto point01;  // invalid itemStart index, return empty
         }
-        $itemStart = $itemStart;  // page number based from client data
-        $itemsLimit = $itemsLimit;
+        // $itemStart = $itemStart;  // page number based from client data
+        // $itemsLimit = $itemsLimit;
         $page = (int)ceil(($itemStart + 1) / $itemsLimit);
         $perPage = $itemsLimit;
     }
@@ -2000,7 +2001,7 @@ function db_model_table_name(string $class)
  *
  * @usage access parent template: `$q->join($p, $p.'.id', '=', $t.'.foreign_id'); $q->select([$p.'.id as parent_foreign_id', $t.'.*']);`
  *
- * @param \Illuminate\Database\Eloquent\Relations\Relation $query
+ * @param \Illuminate\Database\Eloquent\Relations\Relation|\Illuminate\Database\Query\Builder $query
  * @return <int,string>
  */
 function db_relation_info($query)
@@ -2508,7 +2509,7 @@ function dt_standard_format()
 /**
  * Use this function to properly validate carbon object
  *
- * @param Carbon\Carbon $obj
+ * @param \Carbon\Carbon|null $obj
  * @return bool
  */
 function dt_is_carbon($obj)
@@ -2520,12 +2521,12 @@ function dt_is_carbon($obj)
 /**
  * Advanced datetime parse function
  *
- * @property bool is_valid
+ * @property bool $is_valid
  * @param string $dt_str
  * @param array|string $dt_format [ from, to ] | from
  * @param array|string $tz [ from, to ] | from
  * @return \App\Traits\DT
- * @uses Carbon\Carbon
+ * @uses \Carbon\Carbon
  */
 function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
 {
@@ -2551,7 +2552,7 @@ function dt_parse(string $dt_str, $dt_format = ['', ''], array $tz = ['', ''])
     $tz_fm = $tz[0];
     $tz_to = $tz[1];
     $dt = $output = [false, [], [], [], []];
-    $dt_ = false;
+    $dt_ = null;
     try { $dt_ = Carbon::createFromFormat($format_fm, $dt_str, $tz_fm); } catch (\Exception $ex) {}
     if(!dt_is_carbon($dt_)) goto point1;
     $dt2 = $dt_->clone()->setTimeZone($tz_to);
@@ -2751,7 +2752,7 @@ function dt_is_timezone(string $tz_str) {
 }
 
 function dt_server_tz() {
-    $stz = config_env('APP_TIMEZONE', dt_standard_tz());
+    $stz = config('app.timezone', dt_standard_tz());
     if(!dt_is_timezone($stz)) throw new exception('Invalid server timezone');
     return $stz;
 }
@@ -3204,7 +3205,7 @@ function route_parse_url(string $url, bool $adjustScheme = true)
  *
  * @param string $uri
  * @param string $view
- * @return \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory
+ * @return \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|null
  */
 function route_generate_view(string $uri, string $view)
 {
@@ -3219,7 +3220,7 @@ function route_generate_view(string $uri, string $view)
  * @param string $uri
  * @param string $class
  * @param array $options (optional)
- * @return \Illuminate\Routing\Route
+ * @return \Illuminate\Routing\Route|null
  * @throws Exception
  */
 function route_generate_resource(string $uri, string $class, array $options = [])
@@ -3325,7 +3326,7 @@ function route_names(bool $withFilter = false)
  * Generate root URIs
  *
  * @param string $uri
- * @return \Illuminate\Routing\Route
+ * @return \Illuminate\Routing\Route|null
  */
 function route_generate_root_uris()
 {
@@ -3352,7 +3353,7 @@ function route_generate_root_uris()
  * @param string $uri
  * @param string $platform
  * @param string $class
- * @return \Illuminate\Routing\Route
+ * @return \Illuminate\Routing\Route|null
  */
 function route_generate_auth_platform(string $platform)
 {
@@ -3393,7 +3394,7 @@ function route_url_action(string $route, string $action, int $id, bool $wrapAnch
             break;
         default:
             throw new exception('Invalid action: `'.$action.'`');
-            break;
+            // break;
     }
     $pre = $wrapAnchor ? '<a '.(arr_implode_html_attr(' ', $attr)).'>' : '';
     $suf = $wrapAnchor ? '</a>' : '';
@@ -3436,7 +3437,7 @@ function arr_implode_html_attr(string $glue, array $attributes)
  */
 function session_get_alerts(bool $delete_alerts_session = false)
 {
-    $key = (string)config_env('APP_SESSION_ALERTS_KEY');
+    $key = config('z.base.session.alert.key');
     $alerts = (array)(session()->get($key) ?? []);
     if($delete_alerts_session)
         session()->forget($key);
@@ -3528,7 +3529,7 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
     }
 
     $val = ['status' => $status, 'msg' => $msg, 'type' => $alert_type, 'title' => $title];
-    session_push(config_env('APP_SESSION_ALERTS_KEY'), $val);
+    session_push(config('z.base.session.alert.key'), $val);
     point1:
 }
 
@@ -3552,7 +3553,8 @@ function session_push_alert($status, $msg, $title = '', $alert_type = 'toastr', 
  *
  * @param string $ip
  * @param int|int[] $port single or multiple ports
- * @return bool
+ * @return <bool,string,array>
+ *
  */
 function socket_check(string $ip, $port = 80, float $timeout = 0.5)
 {
@@ -3762,6 +3764,22 @@ function storage_file_url(string $path, string $mode) {
 /** -----------------------------------------------
  * STRING
  */
+
+
+/**
+ * Converts a string into a PHP constant variable
+ *
+ * @param string $strvar
+ * @return void
+ */
+ function str_constant_variable(string $input, $isUppercase = true)
+ {
+     $formatted = $isUppercase ? strtoupper($input) : strtolower($input);
+     $sanitized = str_replace([' ', '-'], '_', $formatted);
+     $pattern = $isUppercase ? '/[^A-Z0-9_]/' : '/[^a-z0-9_]/';
+     $constantName = preg_replace($pattern, '', $sanitized);
+     return $constantName;
+ }
 
 /**
  * Compares two "PHP-standardized" version number strings
@@ -4006,7 +4024,7 @@ function str_replace_last($search, $replace, $subject)
  *
  * @param string $url
  * @param integer $component
- * @return void
+ * @return array
  * @before `url_parse()`
  */
 function url_parse_short(string $url, int $component = -1)
@@ -4246,7 +4264,7 @@ function url_parse(string $url, string $defaultScheme = 'https')
 
         $fn1 = function(bool $isHttps) { return $isHttps ? 'https' : 'http'; };
         // $isUrlHttps = Str::startsWith($url, 'https://');
-        // $isAppUrlHttps = Str::startsWith(config_env('APP_URL'), 'https://');
+        // $isAppUrlHttps = Str::startsWith(config('app.url'), 'https://');
         // $shouldAdjust = ($adjustScheme && ($isUrlHttps !== $isAppUrlHttps));
         $username = (string)($u[0] ?? '');
 
@@ -4520,7 +4538,8 @@ function var_type_official(string $type)
     if(!in_array($type, $types, true))
         throw new exception('Invalid type: '.$type);
     $t = []; foreach($types as $k=>$v) { $t[$v] = $v; }
-    $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
+    // $type2 = array_key_exists($type, $o) ? $type[$o] : $type;
+    $type2 = array_key_exists($type, $o) ? $o[$type] : $type;
     if(!array_key_exists($type2, $t))
         throw new exception('Invalid data type: '.$type2);
 
@@ -4638,11 +4657,11 @@ function webclient_intended()
  */
 function webclient_is_dev()
 {
-    // return !empty(config_env('APP_DEV_KEY')) && ((string)(request()->cookie('dev') ?? '')) === config_env('APP_DEV_KEY');
-    return !empty(config_env('APP_DEV_KEY'))
-        && !empty(config_env('APP_DEV_VAL'))
-        && request()->hasCookie(config_env('APP_DEV_KEY'))
-        && ((string)(request()->cookie('dev') ?? '')) === config_env('APP_DEV_VAL')
+    // return !empty(config('z.base.key')) && ((string)(request()->cookie('dev') ?? '')) === config('z.base.key');
+    return !empty(config('z.base.key'))
+        && !empty(config('z.base.val'))
+        && request()->hasCookie(config('z.base.key'))
+        && ((string)(request()->cookie('dev') ?? '')) === config('z.base.val')
     ;
 }
 

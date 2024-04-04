@@ -40,7 +40,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
         /** @var \Illuminate\Foundation\Application $app */
         $app = $this->app;
-        
+
         if ($app->isLocal()) {
 			if(class_exists(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class)) {
 				$this->app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
@@ -55,7 +55,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
         # --------------------
         # CUSTOM
-		
+
     }
 
     /**
@@ -72,7 +72,7 @@ class BaseAppServiceProvider extends ServiceProvider
         $this->addBladeDirectives();
         // $this->initializeMetronic();  // gone to HttpResponse::getView()
         $this->addSequence();
-        
+
     }
 
 
@@ -82,17 +82,17 @@ class BaseAppServiceProvider extends ServiceProvider
     {
         //$required_php = (string)env('PHP_MIN_VERSION', '8.1.2');
         //$required_laravel = (string)env('LARAVEL_MIN_VERSION', '9.5.1');
-		
+
 		$composer = json_decode(file_get_contents(base_path('./composer.json')), true);
 		$getMinVersion = function(string $key, string $default) use($composer) {
 			return preg_replace("/[^0-9\.]/", '', trim((string)arr_get($composer, 'require.'.$key, $default)));
 		};
-		
+
 		$required_php = $getMinVersion('php', '8.0');
         $required_laravel = $getMinVersion('laravel/framework', '8.12');
-		
+
         if(!app()->runningInConsole()) {
-			
+
             // check php version
 			if(empty($required_php)) {
 				die('Required PHP version must not be empty.');
@@ -100,7 +100,7 @@ class BaseAppServiceProvider extends ServiceProvider
             if(!str_version_ge(PHP_VERSION, $required_php)) {
                 die('PHP version must be '.$required_php.' or up.');
             }
-			
+
             // check laravel version
 			if(empty($required_laravel)) {
 				die('Required Laravel version must not be empty.');
@@ -110,8 +110,20 @@ class BaseAppServiceProvider extends ServiceProvider
             }
 
             // $this->evalBrowser();
+
+            // check config files
+            $check_configs = [
+                'z.base',
+                'z.browser',
+                'z.role',
+            ];
+            foreach($check_configs as $k=>$v) {
+                if(!config()->has($v)) {
+                    die('Missing config file: '.$v);
+                }
+            }
         }
-        
+
 
     }
 
@@ -125,9 +137,9 @@ class BaseAppServiceProvider extends ServiceProvider
             return json_decode(json_encode($this->get()->toArray()), true);
         });
 
-        
+
         // ELOQUENT BUILDER
-        \Illuminate\Database\Eloquent\Builder::macro('toArr', 
+        \Illuminate\Database\Eloquent\Builder::macro('toArr',
         // use get() or first() before calling this, except for auth()->user()
         function () {
             /** @var \Illuminate\Database\Eloquent\Builder $this */
@@ -141,14 +153,14 @@ class BaseAppServiceProvider extends ServiceProvider
             }, $this->toSql());
         });
 
-        \Illuminate\Database\Eloquent\Builder::macro('arrGet', 
+        \Illuminate\Database\Eloquent\Builder::macro('arrGet',
         function ($key, $default = null) {
             /** @var \Illuminate\Database\Eloquent\Builder $this */
             $ths = $this;
             if(!is_array($ths)) throw new \Exception('$this must be array');
             return arr_get($ths, $key, $default);
         });
-        
+
         // ELOQUENT COLLECTION
         // \Illuminate\Database\Eloquent\Collection::macro('arrGet', function ($key, $default = null) {
         //     // dd(2);
@@ -159,7 +171,7 @@ class BaseAppServiceProvider extends ServiceProvider
         //     return json_decode(json_encode($this), true);
         // });
         \Illuminate\Database\Eloquent\Collection::mixin(new EloquentCollectionMacro);
-        
+
     }
 
     protected function addBladeDirectives()
@@ -171,7 +183,7 @@ class BaseAppServiceProvider extends ServiceProvider
         Blade::directive('blade_purpose', function($expression){
             return "<?php echo blade_purpose($expression); ?>";
         });
-        
+
         Blade::directive('blade_route', function($expression){
             return "<?php echo blade_route($expression); ?>";
         });
@@ -182,36 +194,36 @@ class BaseAppServiceProvider extends ServiceProvider
     {
         $theme = null;
         try { $theme = theme(); } catch(\Throwable $ex) {}
-        
+
         if(config()->has('demoa') && get_class($theme) === 'App\Core\Adapters\Theme') {
             $theme = theme();
-            
+
             // Share theme adapter class
             View::share('theme', $theme);
-    
+
             // Set demo globally
             // $theme->setDemo(request()->input('demo', 'demo1'));
             $theme->setDemo('demoa');
-    
+
             $theme->initConfig();
-    
+
             bootstrap()->run();
-    
-            if (isRTL()) {
+
+            if (isRTL() && class_exists('App\Core\Adapters\Theme')) {
                 // RTL html attributes
-                Theme::addHtmlAttribute('html', 'dir', 'rtl');
-                Theme::addHtmlAttribute('html', 'direction', 'rtl');
-                Theme::addHtmlAttribute('html', 'style', 'direction:rtl;');
-                Theme::addHtmlAttribute('body', 'direction', 'rtl');
+                // Theme::addHtmlAttribute('html', 'dir', 'rtl');
+                // Theme::addHtmlAttribute('html', 'direction', 'rtl');
+                // Theme::addHtmlAttribute('html', 'style', 'direction:rtl;');
+                // Theme::addHtmlAttribute('body', 'direction', 'rtl');
             }
         }
     }
 
 
     protected function addSequence()
-    {        
+    {
         // FORCE SCHEME
-		
+
         if(config_env('APP_FORCE_HTTPS', false)) {
             URL::forceScheme('https');
             $this->app['request']->server->set('HTTPS', true);
@@ -241,7 +253,7 @@ class BaseAppServiceProvider extends ServiceProvider
         // COUNT ACTIVE USERS
         //config_unv_set('users_count', DB::table($tbl_user)->join($tbl_user_state, $tbl_user_state.'.user_id', '=', $tbl_user.'.id')->where($tbl_user_state.'.is_active', '=', 1)->count($tbl_user.'.id'));
 		config_unv_set('users_count', DB::table($tbl_user)->where($tbl_user.'.activated_at', 'IS NOT', null)->count($tbl_user.'.id'));
-        
+
         // SET REGISTER NOW
         config_unv_set('register_now', config_unv('users_count') <= 0);
 
@@ -263,13 +275,13 @@ class BaseAppServiceProvider extends ServiceProvider
             if(!array_key_exists($c, $consts))
                 throw new Exception("Missing constant role: $v[1]");
             if($consts[$c] !== $v[0])
-                throw new Exception("Role value mismatch in constant: $v[1]");            
+                throw new Exception("Role value mismatch in constant: $v[1]");
             if(!array_key_exists($c, $arr2))
                 throw new Exception("Missing DB role: $v[1]");
             if($arr2[$c] !== $v[0])
                 throw new Exception("Role value mismatch in DB: $v[1]");
         }
-        
+
         // VALIDATE DB VALUES
         // foreach($db_roles as $key=>$val) {
         //     $const1 = strtoupper('ROLE_'.$val['short']);
@@ -290,7 +302,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
 
 
-    
+
 
     /*protected function evalBrowser(bool $skipRootPath = true)
     {
@@ -308,7 +320,7 @@ class BaseAppServiceProvider extends ServiceProvider
         }
 
         // CHECK BROWSER
-        $vb = function() use($ua) {                
+        $vb = function() use($ua) {
             $flagged = false;
             // $invalid_type = false;
             // $invalid_name = false;
@@ -322,24 +334,24 @@ class BaseAppServiceProvider extends ServiceProvider
                     throw new exception('Failed to get user-agent info');
                 }
                 $ba = config('browser.requirement');
-        
+
                 if(!array_key_exists($ua['device']['type'], $ba)) {
                     config()->set('browser.is_valid_type', false);
                     throw new exception('Invalid device type');
                 }
                 config()->set('browser.type', $ua['device']['type']);
-        
+
                 if(!array_key_exists($ua['browser']['name'], $ba[$ua['device']['type']])) {
                     config()->set('browser.is_valid_name', false);
                     throw new exception('Invalid device name');
                 }
                 config()->set('browser.name', $ua['browser']['name']);
-        
+
                 $version_required = $ba[$ua['device']['type']][$ua['browser']['name']];
                 $version_current = $ua['browser']['version'];
                 config()->set('browser.version.required', $version_required);
                 config()->set('browser.version.current', $version_current);
-        
+
                 // $flagged = false;
                 if(str_version_compare($version_current, $version_required, '<')) {
                     config()->set('browser.is_outdated', true);
@@ -350,7 +362,7 @@ class BaseAppServiceProvider extends ServiceProvider
                 $allowed_host = (array)config('browser.allowed_host');
                 $blocked_host = (array)config('browser.blocked_host');
                 $up = url_parse($http_referrer);
-                
+
                 if(
                     // in_array($http_referrer, $block_referrer, true)
                     ($up->is_valid && in_array($up->host, $blocked_host, true))

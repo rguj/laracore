@@ -100,13 +100,11 @@ class ClientInstanceMiddleware
             $this->ROLE->{$v->name} = $v->id;
         }
 
-        dd($this->ROLE);
+        // dd($this->ROLE);
     }
 
     public function __construct()
     {
-		dump(1);
-
         $this->__renderRoles();
 
         $this->url_login = route('login');
@@ -117,8 +115,7 @@ class ClientInstanceMiddleware
         $this->url_intended = webclient_intended();
 
         //$this->home = $this->url_home;
-        // $this->default_timezone = config('env.APP_TIMEZONE');
-        $this->force_register = (bool)config('env.APP_NO_USER_FORCE_REGISTER');
+        $this->force_register = (bool)config('z.base.register.force_if_empty_user');
         $this->is_auth = cuser_is_auth();
         $this->is_admin = false;
 
@@ -161,7 +158,7 @@ class ClientInstanceMiddleware
         point1:
         $this->user_info = SELF::user_info_($id);
         $this->is_admin = arr_colval_exists(SELF::ROLE_ADMIN, $this->user_info['types'] ?? [], 'role_id', true);
-        Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', env('APP_TIMEZONE', 'UTC')));
+        Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', config('app.timezone')));
         Config::set('user', $this->user_info);
 
         // fix admin roles
@@ -171,7 +168,7 @@ class ClientInstanceMiddleware
                     $a = arr_search_by_key($this->user_info['types'], 'role_id', $v[0]);
                     if(empty($a)) {
                         RoleUser::updateOrCreate(['role_id' => $v[0], 'user_id' => $this->user_info['id']], []);
-                        ModelHasRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v[0], 'model_type' => \App\Models\User::class], []);
+                        ModelHasRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v[0], 'model_type' => User::class], []);
                     }
                 }
                 goto point1;
@@ -193,8 +190,8 @@ class ClientInstanceMiddleware
             app('debugbar')->enable();
             Config::set('app.debug', true);
         } else {
-            app('debugbar')->disable();
-            Config::set('app.debug', false);
+            // app('debugbar')->disable();
+            // Config::set('app.debug', false);
         }
 
         // MAINTENANCE MODE
@@ -204,6 +201,7 @@ class ClientInstanceMiddleware
 
         // some validation
         $validate = $this->validate($request);  // added new
+
         if(webclient_is_dev()) {
 
         }
@@ -232,11 +230,11 @@ class ClientInstanceMiddleware
 
 
         // set user theme mode
-        $theme_mode = config('user.settings.theme_mode') ?? '';
+        $theme_mode = config('z.user.settings.theme_mode') ?? '';
         $theme_mode = in_array($theme_mode, ['light', 'dark']) ? $theme_mode : 'light';
-        Config::set('demoa.general.layout.aside.theme', $theme_mode);
+        Config::set('z.demoa.general.layout.aside.theme', $theme_mode);
         // override global menu
-        Config::set('global.menu', $this->user_menu($request, false));
+        Config::set('z.global.menu', $this->user_menu($request, false));
 
         // trigger theme bootstrap
         AppServiceProvider::initializeMetronic();
@@ -338,7 +336,7 @@ class ClientInstanceMiddleware
         } else {
             // check if no user
             $is_url_registration = ($schemeHostPath === $this->url_register);
-            if($this->force_register && config_unv('users_count') < 1 && !$is_url_registration) {
+            if($this->force_register && config('z.user-count') < 1 && !$is_url_registration) {
                 session_push_alert('info', 'Please register first');
                 return [false, 2, $this->url_register];
             }
@@ -490,7 +488,7 @@ class ClientInstanceMiddleware
     //     $has_tz = $request->has('_timezone');
     //     $tz_before = $request->input('_timezone');
 
-    //     $request->merge(['_timezone'=>config('env.APP_TIMEZONE')]);  // override timezone
+    //     $request->merge(['_timezone'=>config('app.timezone')]);  // override timezone
     //     $client_info = WebClient::getClientUAInfo($request);  // get client info
 
     //     // delete or put back
@@ -504,7 +502,7 @@ class ClientInstanceMiddleware
     //     return $client_info;
     // }
     public static function client_info_(BaseRequest $request) {
-        // $request->merge(['_timezone'=>config('env.APP_TIMEZONE')]);  // override timezone
+        // $request->merge(['_timezone'=>config('app.timezone')]);  // override timezone
         $client_info = WebClient::getClientUAInfo($request);  // get client info
         return $client_info;
     }
@@ -515,7 +513,7 @@ class ClientInstanceMiddleware
     public function redirect(bool $goto_intended_url, bool $return_object=true) {
         // does not check is_valid
         // @param $return_object ? redirect_object : route_string
-        $user_role_ids = array_column(config('user.types'), 'id');
+        $user_role_ids = array_column(config('z.user.types'), 'id');
 
         # config
         $redirect_to_str = null;
@@ -529,7 +527,7 @@ class ClientInstanceMiddleware
         if($goto_intended_url) {
             // AppFn::STR_Sanitize($next_url, false, true);  // trim next_url
             $next_url = $goto_intended_url ? redirect()->intended()->getTargetUrl() : '';
-            $next_url = $next_url === config('env.APP_URL') ? $default : $next_url;
+            $next_url = $next_url === config('app.url') ? $default : $next_url;
             if(!empty($next_url)) {
                 $redirect_to_str = $next_url;
                 goto point1;
@@ -568,13 +566,14 @@ class ClientInstanceMiddleware
         ];
 
         $ua = WebClient::__getUA();
-        // config()->set('browser', []);
+        // config()->set('z.browser', []);
 
         // if($skipRootPath && request()->path() === '/') {
         if($skipRootPath && in_array(request()->path(), $skip)) {
             goto point2;
         }
 
+        //dd($ua);
         // CHECK BROWSER
         $vb = function() use($ua) {
             $flagged = false;
@@ -589,34 +588,34 @@ class ClientInstanceMiddleware
                     // $invalid_browser = true;
                     throw new exception('Failed to get user-agent info');
                 }
-                $ba = config('browser.requirement');
+                $ba = config('z.browser.requirement');
 
                 if(!array_key_exists($ua['device']['type'], $ba)) {
-                    config()->set('browser.is_valid_type', false);
+                    config()->set('z.browser.is_valid_type', false);
                     throw new exception('Invalid device type');
                 }
-                config()->set('browser.type', $ua['device']['type']);
+                config()->set('z.browser.type', $ua['device']['type']);
 
                 if(!array_key_exists($ua['browser']['name'], $ba[$ua['device']['type']])) {
-                    config()->set('browser.is_valid_name', false);
+                    config()->set('z.browser.is_valid_name', false);
                     throw new exception('Invalid device name');
                 }
-                config()->set('browser.name', $ua['browser']['name']);
+                config()->set('z.browser.name', $ua['browser']['name']);
 
                 $version_required = $ba[$ua['device']['type']][$ua['browser']['name']];
                 $version_current = $ua['browser']['version'];
-                config()->set('browser.version.required', $version_required);
-                config()->set('browser.version.current', $version_current);
+                config()->set('z.browser.version.required', $version_required);
+                config()->set('z.browser.version.current', $version_current);
 
                 // $flagged = false;
                 if(str_version_compare($version_current, $version_required, '<')) {
-                    config()->set('browser.is_outdated', true);
+                    config()->set('z.browser.is_outdated', true);
                     $flagged = true;
                 }
 
                 $http_referrer = $_SERVER['HTTP_REFERER'] ?? '';
-                $allowed_host = (array)config('browser.allowed_host');
-                $blocked_host = (array)config('browser.blocked_host');
+                $allowed_host = (array)config('z.browser.allowed_host');
+                $blocked_host = (array)config('z.browser.blocked_host');
                 $up = url_parse($http_referrer);
 
                 if(
@@ -625,32 +624,32 @@ class ClientInstanceMiddleware
                     || ($up->is_valid && !in_array($up->host, $allowed_host, true))
                     || (!str_empty($http_referrer) && !$up->is_valid)
                 ) {
-                    config()->set('browser.is_blocked_referrer', true);
+                    config()->set('z.browser.is_blocked_referrer', true);
                     $flagged = true;
                 }
 
                 if($flagged) {
-                    if(!config('browser.is_valid_type')) {
+                    if(!config('z.browser.is_valid_type')) {
                         throw new exception('Unsupported referrer');
                     }
-                    if(!config('browser.is_valid_name')) {
+                    if(!config('z.browser.is_valid_name')) {
                         throw new exception('Unsupported referrer');
                     }
-                    if(!config('browser.is_outdated')) {
+                    if(!config('z.browser.is_outdated')) {
                         throw new exception('Unsupported browser');
                     }
-                    if(!config('browser.is_blocked_referrer')) {
+                    if(!config('z.browser.is_blocked_referrer')) {
                         throw new exception('Unsupported referrer');
                     }
                 }
 
-            } catch(\Exception $ex) {
+            } catch(Exception $ex) {
                 $err_msg = $ex->getMessage();
 
-                if(!in_array($ua['device']['name'] ?? '', (array)config('browser.bypass_device_name'))) {
-                    config()->set('browser.is_valid', false);
-                    config()->set('browser.err_msg', $err_msg);
-                    //abort(response()->view('errors.unsupported-browser', config('browser'), 406));
+                if(!in_array($ua['device']['name'] ?? '', (array)config('z.browser.bypass_device_name'))) {
+                    config()->set('z.browser.is_valid', false);
+                    config()->set('z.browser.err_msg', $err_msg);
+                    //abort(response()->view('errors.unsupported-browser', config('z.browser'), 406));
                 }
 
             }
@@ -659,7 +658,7 @@ class ClientInstanceMiddleware
         };
         $vb();
         point2:
-        config()->set('browser.useragent', $ua);
+        config()->set('z.browser.useragent', $ua);
 
         // updatemybrowser.org minumum requirements
         $umb = [];
@@ -678,8 +677,8 @@ class ClientInstanceMiddleware
             'iosbrowser' => 'ios',
             'samsung' => 'samsung',
         ];
-        $device_type = (string)config('browser.useragent.device.type');
-        $req = !empty($device_type) ? (array)config('browser.requirement.'.$device_type) : [];
+        $device_type = (string)config('z.browser.useragent.device.type');
+        $req = !empty($device_type) ? (array)config('z.browser.requirement.'.$device_type) : [];
         foreach($req as $k=>$v) {
             $k2 = strtolower($k);
             $v2 = (float)$v;
@@ -688,8 +687,8 @@ class ClientInstanceMiddleware
                 $buo[$buo_keys[$k2]] = $v;
             }
         }
-        config()->set('browser.umb', $umb);
-        config()->set('browser.buo', $buo);
+        config()->set('z.browser.umb', $umb);
+        config()->set('z.browser.buo', $buo);
 
 
     }
@@ -727,15 +726,15 @@ class ClientInstanceMiddleware
 
         // get the menu of each role
         $main = [];
-        array_push($main, ...config_unv('menu.all'));
-        $rs = array_column((array)config('user.types'), 'short');
+        array_push($main, ...config('z.menu.all'));
+        $rs = array_column((array)config('z.user.types'), 'short');
         if(cuser_is_auth()) {
             foreach($show_roles as $k1=>$v1) {
                 if(!in_array($v1, $rs))
                     continue;
 
                 $lbl = [false, ''];
-                foreach(config('user.types') as $k2=>$v2) {
+                foreach(config('z.user.types') as $k2=>$v2) {
                     if($v2['short'] === $v1) {
                         $lbl = [true, $v2['title']];
                         break;
@@ -749,7 +748,7 @@ class ClientInstanceMiddleware
                         throw new exception('Role `'.$v1.'` not found. [File]');
                 }
 
-                $m = config_unv('menu.'.$v1);
+                $m = config('z.menu.'.$v1);
                 if(!empty($m)) {
                     // array_unshift($m, $category($lbl[1]));
                     // array_push($main, $m);
@@ -759,12 +758,12 @@ class ClientInstanceMiddleware
                     }
                 }
             }
-            if(!empty(config('unv.menu.user'))) {
-                array_push($main, $category('User'), config_unv('menu.user'));
+            if(!empty(config('z.menu.user'))) {
+                array_push($main, $category('User'), config('z.menu.user'));
             }
         } else {
-            if(!empty(config('unv.menu.guest'))) {
-                array_push($main, $category('Guest'), ...config_unv('menu.guest'));
+            if(!empty(config('z.menu.guest'))) {
+                array_push($main, $category('Guest'), ...config('z.menu.guest'));
             }
         }
 
@@ -776,7 +775,8 @@ class ClientInstanceMiddleware
 
         return [
             'documentation' => $this->user_menu_documentation($request),
-            'horizontal' => $this->user_menu_horizontal($request),
+            // 'horizontal' => $this->user_menu_horizontal($request),
+            'horizontal' => $this->user_menu_horizontal(),
             // 'main' => $this->user_menu_main($request),
             'main' => $main2,
         ];
