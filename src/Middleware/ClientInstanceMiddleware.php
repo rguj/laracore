@@ -45,29 +45,30 @@ class ClientInstanceMiddleware
     // public string $default_timezone;  // = 'Asia/Taipei';
     // public string $home;
 
-    public $ROLE = [];
+    /** @var object $role */
+    public $role;
 
-    public const ROLES = [
-        [1, 'admin', 'Administrator'],
-        [2, 'rstaff', 'Registrar Staff'],
-        [3, 'eofficer', 'Enrollment Officer'],
-        [4, 'student', 'Student'],
-        [5, 'cashier', 'Cashier'],
-        [6, 'cstaff', 'Clinic Staff'],
-        [7, 'jappl', 'Job Applicant'],
-        [8, 'misstaff', 'MIS Staff'],
-        [9, 'osdsstaff', 'OSDS Staff'],
-    ];
+    // public const ROLES = [
+    //     [1, 'admin', 'Administrator'],
+    //     [2, 'rstaff', 'Registrar Staff'],
+    //     [3, 'eofficer', 'Enrollment Officer'],
+    //     [4, 'student', 'Student'],
+    //     [5, 'cashier', 'Cashier'],
+    //     [6, 'cstaff', 'Clinic Staff'],
+    //     [7, 'jappl', 'Job Applicant'],
+    //     [8, 'misstaff', 'MIS Staff'],
+    //     [9, 'osdsstaff', 'OSDS Staff'],
+    // ];
 
-    public const ROLE_ADMIN       = 1;
-    public const ROLE_RSTAFF      = 2;
-    public const ROLE_EOFFICER    = 3;
-    public const ROLE_STUDENT     = 4;
-    public const ROLE_CASHIER     = 5;
-    public const ROLE_CSTAFF      = 6;
-    public const ROLE_JAPPL       = 7;
-    public const ROLE_MISSTAFF    = 8;
-    public const ROLE_OSDSSTAFF   = 9;
+    // public const ROLE_ADMIN       = 1;
+    // public const ROLE_RSTAFF      = 2;
+    // public const ROLE_EOFFICER    = 3;
+    // public const ROLE_STUDENT     = 4;
+    // public const ROLE_CASHIER     = 5;
+    // public const ROLE_CSTAFF      = 6;
+    // public const ROLE_JAPPL       = 7;
+    // public const ROLE_MISSTAFF    = 8;
+    // public const ROLE_OSDSSTAFF   = 9;
 
     public const GLOBAL_THROTTLE = [5, 1];  // [ attempts, decay_mins ]
 
@@ -93,14 +94,14 @@ class ClientInstanceMiddleware
 
     public function __renderRoles()
     {
-        $this->ROLE = (object)[];
+        $this->role = (object)[];
 
         $d1 = Role::get();
         foreach($d1 as $k=>$v) {
-            $this->ROLE->{$v->name} = $v->id;
+            $this->role->{$v->name} = $v->id;
         }
 
-        // dd($this->ROLE);
+        // dd($this->role);
     }
 
     public function __construct()
@@ -153,18 +154,19 @@ class ClientInstanceMiddleware
         $request = resolve(BaseRequest::class);
         $this->request = $request;
 
+
         // set user info
         $id = cuser_id();
         point1:
         $this->user_info = SELF::user_info_($id);
-        $this->is_admin = arr_colval_exists(SELF::ROLE_ADMIN, $this->user_info['types'] ?? [], 'role_id', true);
+        $this->is_admin = arr_colval_exists($this->role->admin, $this->user_info['types'] ?? [], 'role_id', true);
         Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', config('app.timezone')));
         Config::set('user', $this->user_info);
 
         // fix admin roles
         if($this->is_admin) {
-            if(count(SELF::ROLES) !== count($this->user_info['types'])) {
-                foreach(SELF::ROLES as $k=>$v) {
+            if(count($this->role) !== count($this->user_info['types'])) {
+                foreach($this->role as $k=>$v) {
                     $a = arr_search_by_key($this->user_info['types'], 'role_id', $v[0]);
                     if(empty($a)) {
                         RoleUser::updateOrCreate(['role_id' => $v[0], 'user_id' => $this->user_info['id']], []);
@@ -174,7 +176,11 @@ class ClientInstanceMiddleware
                 goto point1;
             }
         }
-        Config::set('roles', SELF::ROLES);
+        // Config::set('roles', $this->role);
+        Config::set('z.roles', $this->role);
+
+        dd($this->role);
+        dd(config('z.roles'));
 
         // set client info
         $this->client_info = SELF::client_info_($request);
@@ -242,7 +248,6 @@ class ClientInstanceMiddleware
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
-
 
         return $next($req);
     }

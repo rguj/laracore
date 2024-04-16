@@ -72,7 +72,6 @@ class BaseAppServiceProvider extends ServiceProvider
         $this->addBladeDirectives();
         // $this->initializeMetronic();  // gone to HttpResponse::getView()
         $this->addSequence();
-
     }
 
 
@@ -266,6 +265,7 @@ class BaseAppServiceProvider extends ServiceProvider
         // CHECK CLIENT_INSTANCE ROLES
         $cls1 = new \ReflectionClass(ClientInstanceMiddleware::class);
         $consts = $cls1->getConstants();
+        dd($cls1);
         $arr2 = [];
         foreach($db_roles as $k=>$v) {
             $arr2[strtoupper('ROLE_'.$v['name'])] = $v['id'];
