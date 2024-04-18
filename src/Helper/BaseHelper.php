@@ -1069,6 +1069,7 @@ function config_set($key, $value = null)
  * @param string $key
  * @param mixed $val
  * @return void
+ * @deprecated 1.0.0
  */
 function config_unv_set(string $key, $val)
 {

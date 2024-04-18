@@ -161,7 +161,10 @@ class ClientInstanceMiddleware
         $this->user_info = SELF::user_info_($id);
         $this->is_admin = arr_colval_exists($this->role->admin, $this->user_info['types'] ?? [], 'role_id', true);
         Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', config('app.timezone')));
-        Config::set('user', $this->user_info);
+        // config()->set('z.user', $this->user_info);
+
+        config()->set('z.user.settings.timezone', $this->user_info['settings']['timezone']);
+        dd(config('z'));
 
         // fix admin roles
         if($this->is_admin) {
@@ -179,11 +182,12 @@ class ClientInstanceMiddleware
         // Config::set('roles', $this->role);
         Config::set('z.roles', $this->role);
 
-        dd($this->role);
-        dd(config('z.roles'));
+        // dd($this->role);
+        // dd(config('z.roles'));
 
         // set client info
         $this->client_info = SELF::client_info_($request);
+        dd($this->client_info);
         if(!$this->client_info[0])
             throw new Exception('Unable to issue client info');
         $this->client_info = $this->client_info[2];
@@ -400,16 +404,16 @@ class ClientInstanceMiddleware
 
     public static function user_info_($id) {
 
-        $tblUser = db_model_table_name(\App\Models\User::class);
-        $tblRole = db_model_table_name(\App\Models\Role::class);
+        $tblUser = db_model_table_name(config('auth.providers.users.model'));
+        $tblRole = db_model_table_name(config('permission.models.role'));
         // $tblUserType = db_model_table_name(\App\Models\UserType::class);
         $tblUserType = db_model_table_name(\App\Models\RoleUser::class);
 
         // get user data
         $user = [];
         if(!is_null($id)) {
-            $u = db_model_table_name(\App\Models\User::class);  // user table;
-            $user = \App\Models\User::with([
+            $u = db_model_table_name(config('auth.providers.users.model'));  // user table;
+            $user = config('auth.providers.users.model')::with([
                 'settings' => function(HasMany $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
@@ -438,7 +442,7 @@ class ClientInstanceMiddleware
                 'types' => function(HasMany $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
-                    $r = db_model_table_name(\App\Models\Role::class);  // role table
+                    $r = db_model_table_name(config('permission.models.role'));  // role table
                     $q->leftJoin($r,  $r.'.id', '=',  $t.'.role_id', );
                     $q->select(['user_id',  $r.'.id AS role_id',  $r.'.title',  $r.'.short']);
                     // $q->where([ $t.'.is_valid'=>1]);
@@ -455,8 +459,6 @@ class ClientInstanceMiddleware
             ->get()->toArr(0)
             // ->toSql()
             ;
-
-            // dd($user);
 
             // harmonize user settings array
             $user_settings = [];

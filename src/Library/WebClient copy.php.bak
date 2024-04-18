@@ -2,10 +2,13 @@
 
 namespace Rguj\Laracore\Library;
 
+// ----------------------------------------------------------
 //use Illuminate\Http\Request;
 use Rguj\Laracore\Request\Request;
 use Jenssegers\Agent\Agent;
+// use Illuminate\Support\Facades\Auth;
 use Exception;
+// ----------------------------------------------------------
 
 /**
  * Web Client / User Agent
@@ -102,7 +105,7 @@ class WebClient {
             $clientUAInfo['languages'] = $agent->languages();
             $clientUAInfo['agent'] = $agent;
 
-        } catch(Exception $ex) {
+        } catch(\Exception $ex) {
 
         }
 
@@ -139,7 +142,7 @@ class WebClient {
 
             $data[0] = true;
             $data[2] = $ua;
-        } catch(Exception $ex) {
+        } catch(\Exception $ex) {
             $data[1] = $ex->getMessage();
         }
 
@@ -240,29 +243,75 @@ class WebClient {
     //     return $data;
     // }
 
+    /*public static function issueClientUAInfo(Request $request) {
+        $data = [false, ''];
+        $keys = SELF::getKeys();
 
-    // public static function getTimeZone() {
-    //     $keys = SELF::getKeys();
-    //     $needle = $keys['root'].'.'.$keys['timezone'];  // webclient.timezone
-    //     $timezone = session()->get($needle) ?? '';
-    //     $is_valid_tz = dt_is_timezone($timezone);
-    //     return $is_valid_tz ? $timezone : '';
-    // }
+        try {
+            $isCreated = SELF::makeSessionKey($keys['root']);
+            if($isCreated !== true)
+                throw new exception('Failed to issue web client info. Please try again.');
 
-    // public static function getPrevURL() {
-    //     $keys = SELF::getKeys();
-    //     $needle = $keys['root'].'.'.$keys['prev_url'];  // webclient.prev_url
-    //     $prev_url = session()->get($needle) ?? '';
-    //     $prev_url = (string)(is_string($prev_url) ? $prev_url : '');
-    //     return $prev_url;
-    // }
+            $webclient_data = SELF::getClientUAInfo($request, config('user.settings.timezone', env('USER_DEFAULT_TIMEZONE')));
+            if($webclient_data[0] !== true)
+                throw new exception($webclient_data[1]);
 
-    // public static function getIPAddress() {
-    //     $keys = SELF::getKeys();
-    //     $needle = $keys['root'].'.'.$keys['ip_address'];  // webclient.ip_address
-    //     $ip_address = session()->get($needle) ?? '';
-    //     return validate_ipv4($ip_address) ? $ip_address : '';
-    // }
+            session()->put($keys['root'], $webclient_data[2]);
+
+        } catch(\Exception $ex) {
+            $data[1] = $ex->getMessage();
+            goto point1;
+        }
+
+        $data[0] = true;
+        point1:
+        return $data;
+    }*/
+
+    public static function getTimeZone() {
+        $keys = SELF::getKeys();
+        $needle = $keys['root'].'.'.$keys['timezone'];  // webclient.timezone
+        $timezone = session()->get($needle) ?? '';
+        $is_valid_tz = dt_is_timezone($timezone);
+        return $is_valid_tz ? $timezone : '';
+    }
+
+    public static function getPrevURL() {
+        $keys = SELF::getKeys();
+        $needle = $keys['root'].'.'.$keys['prev_url'];  // webclient.prev_url
+        $prev_url = session()->get($needle) ?? '';
+        $prev_url = (string)(is_string($prev_url) ? $prev_url : '');
+        return $prev_url;
+    }
+
+    public static function getIPAddress() {
+        $keys = SELF::getKeys();
+        $needle = $keys['root'].'.'.$keys['ip_address'];  // webclient.ip_address
+        $ip_address = session()->get($needle) ?? '';
+        return validate_ipv4($ip_address) ? $ip_address : '';
+    }
+
+    /*public static function issueTimeZone(Request $request) {
+        // this is called via post only
+
+        $data = [false, ''];
+        $sk = SELF::getKeys();
+        try {
+            $timezone = $request->post('timezone') ?? '';
+            if(DT::isTZString($timezone) !== true)
+                throw new exception('Invalid TZ. Please refresh your browser.');
+            $needle = $sk['root'].'.'.$sk['timezone'];
+            session()->put($needle, $timezone);
+
+        } catch(\Exception $ex) {
+            $data[1] = $ex->getMessage();
+            goto point1;
+        }
+        $data[0] = true;
+        $data[1] = 'TZ successfully set';
+        point1:
+        return $data;
+    }*/
 
 
 
@@ -272,6 +321,12 @@ class WebClient {
 
 
 
+
+
+
+
+
+    //public static function nextURL(bool $auth_mode=false) {
     public static function nextURL() {
         // returns the previous URI
         // default return is ''
@@ -294,6 +349,17 @@ class WebClient {
         $bool1 = (!empty($prev_url_path) && !in_array($prev_url_path, $URIs_ignored) && $curr_url !== $prev_url);
         return $bool1 ? $prev_url : '';
     }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

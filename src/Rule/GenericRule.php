@@ -18,7 +18,7 @@ class GenericRule {
 
     private array $rulesFounding = [];
     private array $rulesClone = [];
-    
+
     public $rulesArr = [
         'pname' => [  # Person Name
             'min' => 1,
@@ -50,7 +50,7 @@ class GenericRule {
             'regex'  => '',
         ],
         'date' => [
-            'min'          => 0, 
+            'min'          => 0,
             'max'          => 0,
             'regex'        => '',  // regex in (d M Y)
             'format_in'    => '',
@@ -77,8 +77,8 @@ class GenericRule {
             'regex' => "/^(?!.*([',-])\\1)([A-Za-z0-9]+(['-][A-Za-z0-9]|[,.]|\.,)?( )?)+$/u",
         ],
         'email_verification' => [
-            'min'     => 1, 
-            'max'     => 100, 
+            'min'     => 1,
+            'max'     => 100,
             'regex'   => '/^[A-Za-z0-9]{'.(100).'}$/u',
         ],
     ];
@@ -111,7 +111,7 @@ class GenericRule {
 
     final private function is_adm()  // is app dev mode
     {
-        return (bool)config_env('APP_DEV_MODE', false);
+        return (bool)env('APP_DEV_MODE', false);
     }
 
     final private function __initRules()
@@ -152,7 +152,7 @@ class GenericRule {
 
 
     final private function setMobileNumber()
-    {        
+    {
         if(!$this->isMobileNumberSet) {
             $this->__mergeRule('mobilenumber', [
                 'regex' => '/^('.preg_quote($this->rulesArr['mobilenumber']['prefix']).'){1}([0-9]){10}$/u',
@@ -181,7 +181,7 @@ class GenericRule {
     {
         if(!$this->isDateSet) {
             $this->__mergeRule('date', [
-                'min'          => 10, 
+                'min'          => 10,
                 'max'          => 26,
                 'regex'        => '/^(0[1-9]|[12][0-9]|3[01])\ ([a-zA-Z]{3})\ ([0-9]{4})$/u',  // regex_in (d M Y)
                 'format_in'    => 'd M Y',
@@ -191,8 +191,8 @@ class GenericRule {
                 'date_max'     => dt_now_str('Y-m-d', 'UTC').' 23:59:59.999999',
                 'converter'    => function(string $str) {
                     return str_regex_eval(
-                        $this->rulesArr['date']['regex'], 
-                        $str, 
+                        $this->rulesArr['date']['regex'],
+                        $str,
                         function(string $pattern, string $subject, mixed $output) {
                             // return dt_parse_str(
                             //     $subject.' 00:00:00.000000',
@@ -241,7 +241,7 @@ class GenericRule {
                 'lname'          => 'pname',
                 'fname'          => 'pname',
                 'mname'          => 'pname',
-                
+
                 'maiden_lname'   => 'lname',
                 'maiden_fname'   => 'fname',
                 'maiden_mname'   => 'mname',
@@ -262,7 +262,7 @@ class GenericRule {
                 'RC_cm'           => 'address',
                 'RC_place'        => 'address',
                 'RC_zipcode'      => 'zipcode',
-                
+
                 // emgn
                 'RE_lname'        => 'lname',
                 'RE_fname'        => 'fname',
@@ -330,7 +330,7 @@ class GenericRule {
         if(!arr_has($this->rulesArr, $key)) {
             throw new exception('Key not found: '.$key);
         }
-        
+
         // setters to invoke
         // $match = [
         //     'password' => fn() => $this->setPassword(),
@@ -345,7 +345,7 @@ class GenericRule {
 
         // invoke setter
         // if(array_key_exists($mainKey, $match))
-        //     $match[$mainKey]();        
+        //     $match[$mainKey]();
 
         return arr_get($this->rulesArr, $key);
     }

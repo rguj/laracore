@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
  * Fluent Rule - chain methods to create rules array
  */
 class FluentRule {
-    
+
 
     // (ro) rule order
 
@@ -90,7 +90,7 @@ class FluentRule {
             $this->inputs = (array)$request->input();
             $this->files = (array)$request->file();
             $this->all = array_merge($this->queries, $this->inputs, $this->files);
-        }        
+        }
         elseif(!is_null($key)) {
             if(!is_string($key))
                 throw new exception('$key must be string');
@@ -139,18 +139,18 @@ class FluentRule {
 
         foreach($this->ro1_primary as $k=>$v) {
             if(!array_key_exists($v, $this->data1_primary))
-                continue;        
+                continue;
             $arr[] = $this->__joiner($v, $this->data1_primary[$v]);
         }
         foreach($this->ro2_type as $k=>$v) {
             if(!array_key_exists($v, $this->data2_type))
                 continue;
-            $arr[] = $this->__joiner($v, $this->data2_type[$v]);            
+            $arr[] = $this->__joiner($v, $this->data2_type[$v]);
         }
         foreach($this->data3_any as $k=>$v) {
             // $v2 = $hasParentRule ? $this->getRule($this->key.'.'.$k) : $v;
             // $v2 = $hasParentRule ? $this->genericRule[$this->key.'.'.$k] : $v;
-            $v2 = $hasParentRule ? config('rules.generic.'.$this->key.'.'.$k) : $v;
+            $v2 = $hasParentRule ? config('z.rule.generic.'.$this->key.'.'.$k) : $v;
             $arr[] = $this->__joiner($k, $v2);
         }
         foreach($this->data4_customRules as $k=>$v) {
@@ -209,7 +209,7 @@ class FluentRule {
         $arr2 = [];
         /** @var \App\Rules\Core\FluentRule $v */
         foreach($arr as $k=>$v) {
-            
+
             if(!empty($v->sameAs)) {
                 if(!array_key_exists($v->sameAs, $arr2))
                     throw new exception('sameAs key ('.$v->sameAs.') not found on the create list');
@@ -247,7 +247,7 @@ class FluentRule {
         if(empty($key)) throw new Exception('$key is empty');
         return new static(null, $key);
     }
-    
+
     final public function sameAs(string $key)
     {
         $this->sameAs = $key;
@@ -261,7 +261,7 @@ class FluentRule {
 
         return $this;
     }
-    
+
     final public function get(bool $hasParentRule = false, bool $resetData = false)
     {
         $data = $this->__getData($hasParentRule);
@@ -308,7 +308,7 @@ class FluentRule {
                     if(!in_array($rule, $this->ro1_primary, true))
                         throw new Exception('Value not found: '.$orderIndex.'.'.$rule);
                     $this->data1_primary = [$rule => $params];
-                    break;                
+                    break;
                 case 1:
                     if(!in_array($rule, $this->ro2_type, true))
                         throw new Exception('Value not found: '.$orderIndex.'.'.$rule);
@@ -321,7 +321,7 @@ class FluentRule {
                 throw new Exception('Value not found (any): '.$rule);
 
             if($findRule && is_null($p)) {
-                $r = config('rules.generic.'.$this->key.'.'.$rule);
+                $r = config('z.rule.generic.'.$this->key.'.'.$rule);
                 switch($r) {
                     case 'min': $this->min = (int)$r; break;
                     case 'max': $this->max = (int)$r; break;
@@ -347,7 +347,7 @@ class FluentRule {
     final public function present()
     {
         $this->addRule('present', null, 0, false);
-        
+
         return $this;
     }
 
@@ -373,7 +373,7 @@ class FluentRule {
     {
         if($cond) $this->required();
         else      $this->present();
-        
+
         return $this;
     }
 
@@ -386,28 +386,28 @@ class FluentRule {
     final public function str()
     {
         $this->addRule('string', null, 1, false);
-        
+
         return $this;
     }
 
     final public function int()
     {
         $this->addRule('integer', null, 1, false);
-        
+
         return $this;
     }
 
     final public function arr()
     {
         $this->addRule('array', null, 1, false);
-        
+
         return $this;
     }
-    
+
     final public function date()
     {
         $this->addRule('date', null, 1, false);
-        
+
         return $this;
     }
 

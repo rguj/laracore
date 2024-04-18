@@ -43,7 +43,7 @@ class Request extends FormRequest
 
         $this->genericRuleClass = new GenericRule();
         $this->genericRule = $this->genericRuleClass->getRules();
-        config()->set('rules.generic', $this->genericRule);
+        config()->set('z.rule.generic', $this->genericRule);
 
         $this->fluentRule = FluentRule::factory($request, $this->genericRule);
     }

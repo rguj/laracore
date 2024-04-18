@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Rguj\Laracore\Library;
 
@@ -31,7 +31,7 @@ use Rguj\Laracore\Library\WebClient;
 
 /**
  * Application functions
- * 
+ *
  * @deprecated 1.0.0
  */
 class AppFn {
@@ -55,32 +55,32 @@ class AppFn {
 
 
     public function __construct() {
-        
+
 
     }
 
-    
-
-    
-
-    
 
 
-    
+
+
+
+
+
+
 
 
     public static function JED($var) {
         // JSON Echo & Die
-        //if(is_string($var)) $var = '"'.$var.'"';        
+        //if(is_string($var)) $var = '"'.$var.'"';
         echo json_encode($var);
         die();
     }
-    
-    
 
-    
 
-    
+
+
+
+
 
     public static function ARRAY_merge_ksort() {
         $args = func_get_args();
@@ -91,13 +91,13 @@ class AppFn {
 
 
     /*public static function get_calling_class() {
-    
+
         //get the trace
         $trace = debug_backtrace();
-        
+
         // Get the class that is asking for who awoke it
         $class = $trace[1]['class'];
-    
+
         // +1 to i cos we have to account for calling this function
         for ( $i=1; $i<count( $trace ); $i++ ) {
             if ( isset( $trace[$i] ) ) // is it set?
@@ -117,11 +117,11 @@ class AppFn {
 
 
 
-    
-    
 
-    
-    
+
+
+
+
 
 
 
@@ -208,7 +208,7 @@ class AppFn {
 
         $user_type_ids = SELF::getUserTypes($user_id);
         //dd($user_type_ids);
-        
+
         foreach($user_type_ids as $user_type_id) {
             $rows1 = DB::select('select * from user_acl where user_role_id=? and uri=?', [$user_type_id, $uri]); //dd($rows1);
 
@@ -268,7 +268,7 @@ class AppFn {
         //    throw new Exception('`$obj` must be an object or array');
         /*$classes = [
             'Illuminate\Support\ViewErrorBag',
-            'Illuminate\Support\Collection', 
+            'Illuminate\Support\Collection',
         ];*/
 
         $output = (array)AppFn::OBJECT_reflect($obj, true);
@@ -295,7 +295,7 @@ class AppFn {
                 //$retval = $recode($obj1);
                 $retval = AppFn::ARRAY_recode($obj1);
                 goto point1;
-            } 
+            }
             $reflection = new \ReflectionClass($obj1);
             $props = $reflection->getProperties();
             $obt = (object)[];
@@ -324,7 +324,7 @@ class AppFn {
 
 
 
-    
+
 
 
 
@@ -357,8 +357,6 @@ class AppFn {
 
 
 
-    
-    
 
 
 
@@ -371,7 +369,9 @@ class AppFn {
 
 
 
-    
+
+
+
     public static function USER_BasicInfo(int $user_id) {
 
         $db1 = DB::table('users')->where(['id'=>$user_id]);
@@ -410,7 +410,7 @@ class AppFn {
         $name_formats = [
 
         ];
-        
+
         // FORMING DATA
         $user_data = [
             'email' => $email,
@@ -440,9 +440,9 @@ class AppFn {
         return $data;
     }
 
-    
 
-    
+
+
 
 
 
@@ -505,7 +505,7 @@ class AppFn {
 
     public static function STR_TransToDLFileName(string $str, int $char_limit=15, string $ellipsis='') {
         // Translate to Download File Name
-        // $str1 = preg_replace("/&([a-z])[a-z]+;/i", "$1", htmlentities($apt['lfname']));   
+        // $str1 = preg_replace("/&([a-z])[a-z]+;/i", "$1", htmlentities($apt['lfname']));
         // transliterate accents/diacritics chars (e.g. "GracišceâêîôûñÑÀÈÌÒÙ")
         $output = Str::of($str)->trim()->ascii()->lower()->limit($char_limit, $ellipsis)->slug('-');
         return $output;
@@ -546,7 +546,7 @@ class AppFn {
     public static function STR_NotEmptyEval(string $str, $val_true, $val_false) {
         return !SELF::STR_IsBlankSpace($str) ? $val_true : $val_false;
     }
-    
+
     public static function STR_NotEmptyEvalSelf(string $str, $val_false) {
         return SELF::STR_NotEmptyEval($str, $str, $val_false);
     }
@@ -618,23 +618,23 @@ class AppFn {
                         throw new Exception('Unknown key `'.$key.'`');
                     }
                 }
-            } else 
+            } else
                 throw new Exception('Array structure must be `associative => sequential`');
         }
 
         if(!in_array(AppFn::ARRAY_AnalyzeStructure($symbols)[0], ['empty', 'sequential']))
             throw new Exception('$symbols must be sequential array');
-            
+
         // title v2 (doesn't convert to upper case the chars after dash)
         if($str_mode === 'title2') {
             //$output = '';
             $batch1 = AppFn::STR_UTF8CC($string, 'title');
-            
+
             foreach($preserve_word as $k=>$v) {
                 $symbols = ['-'];  // add dash to change case the character after dash
                 $count_group1 = ['single' => [], 'multis'=>[]];
                 $count_group2 = ['single' => [], 'multis'=>[]];
-                
+
                 // separate single to multiple chars
                 foreach($v as $key=>$val) {
                     $val2 = AppFn::STR_Sanitize($val);
@@ -645,7 +645,7 @@ class AppFn {
                             $count_group2['single'][] = AppFn::STR_UTF8CC($val, 'lower');
                     }
                 }
-                
+
                 // PROCESS MULTIS
                 $str3 = '';
                 $pcs1 = explode(' ', $batch1);
@@ -653,7 +653,7 @@ class AppFn {
                     $val2 = AppFn::STR_UTF8CC($val, 'lower');
                     $str3 .= ($key>0 ? ' ' : '').(in_array($val2, $count_group2['multis']) ? AppFn::STR_UTF8CC($val, $k) :  $val);
                 }
-                
+
                 // PROCESS SINGLES
                 $str4 = '';
                 $pcs1 = str_split($str3);
@@ -668,7 +668,7 @@ class AppFn {
                         $x = $x1;
                     }
                 }
-                
+
                 $batch1 = $str4;
             }
 
@@ -688,10 +688,10 @@ class AppFn {
             }
 
             $batch1 = $str5;
-            
+
             return $batch1;
         }
-        
+
         $mode = array_key_exists($str_mode, $modes) ? $modes[$str_mode] : null;
         $output = SELF::STR_MBCC($string, $mode, $encoding);
         return $output;
@@ -729,13 +729,13 @@ class AppFn {
                 }
             }
         }
-        
+
         // overriding letter case
         $case_folding = [
             'upper' => [$p2_tokens[0], $p2_tokens[1]],
             'lower' => [$p2_tokens[2], $p2_tokens[3]],
             'title' => [$p2_tokens[4], $p2_tokens[5]],
-            ''      => [$p2_tokens[6], $p2_tokens[7]],            
+            ''      => [$p2_tokens[6], $p2_tokens[7]],
         ];
         $output2 = '';
         foreach($case_folding as $key1=>$val1) {
@@ -745,12 +745,12 @@ class AppFn {
                 }
             }
         }
-        
+
         return $output2;
     }
 
     public static function STR_FormatUserName(string $format, array $data, bool $clean_empty=false) {
-        
+
         /*
             Formats (required) (case-sensitive):
                 L or l => Last Name (full or initial)
@@ -763,7 +763,7 @@ class AppFn {
                 S or s => Lower case (since L is already taken)
                 T or t => Title case
                 N or n => Original case
-            
+
             Data Array Keys (required):
                 last, first, middle, extension
 
@@ -830,7 +830,7 @@ class AppFn {
                                 $format_new .= $format_split[$x];
                                 continue;
                             }
-                        }                                              
+                        }
                     }
                 }
             } else {
@@ -841,7 +841,7 @@ class AppFn {
             }
         }
         $format_new2 = AppFn::STR_Sanitize($format_new);
-        $format_new3 = ($clean_empty === true && $matches<=0) ? '' : $format_new2;        
+        $format_new3 = ($clean_empty === true && $matches<=0) ? '' : $format_new2;
         return $format_new3;
     }
 
@@ -855,7 +855,7 @@ class AppFn {
         $symbols_split = str_split($symbols);
         $min_length = 5;
         $length = 10;
-        
+
         if(strlen($str1) < $min_length)
             throw new exception('str1 min length must be >= '.$min_length);
         if(strlen($str2) < $min_length)
@@ -917,29 +917,29 @@ class AppFn {
     }
 
     public static function STR_copyrightYear() {
-        $app_tz = config('env.APP_TIMEZONE');
+        $app_tz = config('app.timezone');
 		$app_tz = DT::isTZString($app_tz) ? $app_tz : DT::getStandardTZ();
 
         $app_created_at = config('env.APP_CREATED_AT');  // assumes it's already UTC
 		$created_at = DT::isDTString(DT::getStandardDTFormat(), $app_created_at) ? $app_created_at : DT::now_str('UTC');
-		
+
 		$dt_created = DT::createDateTimeUTC($created_at);
-		$dt_now = DT::now($app_tz);	
+		$dt_now = DT::now($app_tz);
 
 		$cr_year = ($dt_now->startOfYear() > $dt_created->startOfYear()) ? $dt_created->format('Y').'-'.$dt_now->format('Y') : $dt_created->format('Y');
 
 		return $cr_year;
 	}
 
-    
+
 
     # ----------------------------------------------------------
     # / STRING
     # ----------------------------------------------------------
 
-    
 
-    
+
+
 
 
 
@@ -1022,7 +1022,7 @@ class AppFn {
         // supports up to 2 dimension only
         // auto converts null => '', false => 0, true => 1, decimals => integer
         // associative can be int or string that doesn't match the counter
-        
+
         $dimensions = ['empty', 'sequential', 'associative', 'mixed', 'irregular'];
         $struc = [$dimensions[0], $dimensions[0]];
 
@@ -1141,19 +1141,19 @@ class AppFn {
 
 
 
-    
 
 
 
 
-    
 
 
 
-    
 
 
-    
+
+
+
+
 
     /*public static function GET_BS_Progress_Class_Color($progress) {
         $bs_class = '';
@@ -1178,7 +1178,7 @@ class AppFn {
             array_unshift($data, $home_data);
             $count_menu++;
         }
-            
+
         foreach($data as $key=>$val) {
             $c++;
             $bool1 = (
@@ -1199,7 +1199,7 @@ class AppFn {
             $html .= '<li class="breadcrumb-item '.$active.'" '.$aria_current.'>'.$content.'</li>';
         }
         $html .= '</ol></nav></div></div></div></div>';
-        
+
         return $html;
     }
 
@@ -1207,24 +1207,6 @@ class AppFn {
 
 
 
-    
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-    
 
 
 
@@ -1235,10 +1217,28 @@ class AppFn {
 
 
 
-    
-    
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /*public static function customSelectOption(string $val, string $text, string $old_val="[];'\/.") {
         $attrib_selected = ($val === $old_val) ? 'selected' : '';
@@ -1248,11 +1248,6 @@ class AppFn {
 
 
 
-    
-
-    
-
-    
 
 
 
@@ -1260,7 +1255,12 @@ class AppFn {
 
 
 
-    
+
+
+
+
+
+
 
 
 
@@ -1301,7 +1301,7 @@ class AppFn {
 
     public static function HTML_BuildELMValues(array $lconf, $UID) {
         // UID = User Interaction Data
-        
+
         $errors = $UID['errors'];
         $preloads = $UID['preloads'];
         $fieldrules = $UID['fieldrules'];
@@ -1326,7 +1326,7 @@ class AppFn {
             }
             if(empty($lconf['name']))
                 throw new exception('Attribute `'.$val.'` must not be empty.');
-    
+
         } catch(\Exception $ex) {
             dd($ex->getMessage());
             goto point2;
@@ -1335,7 +1335,7 @@ class AppFn {
 
         $attr_name = $lconf['name'];
         $is_required = $lconf['is_required'];
-        
+
 
         $has_error = array_key_exists($attr_name, $errors);
         $feedback_allowed = $lconf['feedback_allowed'] ?? [];
@@ -1404,7 +1404,7 @@ class AppFn {
         $attr_hinter_ipt = 'data-theme="dark" data-trigger="focus" data-html="true" title="'.$_ELM['valu_hinter_ipt'].'"';
         $attr_hinter_lbl = 'data-theme="dark" data-trigger="focus hover" data-html="true" title="'.$_ELM['valu_hinter_lbl'].'"';
         $html_hinter_lbl = '<span data-toggle="tooltip" '.$attr_hinter_lbl.'><i class="mr-1 ml-1 fas fa-question-circle" style="font-size: 14px;"></i></span>';
-        
+
         $_ELM['attr_maxlength']      = !empty($_ELM['valu_maxlength']) ? 'maxlength="'.$_ELM['valu_maxlength'].'"' : '';
         $_ELM['attr_placeholder']    = !empty($_ELM['valu_placeholder']) ? 'placeholder="'.$_ELM['valu_placeholder'].'"' : '';
         $_ELM['attr_required']       = $_ELM['bool_required'] ? 'required' : '';
@@ -1414,7 +1414,7 @@ class AppFn {
         $_ELM['html_required']       = $_ELM['bool_required'] ? '<span class="text-danger" title="Required">*</span>' : '';
         $_ELM['html_hinter_lbl']     = !empty(trim($_ELM['valu_hinter_lbl'])) ? $html_hinter_lbl : '';
 
-        
+
         point2:
         return $_ELM;
     }
@@ -1426,7 +1426,7 @@ class AppFn {
 
 
 
-    
+
 
 
 
@@ -1437,7 +1437,7 @@ class AppFn {
         return (array)$arr;
     }
 
-    public static function CONFIG_env_fetch(array $arr, string $key, $default=null, string $type='') {         
+    public static function CONFIG_env_fetch(array $arr, string $key, $default=null, string $type='') {
         $arr1 = $arr2 = $arr[$key] ?? $default;
         if($type !== '') {
             if($type === 'boolean' || $type === 'bool') {
@@ -1465,7 +1465,7 @@ class AppFn {
             }
         }
         return $val2;*/
-        
+
         /*$arr = SELF::CONFIG_env_all();
         $arr1 = $arr2 = $arr[$key] ?? $default;
 

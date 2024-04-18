@@ -91,7 +91,6 @@ class BaseAppServiceProvider extends ServiceProvider
         $required_laravel = $getMinVersion('laravel/framework', '8.12');
 
         if(!app()->runningInConsole()) {
-
             // check php version
 			if(empty($required_php)) {
 				die('Required PHP version must not be empty.');
@@ -156,7 +155,7 @@ class BaseAppServiceProvider extends ServiceProvider
         function ($key, $default = null) {
             /** @var \Illuminate\Database\Eloquent\Builder $this */
             $ths = $this;
-            if(!is_array($ths)) throw new \Exception('$this must be array');
+            if(!is_array($ths)) throw new Exception('$this must be array');
             return arr_get($ths, $key, $default);
         });
 
@@ -222,14 +221,14 @@ class BaseAppServiceProvider extends ServiceProvider
     protected function addSequence()
     {
         // FORCE SCHEME
-
-        if(config_env('APP_FORCE_HTTPS', false)) {
+        if(env('APP_FORCE_HTTPS', false)) {
             URL::forceScheme('https');
             $this->app['request']->server->set('HTTPS', true);
         }
 
-        $tbl_user = db_model_table_name(\App\Models\User::class);
-        //$tbl_user_state = db_model_table_name(\App\Models\UserState::class);
+        // $tbl_user = db_model_table_name(\App\Models\User::class);
+
+        $tbl_user = db_model_table_name(config('auth.providers.users.model'));
         $defaultDBConn = (string)config('database.default');
 
         $bool1 = (
@@ -247,49 +246,40 @@ class BaseAppServiceProvider extends ServiceProvider
             return false;
         }
 
-        // dd(DB::table('ccms'));
-
         // COUNT ACTIVE USERS
-        //config_unv_set('users_count', DB::table($tbl_user)->join($tbl_user_state, $tbl_user_state.'.user_id', '=', $tbl_user.'.id')->where($tbl_user_state.'.is_active', '=', 1)->count($tbl_user.'.id'));
-		config_unv_set('users_count', DB::table($tbl_user)->where($tbl_user.'.activated_at', 'IS NOT', null)->count($tbl_user.'.id'));
+        //config()->set('users_count', DB::table($tbl_user)->join($tbl_user_state, $tbl_user_state.'.user_id', '=', $tbl_user.'.id')->where($tbl_user_state.'.is_active', '=', 1)->count($tbl_user.'.id'));
+		config()->set('z.base.users.count', DB::table($tbl_user)->where($tbl_user.'.activated_at', 'IS NOT', null)->count($tbl_user.'.id'));
 
         // SET REGISTER NOW
-        config_unv_set('register_now', config_unv('users_count') <= 0);
+        config()->set('z.base.users.register_now', config_unv('users_count') <= 0);
 
-        // GET ROLES
-        //$db_roles = \App\Models\Role::where(['is_valid'=>1])->get()->toArr();
-        $db_roles = \App\Models\Role::get()->toArr();
-        config_unv_set('roles', $db_roles);
-
-
-        // CHECK CLIENT_INSTANCE ROLES
-        $cls1 = new \ReflectionClass(ClientInstanceMiddleware::class);
-        $consts = $cls1->getConstants();
-        dd($cls1);
-        $arr2 = [];
-        foreach($db_roles as $k=>$v) {
-            $arr2[strtoupper('ROLE_'.$v['name'])] = $v['id'];
+        // GET ROLES FROM DB
+        $role_db = \App\Models\Role::get()->toArr();
+        $role_db_col1 = [];
+        foreach($role_db as $k=>$v) {
+            $role_db_col1[strtolower($v['name'])] = $v['id'];
         }
-        foreach($consts['ROLES'] as $k=>$v) {
-            $c = strtoupper('ROLE_'.$v[1]);
-            if(!array_key_exists($c, $consts))
+
+        // GET ROLES FROM CONFIG
+        // FORMAT: [[role_id, role_name, role_name_pretty]]
+        $role_config = (array)config('z.base.roles');
+        $role_config_col1 = [];
+        foreach($role_config as $k=>$v) {
+            $role_config_col1[strtolower($v[1])] = $v[0];
+        }
+
+        // CHECK FOR MISMATCH
+        foreach($role_config as $k=>$v) {
+            $c = strtolower(''.$v[1]);
+            if(!array_key_exists($c, $role_config_col1))
                 throw new Exception("Missing constant role: $v[1]");
-            if($consts[$c] !== $v[0])
+            if($role_config_col1[$c] !== $v[0])
                 throw new Exception("Role value mismatch in constant: $v[1]");
-            if(!array_key_exists($c, $arr2))
+            if(!array_key_exists($c, $role_db_col1))
                 throw new Exception("Missing DB role: $v[1]");
-            if($arr2[$c] !== $v[0])
+            if($role_db_col1[$c] !== $v[0])
                 throw new Exception("Role value mismatch in DB: $v[1]");
         }
-
-        // VALIDATE DB VALUES
-        // foreach($db_roles as $key=>$val) {
-        //     $const1 = strtoupper('ROLE_'.$val['short']);
-        //     if(!array_key_exists($const1, $constants1) || $constants1[$const1] !== $val['id'])
-        //         throw new \Exception('Missing DB role (seq #'.$key.')');
-        // }
-
-
     }
 
 

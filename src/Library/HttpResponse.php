@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace Rguj\Laracore\Library;
 
@@ -34,9 +34,9 @@ use Rguj\Laracore\Request\Request as BaseRequest;
 
 /**
  * Wrapper for BaseController with vast function helpers
- * 
+ *
  * - Please create a `final public function __construct() {}` in BaseController
- * 
+ *
  * @author rguj <slimyslime777@gmail.com>
  * @version 1.0.0
  * @throws Exception
@@ -60,7 +60,7 @@ class HttpResponse {
 
     private bool $isThemeLRPM = false;
     private bool $isDevMode = false;
-    
+
     private bool $isSuccess = false;
     private array $url = [false, false, ''];  // [ noActionOrLoad, isHrefOrReplace, url ]
     private bool $isAjax = false;
@@ -109,10 +109,10 @@ class HttpResponse {
     // public function __construct($request, string $class_name)
     public function __construct($class, $request)
     {
-        // validate $request    
+        // validate $request
         $request_class_check = (get_class($request) === "Illuminate\Http\Request" || get_parent_class($request) === "Illuminate\Foundation\Http\FormRequest");
         if(!$request_class_check)
-            throw new Exception('`$request` must be an instance of Request or FormRequest');        
+            throw new Exception('`$request` must be an instance of Request or FormRequest');
         if(!method_exists($request, 'ajax'))
             throw new Exception('Method `ajax()` doesn\'t exists');
 
@@ -164,12 +164,12 @@ class HttpResponse {
      * @return array<int,\ReflectionClass|array>
      */
     public function __getReflectionAndExclusiveMethods($class)
-    {        
+    {
         $class_name = is_string($class) ? $class : $class::class;
         $ref = new \ReflectionClass($class);
         $o = [];
         foreach(obj_reflect($ref->getMethods(), true) as $k=>$v) {
-            if($v['class'] === $class_name) {                
+            if($v['class'] === $class_name) {
                 $o[] = $v['name'];
             }
         }
@@ -198,7 +198,7 @@ class HttpResponse {
     }
 
     protected function __getWith(bool $isAjax = false)
-    {        
+    {
         $d = array_merge($this->rootData, $this->data);
         return $isAjax ? [
             's' => $this->isSuccess,    // is _success
@@ -255,10 +255,10 @@ class HttpResponse {
         $has_permission = !$this->noPermission;
         if(!$has_permission) {
             $permit_status = $this->getPermitStatus($this->permissions, cuser_data());
-            foreach($this->permissions as $permission) {    
+            foreach($this->permissions as $permission) {
                 // flag permission
                 if(!$has_permission && !empty($permission))
-                    $has_permission = true;                
+                    $has_permission = true;
                 // check permission name if exists in db
                 if(!Str::startsWith($permission, 'generated::') && !in_array($permission, $this->dbPermissions, true)) {
                     throw new Exception('The defined permission `'.$permission.'` doesn\'t exists');
@@ -282,12 +282,12 @@ class HttpResponse {
     {
         if(!$force && $this->hasInit)
             throw new exception('Failed to re-initialize again');
-            
+
         // invoke the custom child `construct()`
         if(method_exists($this->class, 'construct')) {
             $this->class->construct();
         }
-        
+
         // CREATE & MUTATE PURPOSES
         $purposes = $this->__mutatePurposes();
 
@@ -337,8 +337,8 @@ class HttpResponse {
 
 
 
-    
-    
+
+
 
 
 
@@ -358,7 +358,7 @@ class HttpResponse {
      * @throws Exception
      */
     public function purposeLogic(array $args = [], string $key = '', bool $isEncrypted = false)
-    {        
+    {
         $this->logicTriggered++;
         $key = empty($key) ? $this->defaultPurposeKey : $key;
 
@@ -374,7 +374,7 @@ class HttpResponse {
             if(!$vld[0]) {
                 $data[0] = false;
                 $data[1] = $vld[1];
-                if(config('user.is_admin')) throw new exception($data[1]);
+                if(config('z.user.is_admin')) throw new exception($data[1]);
                 else abort(404);
                 return $data;
             }
@@ -405,7 +405,7 @@ class HttpResponse {
                     $args[0] = resolve($c);
                 }
             }
-            
+
             // $data[2] = $this->class->{$func_name2}($this->request);
             $data[2] = $this->class->{$func_name2}(...$args);
             $data[0] = true;
@@ -455,14 +455,14 @@ class HttpResponse {
 
 
 
-    
+
 
 
 
 
     // ADDERS
 
-    
+
     public function addAlertAuto(bool $cond, string $alert_type = 'toastr', bool $as_session = false)
     {
         $this->__evalAlertType($alert_type);
@@ -481,7 +481,7 @@ class HttpResponse {
         $caller_method = debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2)[1]['function'] ?? '';
         if(!empty($caller_method) && array_key_exists($caller_method, $arr)) {
             $str = !empty($arr[$caller_method]) ? $arr[$caller_method] : $caller_method;
-        }       
+        }
         $str = Str::of($str.' '.$type)->trim()->lower()->ucfirst();
         match($alert_type) {
             'toastr' => $this->addAlertToastr($type, $str, $as_session),
@@ -525,7 +525,7 @@ class HttpResponse {
         array_unique($this->permissions);
     }
 
-    public function addFieldError(string $key, string $val) 
+    public function addFieldError(string $key, string $val)
     {
         $v = $this->validateFieldError($key, $val);
         if(!$v[0]) throw new exception($v[1]);
@@ -543,7 +543,7 @@ class HttpResponse {
         $j = $this->request->ajax();
         if($j) {
             $a = !in_array($m, ['POST']);
-        } else {     
+        } else {
             $a = in_array($m, ['POST']);
         }
         $a = !is_bool($a) ? !$this->isAjax : $a; // DEFECTIVE
@@ -594,7 +594,7 @@ class HttpResponse {
         if(empty($alert_msg))
             throw new Exception('Alert message must not be empty');
         if($as_session)
-            session_push_alert($alert_status, $alert_msg, $alert_title, 'toastr');        
+            session_push_alert($alert_status, $alert_msg, $alert_title, 'toastr');
         else
             $this->alertsToastr[] = ['status'=>$alert_status, 'msg'=>$alert_msg, 'title'=>$alert_title];
     }
@@ -620,7 +620,7 @@ class HttpResponse {
 
     // SETTERS
 
-    
+
     protected function setResetWith()
     {
         $this->with = $this->__getWith(false);
@@ -644,7 +644,7 @@ class HttpResponse {
                 throw new exception('Could not encrypt purpose `'.$key.'`');
             if(array_key_exists($val, $purposes2))
                 throw new exception('Key already exists [ '.$val.', '.$purposes2[$val][2].', '.$key.' ]');
-            $purposes2[$val] = [$val_e[2], '<input name="_purpose" value="'.$val_e[2].'" type="hidden" />', $key];             
+            $purposes2[$val] = [$val_e[2], '<input name="_purpose" value="'.$val_e[2].'" type="hidden" />', $key];
         }
         point1:
         $this->purposes = $purposes2;
@@ -666,7 +666,7 @@ class HttpResponse {
      * @param boolean $isHrefOrReplace
      * @return void
      */
-    public function setURL($redirectTo, bool $isHrefOrReplace = true) 
+    public function setURL($redirectTo, bool $isHrefOrReplace = true)
     {
         $isObj = is_object($redirectTo) && get_class($redirectTo) === 'Illuminate\Http\RedirectResponse';
         if(!($isObj || is_string($redirectTo)))
@@ -675,38 +675,38 @@ class HttpResponse {
         $this->url = [true, $isHrefOrReplace, $target_url];
     }
 
-    public function setTitle(string $title, bool $include_app_name=true, string $separator = ' | ') 
+    public function setTitle(string $title, bool $include_app_name=true, string $separator = ' | ')
     {
         $this->title = view_title($title, $include_app_name, $separator);
     }
 
-    public function setDesc(string $desc) 
+    public function setDesc(string $desc)
     {
         $this->desc = $desc;
     }
-    
-    public function setFormRules(array $formRules) 
+
+    public function setFormRules(array $formRules)
     {
         $this->formRules = $formRules;
     }
 
-    public function setFormPreloads(array $formPreloads) 
+    public function setFormPreloads(array $formPreloads)
     {
         $this->formPreloads = $formPreloads;
     }
 
-    public function setFormValues(array $formValues) 
+    public function setFormValues(array $formValues)
     {
         $this->formValues = $formValues;
     }
 
-    public function setFormErrors(array $formErrors, bool $onlyFirstError = false) 
+    public function setFormErrors(array $formErrors, bool $onlyFirstError = false)
     {
         foreach($formErrors as $key=>$val) {
-            if(!$onlyFirstError) {                
+            if(!$onlyFirstError) {
                 $v = $this->validateFieldError($key, $val, $onlyFirstError);
                 if(!$v[0]) throw new exception($v[1]);
-            }            
+            }
         }
         $this->formErrors = $formErrors;
     }
@@ -719,7 +719,7 @@ class HttpResponse {
         }
         $this->data = $data;
     }
-    
+
     public function setIsSuccess(bool $isSuccess) {
         $this->isSuccess = $isSuccess;
     }
@@ -727,7 +727,7 @@ class HttpResponse {
     public function setUserId(int $userId = 0) {
         $this->userId = $userId <= 0 ? 0 : $userId;
     }
-    
+
     public function setIsUserAdmin(bool $isUserAdmin) {
         $this->isUserAdmin = $isUserAdmin;
     }
@@ -740,7 +740,7 @@ class HttpResponse {
     public function setEndProcessTime()
     {
         $this->processTime = (microtime(true) - LARAVEL_START);
-        Config::set('env.PROCESS_TIME', $this->processTime);
+        config()->set('z.base.process_time', $this->processTime);
     }
 
 
@@ -759,7 +759,7 @@ class HttpResponse {
 
 
 
-    
+
 
 
 
@@ -812,7 +812,7 @@ class HttpResponse {
             throw new Exception('Array key `'.$key.'` doesn\'t exists');
         return is_null($mode) ? $this->purposes[$key] : $this->purposes[$key][$mode];
     }
-	
+
 	public function getPurposes($mode = null)
     {
         $arr = [];
@@ -827,7 +827,7 @@ class HttpResponse {
     {
         $with = $this->__getWith($this->isAjax);
         return array_merge($this->rootData, ($withKey ? ['with'=>$with] : $with));
-        
+
     }
 
     public function getJSON()
@@ -836,7 +836,7 @@ class HttpResponse {
         return response()->json($this->getWith(false));
     }
 
-    /** 
+    /**
      * Check if user has permit
      *
      * @param array $permissions
@@ -864,7 +864,7 @@ class HttpResponse {
 
     /**
      * Returns `View` or `JsonResponse`
-     * 
+     *
      * - the `$view` will not be used if the request is AJAX, instead you must specify it using the method `setURL()`
      *
      * @param \Illuminate\Contracts\View\View|\Illuminate\Contracts\View\Factory|string $view
@@ -898,11 +898,11 @@ class HttpResponse {
 
     public function setSessionFlash()
     {
-        $s = config_env('APP_SUCCESS_KEY', '');
-        $e = config_env('APP_ERROR_KEY', '');
+        $s = config('z.base.success.key', '');
+        $e = config('z.base.error.key', '');
 
-        if(empty($s)) throw new Exception('env.APP_SUCCESS_KEY is empty');
-        if(empty($e)) throw new Exception('env.APP_ERROR_KEY is empty');
+        if(empty($s)) throw new Exception('z.base.success.key is empty');
+        if(empty($e)) throw new Exception('z.base.error.key is empty');
 
         // create success and errors session
         if(session()->has('errors')) {
@@ -918,7 +918,7 @@ class HttpResponse {
 
     /**
      * Returns `RedirectResponse` or `JsonResponse`
-     * 
+     *
      * - the `$route_url` will not be used if the request is AJAX, instead you must specify it using the method `setURL()`
      *
      * @param string $route_url
@@ -931,11 +931,11 @@ class HttpResponse {
      */
     public function getRedirect(string $route_url, bool $is_route_or_url, bool $isSuccess, bool $includeWith = true, bool $endProcessTime = true, array $inputs = [])
     {
-        
+
         $this->__evalInit();
 
         $this->setIsSuccess($isSuccess);
-        $sfk = (string)config_env('APP_SESSION_ALERTS_KEY');
+        $sfk = (string)config('z.base.session.alert.key');
         if($endProcessTime)
             $this->setEndProcessTime();
         if($this->isAjax) {
@@ -946,7 +946,7 @@ class HttpResponse {
                 throw new exception('Route `'.$route_url.'` doesn\'t exists');
             if(!$is_route_or_url && !$is_valid_url)
                 throw new exception('Invalid URL: '.$route_url);
-                
+
             $redir_to = $is_route_or_url ? route($route_url) : $route_url;
             $redir = redirect()->to($redir_to);
 
@@ -962,7 +962,7 @@ class HttpResponse {
             if(!empty($this->formErrors)) {
                 $redir->withInput($inputs)->withErrors($this->formErrors);
                 $this->setSessionFlash();
-            }     
+            }
 
             // include with
             if($includeWith) $redir->with($this->getWith(true));
@@ -996,7 +996,7 @@ class HttpResponse {
 
     // VALIDATORS
 
-    public function validateFieldError(string $key, $val) 
+    public function validateFieldError(string $key, $val)
     {
         if(empty($key))
             return [false, 'Invalid key `'.$key.'`'];
@@ -1004,7 +1004,7 @@ class HttpResponse {
             return [false, '`$val` must be string or array of string'];
         if(empty($val))
             return [false, 'Invalid value `'.$key.'`'];
-        
+
         $x = -1;
         foreach($val as $key1=>$val1) {
             $x++;
@@ -1026,7 +1026,7 @@ class HttpResponse {
      * @param \Illuminate\Contracts\Support\Arrayable|array $data
      * @param array $mergeData
      * @return array [ bool, error_msg, \Illuminate\View\View ]
-     */    
+     */
     public function validateView($view, $data = [], $mergeData = [])
     {
         $obj_list = ['Illuminate\Contracts\View\View', 'Illuminate\Contracts\View\Factory', 'Illuminate\View\View'];
@@ -1063,7 +1063,7 @@ class HttpResponse {
         $purpose = $this->request->input($key);
         if($isEncrypted) {
             $crypt = crypt_sc($purpose, 1, true);
-            if(!$crypt[0])        
+            if(!$crypt[0])
                 return [false, 'Could not decrypt input purpose'];
             $purpose = $crypt[2];
         }
@@ -1072,7 +1072,7 @@ class HttpResponse {
         return [true, '', $purpose];  // success, msg, purpose
     }
 
-    
+
 
 
 
@@ -1094,7 +1094,7 @@ class HttpResponse {
 
 
 
-    
+
 
     /**
      * Check if request has logic purpose
@@ -1114,13 +1114,13 @@ class HttpResponse {
         return is_bool($this->logicData[0]);  // && ($isTrue ? $this->logicData[0] : true);
     }
 
-    
 
 
 
 
 
-    
+
+
 
     public function parseColumns(array $columns)
     {
@@ -1155,7 +1155,7 @@ class HttpResponse {
 
 
 
-    
+
 
 
 
