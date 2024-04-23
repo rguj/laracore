@@ -108,11 +108,14 @@ class ClientInstanceMiddleware
     {
         $this->__renderRoles();
 
-        $this->url_login = route('login');
-        $this->url_register = route('register');
-        $this->url_verify_email = route('verification.notice');
-        $this->url_api = route('api.index');
-        $this->url_home = route('home.index');
+        // $this->url_login = route('login');
+        // $this->url_register = route('register');
+        $this->url_login = route(env('ROUTE_LOGIN'));
+        $this->url_register = route(env('ROUTE_LOGIN'));
+        $this->url_verify_email = route(env('ROUTE_VERIFY_EMAIL'));
+        $this->url_api = route(env('ROUTE_API'));
+        $this->url_home = route(env('ROUTE_HOME'));
+        // $this->url_home = route('home.index');
         $this->url_intended = webclient_intended();
 
         //$this->home = $this->url_home;
@@ -150,7 +153,7 @@ class ClientInstanceMiddleware
      */
     public function handle(HttpRequest $req, Closure $next)
     {
-		dump(2);
+		// dump(2);
         $request = resolve(BaseRequest::class);
         $this->request = $request;
 
@@ -164,7 +167,7 @@ class ClientInstanceMiddleware
         // config()->set('z.user', $this->user_info);
 
         config()->set('z.user.settings.timezone', $this->user_info['settings']['timezone']);
-        dd(config('z'));
+        // dd(config('z'));
 
         // fix admin roles
         if($this->is_admin) {
@@ -187,7 +190,10 @@ class ClientInstanceMiddleware
 
         // set client info
         $this->client_info = SELF::client_info_($request);
-        dd($this->client_info);
+
+        // dd($this->client_info);
+
+        // dd($this->client_info);
         if(!$this->client_info[0])
             throw new Exception('Unable to issue client info');
         $this->client_info = $this->client_info[2];
@@ -215,6 +221,8 @@ class ClientInstanceMiddleware
         if(webclient_is_dev()) {
 
         }
+
+        // dd(cuser_data());
         if(!$validate[0]) {
 
             // if(!is_string($validate[2])) {
@@ -227,10 +235,13 @@ class ClientInstanceMiddleware
 
             switch($validate[1]) {
                 case 1:
+                    // dd(1);
                     throw new Exception($validate[2]);
                 case 2:
+                    // dd(2);
                     return redirect()->to($validate[2]);
                 default:
+                    // dd(3);
                     throw new Exception('Invalid mode');
             }
         }
@@ -299,6 +310,7 @@ class ClientInstanceMiddleware
         }
 
         if(in_array($url->path, ['', '/'])) {
+            // dump(0);
             goto point1;
         }
 
@@ -332,11 +344,13 @@ class ClientInstanceMiddleware
             // check email verify
             if(!$this->user_info['verify']['email']['is_verified']) {
                 if($schemeHostPath !== $this->url_verify_email) {
+                    // dd(11);
                     session_push_alert('info', 'Please verify your email first');
                     return [false, 2, $this->url_verify_email];
                 }
             } else {
                 if($schemeHostPath === $this->url_verify_email) {
+                    // dd(22);
                     session_push_alert('success', 'Account is already verified.');
                     // return [false, 2, $this->url_home];
                     return [false, 2, $this->url_intended];
@@ -344,20 +358,25 @@ class ClientInstanceMiddleware
             }
         } else {
             // check if no user
+
             $is_url_registration = ($schemeHostPath === $this->url_register);
             if($this->force_register && config('z.user-count') < 1 && !$is_url_registration) {
+                // dd(33);
                 session_push_alert('info', 'Please register first');
                 return [false, 2, $this->url_register];
             }
             elseif($is_url_registration) {
+                // dd(44);
                 goto point1;
             }
             else {
-                if($schemeHostPath === $this->url_login || $schemeHostPath === route('password.request')) {
+                if($schemeHostPath === $this->url_login || $schemeHostPath === route(env('ROUTE_PASSWORD_REQUEST'))) {
+                    dd(55);
                     goto point1;
                 }
                 // dump($schemeHostPath);
                 // dump($this->url_login);
+                // dd(66);
                 session_push_alert('error', 'Please login first.');
                 return [false, 2, $this->url_login];
             }

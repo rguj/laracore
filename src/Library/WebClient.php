@@ -45,7 +45,8 @@ class WebClient {
             'browser' => 'browser',
             'device' => 'device',
             'languages' => 'languages',
-            'server' => 'server',
+            'server_name' => 'server_name',
+            'server_addr' => 'server_addr',
             'agent' => 'agent',
         ];
         return $arr;
@@ -121,6 +122,9 @@ class WebClient {
         $data = [false, '', []];
 
         try {
+            $ua['server_name'] = request()->server('SERVER_NAME');
+            $ua['server_addr'] = request()->server('SERVER_ADDR');
+
             // IPv4
             $ip_address = !is_null($request) ? $request->ip() : $_SERVER['REMOTE_ADDR'];
             $ip_address = $ip_address === '::1' ? '127.0.0.1' : $ip_address;
@@ -283,8 +287,8 @@ class WebClient {
         $prev_url_path = $parsed_prev_url['path'] ?? '';
         $except = [  // guest pages
             // route('index.index'),               // /
-            route('login'),                     // /login
-            route('register'),                  // /register
+            route(env('ROUTE_LOGIN')),                     // /login
+            route(env('ROUTE_REGISTER')),                  // /register
             // route('auth.fb.redirect'),          // /auth/facebook/redirect
             // route('auth.fb.callback'),          // /auth/facebook/callback
             // route('auth.fb.deletion'),          // /auth/facebook/deletion

@@ -3362,7 +3362,7 @@ function route_generate_auth_platform(string $platform)
     $platform = strtolower(preg_replace('/[^A-Za-z0-9]/u', '', $platform));
     $class = '\App\Http\Controllers\Guest\\'.ucwords($platform).'Controller';
     foreach($methods as $key=>$val) {
-        //$config_key = strtoupper($platform.'_AUTH_ROUTE_'.$val);
+        //$config_key = strtoupper($platform.'_ROUTE_'.$val);
         $route_name = strtolower($platform.'.'.$val);
         //$config = config('env.'.$config_key);
         //if(empty($config))
@@ -4639,8 +4639,8 @@ function webclient_intended()
 
     $except = [  // guest pages
         // route('index.index'),               // /
-        route('login'),                     // /login
-        route('register'),                  // /register
+        route(env('ROUTE_LOGIN')),                     // /login
+        route(env('ROUTE_REGISTER')),                  // /register
         // route('auth.fb.redirect'),          // /auth/facebook/redirect
         // route('auth.fb.callback'),          // /auth/facebook/callback
         // route('auth.fb.deletion'),          // /auth/facebook/deletion

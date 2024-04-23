@@ -70,49 +70,59 @@ function cuser_is_guest()
     return !cuser_is_auth();
 }
 
+/**
+ * Get config roles
+ *
+ * @return object
+ */
+function roles()
+{
+    return config('z.roles');
+}
+
 function cuser_is_admin()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_ADMIN);
+    return cuser_has_role_id(roles()->admin);
 }
 
 function cuser_is_rstaff()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_RSTAFF);
+    return cuser_has_role_id(roles()->rstaff);
 }
 
 function cuser_is_eofficer()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_EOFFICER);
+    return cuser_has_role_id(roles()->eofficer);
 }
 
 function cuser_is_student()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_STUDENT);
+    return cuser_has_role_id(roles()->student);
 }
 
 function cuser_is_cashier()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_CASHIER);
+    return cuser_has_role_id(roles()->cashier);
 }
 
 function cuser_is_cstaff()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_CSTAFF);
+    return cuser_has_role_id(roles()->cstaff);
 }
 
 function cuser_is_jappl()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_JAPPL);
+    return cuser_has_role_id(roles()->jappl);
 }
 
 function cuser_is_osdsstaff()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_OSDSSTAFF);
+    return cuser_has_role_id(roles()->osdsstaff);
 }
 
 function cuser_is_misstaff()
 {
-    return cuser_has_role_id(ClientInstanceMiddleware::ROLE_MISSTAFF);
+    return cuser_has_role_id(roles()->misstaff);
 }
 
 
