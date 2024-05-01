@@ -112,7 +112,7 @@ class Request extends FormRequest
      *
      * - please invoke `parent::messages()`
      *
-     * @return void
+     * @return array|null
      */
     public function messages()
     {

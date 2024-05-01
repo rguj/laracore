@@ -19,6 +19,8 @@ class IsBPRouteAllowed
      */
     public function handle(Request $request, Closure $next)
     {
+        // dd(! $this->checkIfUserIsRouteAllowed(backpack_user()));
+
         if (backpack_auth()->guest()) {
             return $this->respondToUnauthorizedRequest($request);
         }
@@ -26,6 +28,7 @@ class IsBPRouteAllowed
         if (! $this->checkIfUserIsRouteAllowed(backpack_user())) {
             return $this->respondToUnauthorizedRequest($request);
         }
+
 
         return $next($request);
     }

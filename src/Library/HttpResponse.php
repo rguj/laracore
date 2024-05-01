@@ -141,7 +141,7 @@ class HttpResponse {
         list($this->reflection, $this->methods) = $this->__getReflectionAndExclusiveMethods($class);
         list($this->reflectionParent, $this->methodsParent) = $this->__getReflectionAndExclusiveMethods(get_parent_class($class));
         $this->constants = $this->reflection->getConstants() ?? [];
-        $this->constantsIndex = (new \ReflectionClass(\App\Http\Controllers\IndexController::class))->getConstants() ?? [];
+        $this->constantsIndex = (new \ReflectionClass(IndexController::class))->getConstants() ?? [];
 
         // invoke the custom child `construct()`
         // if(method_exists($this->class, 'construct')) {
@@ -179,7 +179,7 @@ class HttpResponse {
     protected function __mutatePurposes()
     {
         // get index purposes for merging
-        $ref1 = new \ReflectionClass(\App\Http\Controllers\IndexController::class);
+        $ref1 = new \ReflectionClass(IndexController::class);
         $constants_index = $ref1->getConstants();
         $this->constants = array_merge($constants_index, array_merge($this->constants, $constants_index));
         $purposes = [];
@@ -288,15 +288,19 @@ class HttpResponse {
             $this->class->construct();
         }
 
+        /** @var object $pmp */
+        $pmp = config('permission.models.permission');
+
         // CREATE & MUTATE PURPOSES
         $purposes = $this->__mutatePurposes();
 
         // setters
         $this->constants = $this->reflection->getConstants() ?? [];
-        $this->dbPermissions = Permission::all('title')->pluck('title')->toArray();
+        // $this->dbPermissions = config('permission.models.permission')::all('title')->pluck('title')->toArray();
+        $this->dbPermissions = $pmp::all('name')->pluck('name')->toArray();
         $this->routeName = str_sanitize((string)($this->request->route()->getName()));
         $this->routeNames = route_names(true);
-        $this->request = $this->request;
+        // $this->request = $this->request;
         $this->resolvedRequest = resolve(BaseRequest::class);
         $this->method = $this->request->method();
         $this->isAjax = $this->request->ajax();
@@ -376,7 +380,7 @@ class HttpResponse {
                 $data[1] = $vld[1];
                 if(config('z.user.is_admin')) throw new exception($data[1]);
                 else abort(404);
-                return $data;
+                // return $data;
             }
 
             // check method name
@@ -635,7 +639,7 @@ class HttpResponse {
     {
         $purposes2 = [];
         if(empty($purposes)) goto point1;
-        if(!AppFn::ARRAY_IsTypeAssociative($purposes))
+        if(!arr_type_assoc($purposes))
             throw new Exception('Purposes is not a sequential array');
         foreach($purposes as $key=>$val) {
             $key = strtoupper($key);
@@ -662,7 +666,7 @@ class HttpResponse {
      * Sets URL to which it redirects
      * - do not send a data which gives a reload command, you must specify URL
      *
-     * @param Illuminate\Http\RedirectResponse|string $redirectTo
+     * @param \Illuminate\Http\RedirectResponse|string $redirectTo
      * @param boolean $isHrefOrReplace
      * @return void
      */
@@ -704,7 +708,8 @@ class HttpResponse {
     {
         foreach($formErrors as $key=>$val) {
             if(!$onlyFirstError) {
-                $v = $this->validateFieldError($key, $val, $onlyFirstError);
+                // $v = $this->validateFieldError($key, $val, $onlyFirstError);
+                $v = $this->validateFieldError($key, $val);
                 if(!$v[0]) throw new exception($v[1]);
             }
         }
@@ -1050,7 +1055,7 @@ class HttpResponse {
             $ret[0] = true;
             $ret[2] = $v;
             $ret[3] = $v_name;
-        } catch(\Exception $ex) {
+        } catch(Exception $ex) {
             $ret[1] = $ex->getMessage();
         }
         return $ret;

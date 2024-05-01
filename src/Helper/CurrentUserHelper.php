@@ -73,56 +73,76 @@ function cuser_is_guest()
 /**
  * Get config roles
  *
- * @return object
+ * @return array
  */
-function roles()
+function z_roles_arr()
 {
-    return config('z.roles');
+    return config('z.base.roles');
 }
+
+function z_roles(bool $objectKey = true)
+{
+    $r = [];
+    foreach(z_roles_arr() as $k=>$v) {
+        $r[$v[1]] = $v[0];
+    }
+    return $objectKey ? (object)$r : $r;
+}
+
+function z_roles_names()
+{
+    return array_column(z_roles_arr(), 1);
+}
+
+function z_roles_ids()
+{
+    return array_column(z_roles_arr(), 0);
+}
+
 
 function cuser_is_admin()
 {
-    return cuser_has_role_id(roles()->admin);
+    return cuser_has_role_id(z_roles()->admin);
 }
 
 function cuser_is_rstaff()
 {
-    return cuser_has_role_id(roles()->rstaff);
+    return cuser_has_role_id(z_roles()->rstaff);
 }
 
 function cuser_is_eofficer()
 {
-    return cuser_has_role_id(roles()->eofficer);
+    return cuser_has_role_id(z_roles()->eofficer);
 }
 
 function cuser_is_student()
 {
-    return cuser_has_role_id(roles()->student);
+    return cuser_has_role_id(z_roles()->student);
 }
 
 function cuser_is_cashier()
 {
-    return cuser_has_role_id(roles()->cashier);
+    return cuser_has_role_id(z_roles()->cashier);
 }
 
 function cuser_is_cstaff()
 {
-    return cuser_has_role_id(roles()->cstaff);
+    return cuser_has_role_id(z_roles()->cstaff);
 }
 
 function cuser_is_jappl()
 {
-    return cuser_has_role_id(roles()->jappl);
+    return cuser_has_role_id(z_roles()->jappl);
 }
 
 function cuser_is_osdsstaff()
 {
-    return cuser_has_role_id(roles()->osdsstaff);
+    return cuser_has_role_id(z_roles()->osdsstaff);
 }
 
 function cuser_is_misstaff()
 {
-    return cuser_has_role_id(roles()->misstaff);
+    return cuser_has_role_id(z_roles()->misstaff);
 }
 
 

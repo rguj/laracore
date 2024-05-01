@@ -72,6 +72,7 @@ class BaseAppServiceProvider extends ServiceProvider
         $this->addBladeDirectives();
         // $this->initializeMetronic();  // gone to HttpResponse::getView()
         $this->addSequence();
+        // dd(route('verification.notice'));
     }
 
 
@@ -113,7 +114,7 @@ class BaseAppServiceProvider extends ServiceProvider
             $check_configs = [
                 'z.base',
                 'z.browser',
-                'z.role',
+                // 'z.role',
             ];
             foreach($check_configs as $k=>$v) {
                 if(!config()->has($v)) {

@@ -62,7 +62,7 @@ class BaseController extends Controller
      */
     public function construct()
     {
-        dd(4242);
+        // dd(4242);
     }
 
 

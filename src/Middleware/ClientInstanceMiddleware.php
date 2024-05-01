@@ -46,7 +46,8 @@ class ClientInstanceMiddleware
     // public string $home;
 
     /** @var object $role */
-    public $role;
+    protected $role;
+    protected array $role2;
 
     // public const ROLES = [
     //     [1, 'admin', 'Administrator'],
@@ -92,26 +93,14 @@ class ClientInstanceMiddleware
     private $url_intended;
 
 
-    public function __renderRoles()
-    {
-        $this->role = (object)[];
-
-        $d1 = Role::get();
-        foreach($d1 as $k=>$v) {
-            $this->role->{$v->name} = $v->id;
-        }
-
-        // dd($this->role);
-    }
-
     public function __construct()
     {
-        $this->__renderRoles();
+        // $this->__renderRoles();
 
         // $this->url_login = route('login');
         // $this->url_register = route('register');
         $this->url_login = route(env('ROUTE_LOGIN'));
-        $this->url_register = route(env('ROUTE_LOGIN'));
+        $this->url_register = route(env('ROUTE_REGISTER'));
         $this->url_verify_email = route(env('ROUTE_VERIFY_EMAIL'));
         $this->url_api = route(env('ROUTE_API'));
         $this->url_home = route(env('ROUTE_HOME'));
@@ -153,40 +142,39 @@ class ClientInstanceMiddleware
      */
     public function handle(HttpRequest $req, Closure $next)
     {
+
+        // dd(asset('etet'));
+        dump(cuser_data());
+
 		// dump(2);
         $request = resolve(BaseRequest::class);
         $this->request = $request;
 
-
         // set user info
         $id = cuser_id();
+        $roles_arr = z_roles(false);
         point1:
         $this->user_info = SELF::user_info_($id);
-        $this->is_admin = arr_colval_exists($this->role->admin, $this->user_info['types'] ?? [], 'role_id', true);
+        // $this->is_admin = arr_colval_exists(z_roles()->admin, $this->user_info['types'] ?? [], 'role_id', true);
+        $this->is_admin = in_array(z_roles()->admin, $this->user_info['userroles'] ?? [], true);
         Arr::set($this->user_info, 'settings.timezone', Arr::get($this->user_info, 'settings.timezone', config('app.timezone')));
         // config()->set('z.user', $this->user_info);
 
         config()->set('z.user.settings.timezone', $this->user_info['settings']['timezone']);
-        // dd(config('z'));
 
         // fix admin roles
         if($this->is_admin) {
-            if(count($this->role) !== count($this->user_info['types'])) {
-                foreach($this->role as $k=>$v) {
-                    $a = arr_search_by_key($this->user_info['types'], 'role_id', $v[0]);
+            if(count($roles_arr) !== count($this->user_info['userroles'])) {
+                foreach($roles_arr as $k=>$v) {
+                    $a = arr_search_by_key($this->user_info['userroles'], 'role_id', $v);
                     if(empty($a)) {
-                        RoleUser::updateOrCreate(['role_id' => $v[0], 'user_id' => $this->user_info['id']], []);
-                        ModelHasRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v[0], 'model_type' => User::class], []);
+                        RoleUser::updateOrCreate(['role_id' => $v, 'user_id' => $this->user_info['id']], []);
+                        ModelHasRole::updateOrCreate(['model_id' => $this->user_info['id'], 'role_id' => $v, 'model_type' => User::class], []);
                     }
                 }
                 goto point1;
             }
         }
-        // Config::set('roles', $this->role);
-        Config::set('z.roles', $this->role);
-
-        // dd($this->role);
-        // dd(config('z.roles'));
 
         // set client info
         $this->client_info = SELF::client_info_($request);
@@ -217,13 +205,23 @@ class ClientInstanceMiddleware
 
         // some validation
         $validate = $this->validate($request);  // added new
+        // $validate = [true, 0, null];
 
         if(webclient_is_dev()) {
 
         }
 
         // dd(cuser_data());
+
+        if($validate[2] === 'https://hris2.localhost.com' || $validate[2] === 'https://hris2.localhost.com/') {
+            // dd(656587574);
+            $validate[2] = url()->previous();
+        }
+
+        // dump($validate);
+
         if(!$validate[0]) {
+
 
             // if(!is_string($validate[2])) {
             //     throw new Exception('Parameter 3 must be string');
@@ -234,10 +232,13 @@ class ClientInstanceMiddleware
             }
 
             switch($validate[1]) {
+                // $validate [success, err_mode, err_data]
+                // err_mode [1 => exception, 2 => redirect]
                 case 1:
                     // dd(1);
                     throw new Exception($validate[2]);
                 case 2:
+                    // dump($validate);
                     // dd(2);
                     return redirect()->to($validate[2]);
                 default:
@@ -248,6 +249,8 @@ class ClientInstanceMiddleware
 
         // set config
         // Config::set('user', $this->user_info);
+
+        // point1:
 
 
         // set user theme mode
@@ -302,8 +305,11 @@ class ClientInstanceMiddleware
         $url = url_parse(request()->fullUrl());
         $schemeHostPath = $url->schemeHostPath;
 
-        if(in_array($schemeHostPath, $this->bypassAuthRoutes))
+        if(in_array($schemeHostPath, $this->bypassAuthRoutes)) {
+            // dd(654654);
             goto point1;
+        }
+        // dd(222);
 
         if(webclient_is_dev()) {
             // dd($this->user_info);
@@ -341,6 +347,7 @@ class ClientInstanceMiddleware
 
 
 
+            // dd($this->user_info);
             // check email verify
             if(!$this->user_info['verify']['email']['is_verified']) {
                 if($schemeHostPath !== $this->url_verify_email) {
@@ -360,18 +367,21 @@ class ClientInstanceMiddleware
             // check if no user
 
             $is_url_registration = ($schemeHostPath === $this->url_register);
+
             if($this->force_register && config('z.user-count') < 1 && !$is_url_registration) {
                 // dd(33);
                 session_push_alert('info', 'Please register first');
                 return [false, 2, $this->url_register];
             }
             elseif($is_url_registration) {
+                // dump($this->url_register);
+                // dump($schemeHostPath);
                 // dd(44);
                 goto point1;
             }
             else {
                 if($schemeHostPath === $this->url_login || $schemeHostPath === route(env('ROUTE_PASSWORD_REQUEST'))) {
-                    dd(55);
+                    // dd(55);
                     goto point1;
                 }
                 // dump($schemeHostPath);
@@ -426,58 +436,62 @@ class ClientInstanceMiddleware
         $tblUser = db_model_table_name(config('auth.providers.users.model'));
         $tblRole = db_model_table_name(config('permission.models.role'));
         // $tblUserType = db_model_table_name(\App\Models\UserType::class);
-        $tblUserType = db_model_table_name(\App\Models\RoleUser::class);
+        $tblUserType = db_model_table_name(RoleUser::class);
 
         // get user data
         $user = [];
         if(!is_null($id)) {
             $u = db_model_table_name(config('auth.providers.users.model'));  // user table;
-            $user = config('auth.providers.users.model')::with([
+            $user_ = config('auth.providers.users.model')::with([
                 'settings' => function(HasMany $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
 
-                    $q->select(['user_id', $t.'.key', $t.'.value']);
+                    $q->select(['user_id', $t.'.setting_key', $t.'.setting_value']);
                 },
 
                 // 'theme' => function($q) {
                 //     $q->select(['user_id', 'ac_user_theme.theme', 'ac_user_theme.mode']);
                 // },
 
-                'state' => function(HasOne $q) use($id) {
-                    /** @var \Illuminate\Database\Query\Builder $q */
-                    list($t, $p) = db_relation_info($q);
+                // 'state' => function(HasOne $q) use($id) {
+                //     /** @var \Illuminate\Database\Query\Builder $q */
+                //     list($t, $p) = db_relation_info($q);
 
-                    $q->select(['user_id', 'is_active']);
-                },
-                'verifyemail' => function(HasOne $q) use($id) {
-                    /** @var \Illuminate\Database\Query\Builder $q */
-                    list($t, $p) = db_relation_info($q);
-                    // $q->select(['user_id', 'verified_at']);
-                    $q->where($t.'.verified_at', '<>', '')
-                        ->where($t.'.verified_at', '<>', null)
-                        ->select(['user_id', 'verified_at']);
-                },
-                'types' => function(HasMany $q) use($id) {
+                //     $q->select(['user_id', 'is_active']);
+                // },
+                // 'verifyemail' => function(HasOne $q) use($id) {
+                //     /** @var \Illuminate\Database\Query\Builder $q */
+                //     list($t, $p) = db_relation_info($q);
+                //     // $q->select(['user_id', 'verified_at']);
+                //     $q->where($t.'.verified_at', '<>', '')
+                //         ->where($t.'.verified_at', '<>', null)
+                //         ->select(['user_id', 'verified_at']);
+                // },
+                'userroles' => function(HasMany $q) use($id) {
                     /** @var \Illuminate\Database\Query\Builder $q */
                     list($t, $p) = db_relation_info($q);
                     $r = db_model_table_name(config('permission.models.role'));  // role table
-                    $q->leftJoin($r,  $r.'.id', '=',  $t.'.role_id', );
-                    $q->select(['user_id',  $r.'.id AS role_id',  $r.'.title',  $r.'.short']);
+                    $q->join($r,  $r.'.id', '=',  $t.'.role_id');
+                    // $q->select(['user_id',  $r.'.id AS role_id',  $r.'.title',  $r.'.short']);
+                    $q->select(['user_id',  $r.'.id AS role_id', $r.'.name']);
                     // $q->where([ $t.'.is_valid'=>1]);
                     $q->orderBy( $t.'.role_id', 'asc');
                 },
-                'info' => function(HasOne $q) use($id) {
-                    /** @var \Illuminate\Database\Query\Builder $q */
-                    list($t, $p) = db_relation_info($q);
+                // 'info' => function(HasOne $q) use($id) {dd($q);
+                //     /** @var \Illuminate\Database\Query\Builder $q */
+                //     list($t, $p) = db_relation_info($q);
 
-                    $q->select(['user_id', $t.'.*']);
-                },
+                //     $q->select(['user_id', $t.'.*']);
+                // },
             ])
             ->where($u.'.id', '=', $id)
-            ->get()->toArr(0)
+            ->get()//->toArr(0)
             // ->toSql()
             ;
+            $user = $user_->toArr(0);
+            $user_ = $user_[0];
+
 
             // harmonize user settings array
             $user_settings = [];
@@ -486,20 +500,39 @@ class ClientInstanceMiddleware
             });
             $user['settings'] = $user_settings;
 
-            $user['is_active'] = arr_get($user, 'state.is_active', 0) === 1;
-            // $emailverify = dt_parse(arr_get($user, 'verifyemail.verified_at', ''));
-            $emailverify = dt_parse(arr_get($user, 'verifyemail.verified_at', '') ?? '');
+            // $user['is_active'] = arr_get($user, 'state.is_active', 0) === 1;
+            $user['is_active'] = arr_get($user, 'activated_at') !== null;
 
-            $user['verifyemail'] = !is_array($user['verifyemail']) ? [] : $user['verifyemail'];
-            $user['verify'] = [
-                'email' => [
-                    'is_verified' => (bool)($emailverify->is_valid ?? false),
-                    'verified_at' => (string)($emailverify->string->onto ?? ''),
-                ],
+            // $emailverify = dt_parse(arr_get($user, 'verifyemail.verified_at', ''));
+            // dd($user_->email_verified_at->format(dt_standard_format()));
+            $emailverify = dt_parse(($user_->email_verified_at?->format(dt_standard_format()) ?? '') ?? '');
+            // dd($emailverify);
+
+            // $user['verifyemail'] = !is_array($user['verifyemail']) ? [] : $user['verifyemail'];
+            // $user['verify'] = [
+            //     'email' => [
+            //         'is_verified' => (bool)($emailverify->is_valid ?? false),
+            //         'verified_at' => (string)($emailverify->string->onto ?? ''),
+            //     ],
+            // ];
+
+            $roles = [];
+            foreach((array)$user['userroles'] as $k=>$v) {
+                $roles[$v['name']] = $v['role_id'];
+            }
+            $user['userroles'] = $roles;
+
+            $user['verify']['email'] = [
+                'is_verified' => (bool)($emailverify->is_valid ?? false),
+                'verified_at' => (string)($emailverify->string->onto ?? ''),
             ];
 
-            $user['info']['avatar_url'] = SELF::getAvatarUrl($user['info']['avatar'] ?? '', $user['settings']['theme_mode'] ?? 'light');
-            $user['name'] = str_sanitize($user['first_name'].' '.$user['last_name']);
+
+            // $user['info']['avatar_url'] = SELF::getAvatarUrl($user['info']['avatar'] ?? '', $user['settings']['theme_mode'] ?? 'light');
+            $user['info']['avatar_url'] = '';
+            $user['name'] = str_sanitize($user['name'] ?? $user['fname'].' '.$user['lname']);
+            // dd($user);
+
         }
 
         if($id === 14880) {
@@ -539,7 +572,9 @@ class ClientInstanceMiddleware
     public function redirect(bool $goto_intended_url, bool $return_object=true) {
         // does not check is_valid
         // @param $return_object ? redirect_object : route_string
-        $user_role_ids = array_column(config('z.user.types'), 'id');
+
+        // $user_role_ids = array_column(config('z.user.types'), 'id');
+        $user_role_ids = z_roles_ids();
 
         # config
         $redirect_to_str = null;
@@ -752,17 +787,18 @@ class ClientInstanceMiddleware
 
         // get the menu of each role
         $main = [];
-        array_push($main, ...config('z.menu.all'));
-        $rs = array_column((array)config('z.user.types'), 'short');
+        array_push($main, ...(array)config('z.menu.all'));
+        // $rs = array_column((array)config('z.user.types'), 'name');
+        $rs = z_roles_names();
         if(cuser_is_auth()) {
             foreach($show_roles as $k1=>$v1) {
                 if(!in_array($v1, $rs))
                     continue;
 
                 $lbl = [false, ''];
-                foreach(config('z.user.types') as $k2=>$v2) {
-                    if($v2['short'] === $v1) {
-                        $lbl = [true, $v2['title']];
+                foreach(z_roles_arr() as $k2=>$v2) {
+                    if($v2[1] === $v1) {
+                        $lbl = [true, $v2[2]];
                         break;
                     }
                 }
@@ -789,7 +825,7 @@ class ClientInstanceMiddleware
             }
         } else {
             if(!empty(config('z.menu.guest'))) {
-                array_push($main, $category('Guest'), ...config('z.menu.guest'));
+                array_push($main, $category('Guest'), ...(array)config('z.menu.guest'));
             }
         }
 
