@@ -144,7 +144,6 @@ class ClientInstanceMiddleware
     {
 
         // dd(asset('etet'));
-        dump(cuser_data());
 
 		// dump(2);
         $request = resolve(BaseRequest::class);

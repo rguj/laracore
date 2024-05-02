@@ -1,31 +1,39 @@
 <?php
 
+declare(strict_types=1);
+
 use Rguj\Laracore\Middleware\ClientInstanceMiddleware;
 
-
+// dump('hello');
 
 /* -----------------------------------------------
  * CURRENT USER
  */
 
-function cuser_has_role2($val)
-{
-    /** @var \Spatie\Permission\Models\Permission */
-    $user = auth()->user();
-    return cuser_is_auth() ? $user->hasRole($val) : false;
-    // return arr_colval_exists($needle, config('user.types') ?? [], $col_key, $strict);
+if(!function_exists('cuser_has_role2')) {
+    function cuser_has_role2($val)
+    {
+        /** @var \Spatie\Permission\Models\Permission $user */
+        $user = auth()->user();
+        return cuser_is_auth() ? $user->hasRole($val) : false;
+        // return arr_colval_exists($needle, config('user.types') ?? [], $col_key, $strict);
+    }
 }
 
-function cuser_has_role_id($val)
-{
-    return cuser_has_role2($val);
-    // return cuser_has_role($needle, 'role_id', $strict);
+if(!function_exists('cuser_has_role_id')) {
+    function cuser_has_role_id($val)
+    {
+        return cuser_has_role2($val);
+        // return cuser_has_role($needle, 'role_id', $strict);
+    }
 }
 
-function cuser_has_role_role($val)
-{
-    return cuser_has_role2($val);
-    // return cuser_has_role($needle, 'role', $strict);
+if(!function_exists('cuser_has_role_role')) {
+    function cuser_has_role_role($val)
+    {
+        return cuser_has_role2($val);
+        // return cuser_has_role($needle, 'role', $strict);
+    }
 }
 
 // function cuser_has_role_short($needle, bool $strict=false)
@@ -35,19 +43,26 @@ function cuser_has_role_role($val)
 
 
 
-function cuser_id()
-{
-    return cuser_is_auth() ? auth()->id() : null;
+
+if(!function_exists('cuser_id')) {
+    function cuser_id()
+    {
+        return cuser_is_auth() ? auth()->id() : null;
+    }
 }
 
-function cuser_is_verified()
-{
-    return cuser_is_auth() ? (bool)(cuser_data()['verify']['email']['is_verified'] ?? false) : false;
+if(!function_exists('cuser_is_verified')) {
+    function cuser_is_verified()
+    {
+        return cuser_is_auth() ? (bool)(cuser_data()['verify']['email']['is_verified'] ?? false) : false;
+    }
 }
 
-function cuser_is_active()
-{
-    return cuser_is_auth() && cuser_data()['state']['is_active'] === 1;
+if(!function_exists('cuser_is_active')) {
+    function cuser_is_active()
+    {
+        return cuser_is_auth() && cuser_data()['state']['is_active'] === 1;
+    }
 }
 
 
@@ -55,19 +70,25 @@ function cuser_is_active()
 // {
 //     return cuser_is_auth() ? auth()->user() : null;
 // }
-function cuser_data()
-{
-    return config('user');
+if(!function_exists('cuser_data')) {
+    function cuser_data()
+    {
+        return config('user');
+    }
 }
 
-function cuser_is_auth()
-{
-    return auth()->check() && auth()->id();
+if(!function_exists('cuser_is_auth')) {
+    function cuser_is_auth()
+    {
+        return auth()->check() && auth()->id();
+    }
 }
 
-function cuser_is_guest()
-{
-    return !cuser_is_auth();
+if(!function_exists('cuser_is_guest')) {
+    function cuser_is_guest()
+    {
+        return !cuser_is_auth();
+    }
 }
 
 /**
