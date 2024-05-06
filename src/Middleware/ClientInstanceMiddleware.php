@@ -180,9 +180,10 @@ class ClientInstanceMiddleware
 
         // dd($this->client_info);
 
-        // dd($this->client_info);
-        if(!$this->client_info[0])
+        if(!$this->client_info[0]) {
+            jed($this->client_info);
             throw new Exception('Unable to issue client info');
+        }
         $this->client_info = $this->client_info[2];
         Config::set('client', $this->client_info);
 

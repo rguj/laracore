@@ -3950,6 +3950,7 @@ function str_regex_eval(string $pattern, string $subject, $true_func = null)
         if(var_is_closure($true_func) !== true) {
             $output = !is_null($true_func) ? $true_func : $subject;
         } else {
+            /** @var \Closure $true_func */
             $output = $true_func->__invoke($pattern, $subject, null);
         }
     }
@@ -4636,6 +4637,9 @@ function webclient_intended()
 
     $parsed_prev_url = url_parse($prev_url);
     $prev_url_path = $parsed_prev_url->url ?? '';
+
+    // dd(route(env('ROUTE_REGISTER')));
+    // tnev(env('ROUTE_REGISTER'));
 
     $except = [  // guest pages
         // route('index.index'),               // /

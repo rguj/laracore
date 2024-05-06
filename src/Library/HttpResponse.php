@@ -830,7 +830,8 @@ class HttpResponse {
 
     public function getWith(bool $withKey = false)
     {
-        $with = $this->__getWith($this->isAjax);
+        $isAjax = $this->isAjax;
+        $with = $this->__getWith($isAjax);
         return array_merge($this->rootData, ($withKey ? ['with'=>$with] : $with));
 
     }
