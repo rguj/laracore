@@ -97,6 +97,12 @@ class ClientInstanceMiddleware
     {
         // $this->__renderRoles();
 
+        // try {
+        //     route(env('ROUTE_LOGIN'));
+        // } catch(\Exception $ex) {
+        //     tnev(env('ROUTE_REGISTER'));
+        // }
+
         // $this->url_login = route('login');
         // $this->url_register = route('register');
         $this->url_login = route(env('ROUTE_LOGIN'));
@@ -213,10 +219,10 @@ class ClientInstanceMiddleware
 
         // dd(cuser_data());
 
-        if($validate[2] === 'https://hris2.localhost.com' || $validate[2] === 'https://hris2.localhost.com/') {
-            // dd(656587574);
-            $validate[2] = url()->previous();
-        }
+        // if($validate[2] === 'https://hris2.localhost.com' || $validate[2] === 'https://hris2.localhost.com/') {
+        //     // dd(656587574);
+        //     $validate[2] = url()->previous();
+        // }
 
         // dump($validate);
 
@@ -266,7 +272,7 @@ class ClientInstanceMiddleware
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
-
+        
         return $next($req);
     }
 
