@@ -228,6 +228,9 @@ class ClientInstanceMiddleware
 
         if(!$validate[0]) {
 
+            dump($validate);
+            // dd($validate);
+
 
             // if(!is_string($validate[2])) {
             //     throw new Exception('Parameter 3 must be string');
@@ -236,6 +239,7 @@ class ClientInstanceMiddleware
             if($validate[1] === 2 && (!is_string($validate[2]) || empty($validate[2]))) {
                 $validate[2] = url()->previous();
             }
+
 
             switch($validate[1]) {
                 // $validate [success, err_mode, err_data]
@@ -272,7 +276,7 @@ class ClientInstanceMiddleware
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
-        
+
         return $next($req);
     }
 
