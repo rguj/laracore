@@ -187,7 +187,7 @@ class ClientInstanceMiddleware
         // dd($this->client_info);
 
         if(!$this->client_info[0]) {
-            jed($this->client_info);
+            // jed($this->client_info);
             throw new Exception('Unable to issue client info');
         }
         $this->client_info = $this->client_info[2];
@@ -196,6 +196,7 @@ class ClientInstanceMiddleware
         // some logic for debugging
         $has_dev_key = webclient_is_dev();
         // if($this->is_admin || $has_dev_key) {
+
         if($this->is_admin) {
             app('debugbar')->enable();
             Config::set('app.debug', true);
@@ -211,7 +212,14 @@ class ClientInstanceMiddleware
 
         // some validation
         $validate = $this->validate($request);  // added new
-        // $validate = [true, 0, null];
+        // session()->push('vali', $validate);
+        // // $validate = [true, 0, null];
+        // // dd($validate);
+        // // dump($validate);
+        // if(count(session('vali')) > 1) {
+        //     dd(session('vali'));
+        //     session()->forget('vali');
+        // }
 
         if(webclient_is_dev()) {
 
@@ -248,8 +256,8 @@ class ClientInstanceMiddleware
                     // dd(1);
                     throw new Exception($validate[2]);
                 case 2:
-                    // dump($validate);
-                    // dd(2);
+                    dump($validate);
+                    dd(2);
                     return redirect()->to($validate[2]);
                 default:
                     // dd(3);
@@ -276,7 +284,7 @@ class ClientInstanceMiddleware
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
-
+        // dd($req);
         return $next($req);
     }
 

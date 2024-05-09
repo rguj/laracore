@@ -231,7 +231,8 @@ class BaseAppServiceProvider extends ServiceProvider
 
         $tbl_user = db_model_table_name(config('auth.providers.users.model'));
         $defaultDBConn = (string)config('database.default');
-
+        
+        //tnev($defaultDBConn);
         $bool1 = (
             !empty($defaultDBConn)
             && Schema::connection($defaultDBConn)->hasTable($tbl_user)

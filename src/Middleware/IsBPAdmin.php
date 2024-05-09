@@ -17,6 +17,8 @@ class IsBPAdmin
      */
     public function handle(Request $request, Closure $next)
     {
+        dd(backpack_user());
+        dd($this->checkIfUserIsAdmin(backpack_user()));
         if (backpack_auth()->guest()) {
             return $this->respondToUnauthorizedRequest($request);
         }
