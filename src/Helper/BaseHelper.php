@@ -3003,7 +3003,16 @@ function lbp_request_get(string $key)
     return app(BH_CRUD_KEY)->getRequest()->get($key);
 }
 
-
+/**
+ * If current user has role
+ *
+ * @param string|array $role
+ * @param boolean $allowAllForAdmin
+ * @return bool
+ */
+function lbp_user_has_role($role, bool $allowAllForAdmin = true) {
+    return (backpack_auth()->check() && ($allowAllForAdmin || backpack_user()->hasRole($role)));
+}
 
 
 
@@ -4017,6 +4026,9 @@ function str_replace_last($search, $replace, $subject)
 
 
 
+
+
+
 /** -----------------------------------------------
  * URL
  */
@@ -4318,6 +4330,25 @@ function url_parse(string $url, string $defaultScheme = 'https')
     return (object)$r;
 }
 
+/**
+ * Translate URL depends on type
+ *
+ * @param string $type
+ * @param string $link
+ * @return string
+ */
+function url_translate(string $type, string $link) {
+    $link2 = '';
+    if(!empty($link)) {
+        if($type == 'route')
+            $link2 = route($link);
+        elseif($type == 'internal_link')
+            $link2 = url($link);
+        elseif($type == 'external_link')
+            $link2 = $link;
+    }
+    return $link2;
+}
 
 
 

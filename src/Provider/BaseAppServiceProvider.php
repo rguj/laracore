@@ -73,6 +73,9 @@ class BaseAppServiceProvider extends ServiceProvider
         // $this->initializeMetronic();  // gone to HttpResponse::getView()
         $this->addSequence();
         // dd(route('verification.notice'));
+
+        // dd(backpack_pro());
+        // dd(file_get_contents(resource_path('views/vendor/backpack/crud/inc/filters_navbar.blade.php')));
     }
 
 
@@ -231,7 +234,7 @@ class BaseAppServiceProvider extends ServiceProvider
 
         $tbl_user = db_model_table_name(config('auth.providers.users.model'));
         $defaultDBConn = (string)config('database.default');
-        
+
         //tnev($defaultDBConn);
         $bool1 = (
             !empty($defaultDBConn)
