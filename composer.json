@@ -17,7 +17,7 @@
     "minimum-stability": "stable",
 	"prefer-stable": true,
     "require": {
-		"php": "^7.0||^8.0||^9.0",
+		"php": "^7.0||^7.2||^8.0||^9.0",
         "psr/http-message": "^1.0||^2.0",
         "maatwebsite/excel": "^3.1",
         "psr/simple-cache": "^2.0||3.0",
@@ -26,7 +26,7 @@
         "guzzlehttp/guzzle": "^7.0.1||^7.2",
         "intervention/image": "^3.5.1",
         "jenssegers/agent": "^2.6",
-        "laravel/framework": "^11.1.1||^9.16.0",
+        "laravel/framework": "^9.16.0||^11.1.1",
         "laravel/socialite": "^5.5",
         "laravel/tinker": "^2.5||^2.8",
         "laravel/sanctum": "^4.0.1",
