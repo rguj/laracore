@@ -287,8 +287,8 @@ class WebClient {
         $prev_url_path = $parsed_prev_url['path'] ?? '';
         $except = [  // guest pages
             // route('index.index'),               // /
-            route(env('ROUTE_LOGIN')),                     // /login
-            route(env('ROUTE_REGISTER')),                  // /register
+            route(config('env.ROUTE_LOGIN')),                     // /login
+            route(config('env.ROUTE_REGISTER')),                  // /register
             // route('auth.fb.redirect'),          // /auth/facebook/redirect
             // route('auth.fb.callback'),          // /auth/facebook/callback
             // route('auth.fb.deletion'),          // /auth/facebook/deletion

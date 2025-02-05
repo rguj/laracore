@@ -3687,6 +3687,17 @@ function storage_file_info(string $path, $basename_new = null)
     return $file;
 }
 
+function storage_file_move($file, string $dirPath, string $fileName)
+{
+    $dirPath = Str::of($dirPath)->rtrim('/\\')->__toString();
+    $fileName = Str::of($fileName)->ltrim('/\\')->__toString();
+    $path = $dirPath.'/'.$fileName;
+
+    $file->move($dirPath, $fileName);
+
+    return storage_file_info($path);
+}
+
 function storage_file_stream(Request $request) {
     /*
         URL PARAMS:
@@ -3722,9 +3733,9 @@ function storage_file_stream(Request $request) {
         throw new Exception('Invalid mime type');
 
     // ROLE VALIDATION
-    $hasAccess = StorageAccess::check($request, $file);
-    if($hasAccess !== true)
-        abort(403, 'Access denied');
+    // $hasAccess = StorageAccess::check($request, $file);
+    // if($hasAccess !== true)
+    //     abort(403, 'Access denied');
 
     // FILE STREAM
     $headers = ['Content-Type: '.$file['mime_type'], 'Cache-Control: no-cache, no-store, must-revalidate, post-check=0, pre-check=0'];
@@ -4659,6 +4670,8 @@ function view_variable(string $key, bool $strict = false)
 /**
  * Gets the intended URL of webclient
  *
+ * - updated accessing env key into config('env.KEY') to support premature bootstrapping
+ *
  * @return string default `'/'`
  */
 function webclient_intended()
@@ -4674,8 +4687,8 @@ function webclient_intended()
 
     $except = [  // guest pages
         // route('index.index'),               // /
-        route(env('ROUTE_LOGIN')),                     // /login
-        route(env('ROUTE_REGISTER')),                  // /register
+        route(config('env.ROUTE_LOGIN')),                     // /login
+        route(config('env.ROUTE_REGISTER')),                  // /register
         // route('auth.fb.redirect'),          // /auth/facebook/redirect
         // route('auth.fb.callback'),          // /auth/facebook/callback
         // route('auth.fb.deletion'),          // /auth/facebook/deletion

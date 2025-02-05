@@ -65,6 +65,7 @@ class BaseAppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // dd(env('SPATIE_TABLE_ROLES'));
         Artisan::call('view:clear');
         // auth()->user();  // trigger eloquent object
         $this->checkRequirement();

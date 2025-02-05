@@ -86,8 +86,10 @@ class ClientInstanceMiddleware
     private array $guestRoutes;
 
     private $url_login;
+    private $url_logout;
     private $url_register;
     private $url_verify_email;
+    private $url_email_verification;
     private $url_api;
     private $url_home;
     private $url_intended;
@@ -95,21 +97,14 @@ class ClientInstanceMiddleware
 
     public function __construct()
     {
-        // $this->__renderRoles();
-
-        // try {
-        //     route(env('ROUTE_LOGIN'));
-        // } catch(\Exception $ex) {
-        //     tnev(env('ROUTE_REGISTER'));
-        // }
-
-        // $this->url_login = route('login');
-        // $this->url_register = route('register');
-        $this->url_login = route(env('ROUTE_LOGIN'));
-        $this->url_register = route(env('ROUTE_REGISTER'));
-        $this->url_verify_email = route(env('ROUTE_VERIFY_EMAIL'));
-        $this->url_api = route(env('ROUTE_API'));
-        $this->url_home = route(env('ROUTE_HOME'));
+        $this->url_login = route(config('env.ROUTE_LOGIN'));
+        $this->url_logout = route(config('env.ROUTE_LOGOUT'));
+        $this->url_register = route(config('env.ROUTE_REGISTER'));
+        $this->url_verify_email = route(config('env.ROUTE_VERIFY_EMAIL'));
+        $this->url_email_verification = rtrim(route(config('env.ROUTE_EMAIL_VERIFICATION'), ['0', '0']), '/0/0');
+        //dd($this->url_email_verification);
+        $this->url_api = route(config('env.ROUTE_API'));
+        $this->url_home = route(config('env.ROUTE_HOME'));
         // $this->url_home = route('home.index');
         $this->url_intended = webclient_intended();
 
@@ -121,7 +116,7 @@ class ClientInstanceMiddleware
 
         $this->bypassAuthRoutes = [
             $this->url_api,
-
+            $this->url_logout,
         ];
 
         $this->guestRoutes = [
@@ -134,7 +129,20 @@ class ClientInstanceMiddleware
     }
 
 
+    public function construct2() {
+        // $this->__renderRoles();
 
+        // try {
+        //     route(env('ROUTE_LOGIN'));
+        // } catch(\Exception $ex) {
+        //     tnev(env('ROUTE_REGISTER'));
+        // }
+
+        // $this->url_login = route('login');
+        // $this->url_register = route('register');
+        //dd(env('ROUTE_LOGIN'));
+
+    }
 
 
 
@@ -148,7 +156,7 @@ class ClientInstanceMiddleware
      */
     public function handle(HttpRequest $req, Closure $next)
     {
-
+        $this->construct2();
         // dd(asset('etet'));
 
 		// dump(2);
@@ -184,9 +192,10 @@ class ClientInstanceMiddleware
         // set client info
         $this->client_info = SELF::client_info_($request);
 
-        // dd($this->client_info);
+        //dd($this->client_info);
 
         if(!$this->client_info[0]) {
+            dd($this->client_info);
             // jed($this->client_info);
             throw new Exception('Unable to issue client info');
         }
@@ -212,6 +221,7 @@ class ClientInstanceMiddleware
 
         // some validation
         $validate = $this->validate($request);  // added new
+
         // session()->push('vali', $validate);
         // // $validate = [true, 0, null];
         // // dd($validate);
@@ -236,7 +246,7 @@ class ClientInstanceMiddleware
 
         if(!$validate[0]) {
 
-            dump($validate);
+            //dump($validate);
             // dd($validate);
 
 
@@ -256,8 +266,8 @@ class ClientInstanceMiddleware
                     // dd(1);
                     throw new Exception($validate[2]);
                 case 2:
-                    dump($validate);
-                    dd(2);
+                    //dump($validate);
+                    //dd(2);
                     return redirect()->to($validate[2]);
                 default:
                     // dd(3);
@@ -284,7 +294,7 @@ class ClientInstanceMiddleware
         // decrypt purpose
         crypt_de_merge_get($request, 'p', true, false);
         crypt_de_merge_get($request, '_purpose', true, false);
-        // dd($req);
+
         return $next($req);
     }
 
@@ -368,6 +378,10 @@ class ClientInstanceMiddleware
             // dd($this->user_info);
             // check email verify
             if(!$this->user_info['verify']['email']['is_verified']) {
+                // if email verification verify url pattern is detected
+                if(str_preg_match('/^[0-9]+\/[0-9a-z]+$/u', ltrim($schemeHostPath, $this->url_email_verification))) {
+                    goto point1;
+                }
                 if($schemeHostPath !== $this->url_verify_email) {
                     // dd(11);
                     session_push_alert('info', 'Please verify your email first');
