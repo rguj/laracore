@@ -2508,6 +2508,26 @@ function dt_standard_format()
 }
 
 /**
+ * Get the standard datetime format with microseconds
+ *
+ * @return string
+ */
+function dt_standard_formatu()
+{
+    return 'Y-m-d H:i:s.u';
+}
+
+/**
+ * Get the standard datetime format (standard)
+ *
+ * @return string
+ */
+function dt_standard_formatn()
+{
+    return 'Y-m-d H:i:s';
+}
+
+/**
  * Use this function to properly validate carbon object
  *
  * @param \Carbon\Carbon|null $obj
@@ -3673,6 +3693,7 @@ function storage_file_info(string $path, $basename_new = null)
     $file['path_app'] = Str::replaceLast(storage_path('app/'), '', $p);
     $file['dir_app'] = Str::of(Str::replaceLast($file['name'], '', $file['path_app']))->rtrim('/')->__toString();
     $file['md5'] = $file['exists'] ? md5_file($p) : '';
+    $file['size_mb'] = $file['exists'] ? round(File::size($p) / 1024 / 1024, 2) : 0.00;
 
     // NEW PATH
     $ext_ = str_empty($file['ext']) !== true ? '.'.$file['ext'] : '';
@@ -3687,15 +3708,42 @@ function storage_file_info(string $path, $basename_new = null)
     return $file;
 }
 
+/**
+ * Summary of storage_file_move
+ * @param \Illuminate\Support\Facades\File $file
+ * @param string $dirPath
+ * @param string $fileName
+ * @throws \Exception
+ * @return array{basename: string, dir: string, dir_app: string, exists: bool, ext: string, md5: string, mime_type: null, name: string, path: string, path_app: string}
+ */
 function storage_file_move($file, string $dirPath, string $fileName)
 {
+    if (!$file) {
+        throw new \Exception("No file provided for upload.");
+    }
+
     $dirPath = Str::of($dirPath)->rtrim('/\\')->__toString();
     $fileName = Str::of($fileName)->ltrim('/\\')->__toString();
     $path = $dirPath.'/'.$fileName;
 
-    $file->move($dirPath, $fileName);
+    // Ensure Directory Exists
+    if (!Storage::exists($dirPath)) {
+        Storage::makeDirectory($dirPath, 0755, true);
+    }
 
-    return storage_file_info($path);
+    // Move the file to Laravel storage
+    $filePath = $file->storeAs($dirPath, $fileName, 'local');
+
+    return storage_file_info($filePath);
+
+
+    // $dirPath = Str::of($dirPath)->rtrim('/\\')->__toString();
+    // $fileName = Str::of($fileName)->ltrim('/\\')->__toString();
+    // $path = $dirPath.'/'.$fileName;
+
+    // $file->move($dirPath, $fileName);
+
+    // return storage_file_info($path);
 }
 
 function storage_file_stream(Request $request) {
